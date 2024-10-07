@@ -4,50 +4,78 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract HazardProposal is Ownable {
-  uint256[] private hazardList;
+    // Struct to hold hazard data
+    struct Hazard {
+        uint256 id;
+        string title;
+        string description;
+        int256 latitude;
+        int256 longitude;
+    }
 
-  event HazardAdded(uint256 newElementId);
+    // Mapping to store hazards by ID
+    mapping(uint256 => Hazard) public hazards;
+    uint256 public hazardCount;
 
-  constructor() Ownable() {}
+    // Event to log the addition of a new hazard
+    event HazardAdded(uint256 hazardId, string title, string description, int256 latitude, int256 longitude);
 
-  /**
-   * @dev Store a new element ID in the hazard list.
-   * Can only be called by the owner of the contract.
-   * @param newElementId The ID of the new element to store.
-   */
-  function addHazard(uint256 newElementId) public onlyOwner {
-    hazardList.push(newElementId);
-    emit HazardAdded(newElementId);
-  }
+    constructor() Ownable() {}
 
-  /**
-   * @dev Retrieve an element ID from the hazard list.
-   * Emits an event with the retrieved element ID.
-   * @param index The index of the element to retrieve.
-   * @return The element ID at the specified index.
-   */
-  function getHazard(uint256 index) public view returns (uint256) {
-    require(index < hazardList.length, "Index out of bounds");
-    uint256 retrievedElementId = hazardList[index];
-    return retrievedElementId;
-  }
+    /**
+     * @dev Store a new hazard in the contract.
+     * Can only be called by the owner of the contract.
+     * @param _title The title of the hazard.
+     * @param _description The description of the hazard.
+     * @param _latitude The latitude of the hazard's location.
+     * @param _longitude The longitude of the hazard's location.
+     */
+    function storeHazard(
+        string memory _title,
+        string memory _description,
+        int256 _latitude,
+        int256 _longitude
+    ) public onlyOwner {
+        hazards[hazardCount] = Hazard({
+            id: hazardCount,
+            title: _title,
+            description: _description,
+            latitude: _latitude,
+            longitude: _longitude
+        });
+        
+        emit HazardAdded(hazardCount, _title, _description, _latitude, _longitude);
+        
+        // Increment hazard count after storing
+        hazardCount++;
+    }
 
-  /**
-   * @dev Retrieve the first element ID from the hazard list.
-   * Emits an event with the retrieved element ID.
-   * @return The first element ID in the hazard list.
-   */
-  function getFirstHazard() public view returns (uint256) {
-    require(hazardList.length > 0, "Hazard list is empty");
-    uint256 retrievedElementId = hazardList[0];
-    return retrievedElementId;
-  }
+    function getHazard(uint256 _id) public view returns (
+        uint256 id,
+        string memory title,
+        string memory description,
+        int256 latitude,
+        int256 longitude
+    ) {
+        Hazard storage hazard = hazards[_id];
+        return (
+            hazard.id,
+            hazard.title,
+            hazard.description,
+            hazard.latitude,
+            hazard.longitude
+        );
+    }
 
-  /**
-   * @dev Retrieve the entire hazard list.
-   * @return The array of all hazard element IDs.
-   */
-  function getAllHazards() public view returns (uint256[] memory) {
-    return hazardList;
-  }
+    /**
+     * @dev Retrieve all hazards' details.
+     * @return Array of all hazards stored in the contract.
+     */
+    function getAllHazards() public view returns (Hazard[] memory) {
+        Hazard[] memory allHazards = new Hazard[](hazardCount);
+        for (uint256 i = 0; i < hazardCount; i++) {
+            allHazards[i] = hazards[i];
+        }
+        return allHazards;
+    }
 }

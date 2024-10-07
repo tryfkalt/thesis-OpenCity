@@ -6,12 +6,13 @@ import {
     PROPOSAL_DESCRIPTION,
     MIN_DELAY,
     developmentChains,
+    STORE_PARAMS,
 } from "../helper-hardhat-config"
 import { moveBlocks } from "../utils/move-blocks"
 import { moveTime } from "../utils/move-time"
 
 export async function queueAndExecute() {
-    const args = [NEW_STORE_VALUE]
+    const args = STORE_PARAMS
     const functionToCall = FUNC
     const box = await ethers.getContract("HazardProposal")
     const encodedFunctionCall = box.interface.encodeFunctionData(functionToCall, args)

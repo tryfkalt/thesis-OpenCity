@@ -1,10 +1,10 @@
 
 import { ethers, network } from "hardhat";
-import { NEW_STORE_VALUE, FUNC, PROPOSAL_DESCRIPTION, developmentChains, VOTING_DELAY, proposalsFile } from "../helper-hardhat-config";
+import { FUNC, PROPOSAL_DESCRIPTION, developmentChains, VOTING_DELAY, proposalsFile, STORE_PARAMS } from "../helper-hardhat-config";
 import { moveBlocks } from "../utils/move-blocks";
 import * as fs from "fs";
 
-export async function propose(args: any[], functionToCall: string, proposalDescription: string) {
+export async function propose(args: any, functionToCall: string, proposalDescription: string) {
     const governor = await ethers.getContract("GovernorContract");
     const box = await ethers.getContract("HazardProposal");
     // console.log(box);
@@ -52,7 +52,7 @@ function storeProposalId(proposalId: any) {
     fs.writeFileSync(proposalsFile, JSON.stringify(proposals), "utf8");
 }
 
-propose([NEW_STORE_VALUE], FUNC, PROPOSAL_DESCRIPTION).then(() => process.exit(0)).catch(error => {
+propose(STORE_PARAMS, FUNC, PROPOSAL_DESCRIPTION).then(() => process.exit(0)).catch(error => {
     console.error(error);
     process.exit(1);
 });

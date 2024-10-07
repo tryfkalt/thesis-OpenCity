@@ -43,7 +43,7 @@ export default function Home() {
 
       <div>
         <Proposal onProposalSubmit={handleProposalSubmit} />
-        <Map markers={proposals} onMapClick={handleMapClick} />
+        <Map onMapClick={handleMapClick} />
       </div>
     </div>
   );
