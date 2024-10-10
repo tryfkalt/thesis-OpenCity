@@ -2,7 +2,6 @@
 import { ethers, network } from "hardhat"
 import {
     FUNC,
-    NEW_STORE_VALUE,
     PROPOSAL_DESCRIPTION,
     MIN_DELAY,
     developmentChains,

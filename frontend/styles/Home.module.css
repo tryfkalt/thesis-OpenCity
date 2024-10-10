@@ -169,3 +169,12 @@
   padding-right: 10px;
   z-index: 0;
 }
+
+.input-container {
+  margin: 10px 0;
+}
+
+.map-container {
+  height: 40rem;
+  width: 100%;
+}

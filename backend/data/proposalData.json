@@ -6,5 +6,21 @@
       "lat": 50,
       "lng": -0.7
     }
+  },
+  {
+    "title": "Test",
+    "description": "Problem with road",
+    "coordinates": {
+      "lat": 0.5,
+      "lng": -0.66
+    }
+  },
+  {
+    "title": "metamsk",
+    "description": "test",
+    "coordinates": {
+      "lat": 53,
+      "lng": -0.2
+    }
   }
 ]

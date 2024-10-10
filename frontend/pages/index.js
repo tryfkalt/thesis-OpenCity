@@ -4,6 +4,7 @@ import Header from "../components/Header";
 import { useMoralis } from "react-moralis";
 import Map from "../components/Map";
 import Proposal from "../components/CreateProposal";
+import Search from "../components/Map/Search";
 import { useState } from "react";
 
 const supportedChains = ["31337", "11155111"];
@@ -14,6 +15,7 @@ export default function Home() {
   const [selectedCoords, setSelectedCoords] = useState(null);
 
   const handleProposalSubmit = (proposalData) => {
+    console.log(proposalData)
     setProposals([...proposals, proposalData]);
   };
 
@@ -40,10 +42,9 @@ export default function Home() {
       ) : (
         <div>Please connect to a Wallet</div>
       )}
-
       <div>
         <Proposal onProposalSubmit={handleProposalSubmit} />
-        <Map onMapClick={handleMapClick} />
+        <Map markers={proposals} onMapClick={handleMapClick} />
       </div>
     </div>
   );
