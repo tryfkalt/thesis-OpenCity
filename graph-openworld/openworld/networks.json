@@ -1,0 +1,8 @@
+{
+  "sepolia": {
+    "GovernorContract": {
+      "address": "0x4D4d07C37F6Fb33BD290B712A63b75fd6a3FB356",
+      "startBlock": 6852556
+    }
+  }
+}

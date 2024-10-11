@@ -4,7 +4,8 @@ import { FUNC, PROPOSAL_DESCRIPTION, developmentChains, VOTING_DELAY, proposalsF
 import { moveBlocks } from "../utils/move-blocks";
 import * as fs from "fs";
 
-export async function propose(args: any, functionToCall: string, proposalDescription: string) {
+async function propose(args: any, functionToCall: string, proposalDescription: string) {
+    
     const governor = await ethers.getContract("GovernorContract");
     const box = await ethers.getContract("HazardProposal");
     // console.log(box);
@@ -30,11 +31,19 @@ export async function propose(args: any, functionToCall: string, proposalDescrip
     // save the proposalId
     storeProposalId(proposalId);
 
+
     console.log(`Current Proposal State: ${proposalState}`)
     // What block # the proposal was snapshot
     console.log(`Current Proposal Snapshot: ${proposalSnapShot}`)
     // The block number the proposal voting expires
     console.log(`Current Proposal Deadline: ${proposalDeadline}`)
+
+    return {
+        proposalId: proposalId.toString(),
+        proposalState,
+        proposalSnapShot,
+        proposalDeadline,
+    };
 }
 
 function storeProposalId(proposalId: any) {
@@ -56,3 +65,5 @@ propose(STORE_PARAMS, FUNC, PROPOSAL_DESCRIPTION).then(() => process.exit(0)).ca
     console.error(error);
     process.exit(1);
 });
+
+module.exports = { propose }; 

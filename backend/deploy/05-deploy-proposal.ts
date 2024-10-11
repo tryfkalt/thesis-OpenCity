@@ -22,6 +22,12 @@ const deployProposal: DeployFunction = async function (hre: HardhatRuntimeEnviro
         await verify(proposal.address, []);
     };
     const proposalContract = await ethers.getContractAt("HazardProposal", proposal.address);
+    const currentOwner = await proposalContract.owner();
+
+    if (currentOwner.toLowerCase() !== deployer.toLowerCase()) {
+        throw new Error("The deployer is not the owner of the contract");
+    }
+
     const timeLock = await ethers.getContract("TimeLock");
     const transferTx = await proposalContract.transferOwnership(timeLock.address);
     await transferTx.wait(1);

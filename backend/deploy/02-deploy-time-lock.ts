@@ -12,13 +12,13 @@ const deployTimeLock: DeployFunction = async function (hre: HardhatRuntimeEnviro
 
     const timeLock = await deploy("TimeLock", {
         from: deployer,
-        args: [MIN_DELAY, [], []],
+        args: [MIN_DELAY, [], [], deployer],
         log: true,
         waitConfirmations: networkConfig[network.name].blockConfirmations || 1,
     });
     log("TimeLock deployed to: " + timeLock.address);
     if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
-        await verify(timeLock.address, []);
+        await verify(timeLock.address, [MIN_DELAY, [], [], deployer], "contracts/governance_standard/TimeLock.sol:TimeLock");
     };
 };
 
