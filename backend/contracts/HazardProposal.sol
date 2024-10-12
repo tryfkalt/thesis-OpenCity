@@ -20,7 +20,7 @@ contract HazardProposal is Ownable {
     // Event to log the addition of a new hazard
     event HazardAdded(uint256 hazardId, string title, string description, int256 latitude, int256 longitude);
 
-    constructor() Ownable() {}
+    constructor() {}
 
     /**
      * @dev Store a new hazard in the contract.

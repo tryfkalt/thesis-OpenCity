@@ -23,7 +23,7 @@ const deployProposal: DeployFunction = async function (hre: HardhatRuntimeEnviro
     };
     const proposalContract = await ethers.getContractAt("HazardProposal", proposal.address);
     const currentOwner = await proposalContract.owner();
-
+    console.log("Current owner of the contract is: ", currentOwner);
     if (currentOwner.toLowerCase() !== deployer.toLowerCase()) {
         throw new Error("The deployer is not the owner of the contract");
     }

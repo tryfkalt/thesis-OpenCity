@@ -24,13 +24,11 @@ const config: HardhatUserConfig = {
         },
         localhost: {
             chainId: 31337,
-            allowUnlimitedContractSize: true,
-            accounts: [PRIVATE_KEY]
+            allowUnlimitedContractSize: true
         },
         sepolia: {
             url: SEPOLIA_RPC_URL,
             accounts: [PRIVATE_KEY],
-            saveDeployments: true,
             chainId: 11155111,
         },
     },

@@ -3,6 +3,9 @@
     "GovernorContract": {
       "address": "0x4D4d07C37F6Fb33BD290B712A63b75fd6a3FB356",
       "startBlock": 6852556
+    },
+    "HazardProposal": {
+      "address": "0x3E449d6b795B44f647bA9e641c6092A29d5D9734"
     }
   }
 }

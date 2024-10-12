@@ -2,7 +2,7 @@ specVersion: 1.0.0
 indexerHints:
   prune: auto
 schema:
-  file: ./schema.graphql
+  file: schema.graphql
 dataSources:
   - kind: ethereum
     name: GovernorContract
@@ -25,7 +25,7 @@ dataSources:
         - VoteCast
       abis:
         - name: GovernorContract
-          file: ./abis/GovernorContract.json
+          file: GovernorContract/abis/GovernorContract.json
       eventHandlers:
         - event: ProposalCanceled(uint256)
           handler: handleProposalCanceled
@@ -41,7 +41,7 @@ dataSources:
           handler: handleTimelockChange
         - event: VoteCast(indexed address,uint256,uint8,uint256,string)
           handler: handleVoteCast
-      file: ./src/governor-contract.ts
+      file: GovernorContract/GovernorContract.wasm
   - kind: ethereum
     name: HazardProposal
     network: sepolia
@@ -58,10 +58,10 @@ dataSources:
         - OwnershipTransferred
       abis:
         - name: HazardProposal
-          file: ./abis/HazardProposal.json
+          file: HazardProposal/abis/HazardProposal.json
       eventHandlers:
         - event: HazardAdded(uint256,string,string,int256,int256)
           handler: handleHazardAdded
         - event: OwnershipTransferred(indexed address,indexed address)
           handler: handleOwnershipTransferred
-      file: ./src/hazard-proposal.ts
+      file: HazardProposal/HazardProposal.wasm
