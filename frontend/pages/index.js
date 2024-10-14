@@ -12,16 +12,16 @@ const supportedChains = ["31337", "11155111"];
 export default function Home() {
   const { isWeb3Enabled, chainId } = useMoralis();
   const [proposals, setProposals] = useState([]);
-  const [selectedCoords, setSelectedCoords] = useState(null);
+  const [selectedCoords, setSelectedCoords] = useState({ lat: "", lng: "" });
 
   const handleProposalSubmit = (proposalData) => {
     console.log(proposalData)
     setProposals([...proposals, proposalData]);
   };
 
-  const handleMapClick = (coords) => {
-    setSelectedCoords(coords);
-  };
+  // const handleMapClick = (coords) => {
+  //   setSelectedCoords(coords);
+  // };
 
   return (
     <div className={styles.container}>
@@ -43,8 +43,8 @@ export default function Home() {
         <div>Please connect to a Wallet</div>
       )}
       <div>
-        <Proposal onProposalSubmit={handleProposalSubmit} />
-        <Map markers={proposals} onMapClick={handleMapClick} />
+        <Proposal onProposalSubmit={handleProposalSubmit} coordinates={selectedCoords} setCoordinates={setSelectedCoords}/>
+        <Map markers={proposals} onMapClick={setSelectedCoords} />
       </div>
     </div>
   );

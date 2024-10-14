@@ -65,5 +65,5 @@ export const STORE_PARAMS = latestProposal
       0,
     ];
 
-export const FUNC = "storeHazard";
+export const FUNC = "storeHazard" as const;
 export const PROPOSAL_DESCRIPTION = "Proposal to store hazard information.";

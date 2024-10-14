@@ -6,6 +6,7 @@ const verify = async (contractAddress: string, args: any[], contractPath?: strin
         const verificationOptions: { address: string; constructorArguments: any[]; contract?: string } = {
             address: contractAddress,
             constructorArguments: args,
+            contract: contractPath,
         };
 
         // If a specific contract path is provided, include it in the verification options

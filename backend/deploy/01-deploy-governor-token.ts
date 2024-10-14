@@ -18,7 +18,7 @@ const deployGovernanceToken: DeployFunction = async function (hre: HardhatRuntim
     });
     log("GovernorToken deployed to: " + governanceToken.address);
     if (!developmentChains.includes(network.name)) {
-        await verify(governanceToken.address, []);
+        await verify(governanceToken.address, [], "contracts/GovernanceToken.sol:GovernanceToken");
     };
 
     log(`Delegating to ${deployer}...`);

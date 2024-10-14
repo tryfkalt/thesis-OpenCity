@@ -38,12 +38,12 @@ async function propose(args: any, functionToCall: string, proposalDescription: s
     // The block number the proposal voting expires
     console.log(`Current Proposal Deadline: ${proposalDeadline}`)
 
-    return {
-        proposalId: proposalId.toString(),
-        proposalState,
-        proposalSnapShot,
-        proposalDeadline,
-    };
+    // return {
+    //     proposalId: proposalId.toString(),
+    //     proposalState,
+    //     proposalSnapShot,
+    //     proposalDeadline,
+    // };
 }
 
 function storeProposalId(proposalId: any) {

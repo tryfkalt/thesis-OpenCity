@@ -1,4 +1,9 @@
-const { frontEndContractsGovernor, frontEndAbiFileHazardProposal, frontEndAbiFileGovernor, frontEndContractsHazard } = require("../helper-hardhat-config");
+const {
+  frontEndContractsGovernor,
+  frontEndAbiFileHazardProposal,
+  frontEndAbiFileGovernor,
+  frontEndContractsHazard,
+} = require("../helper-hardhat-config");
 const fs = require("fs");
 const { network, ethers } = require("hardhat");
 
@@ -9,16 +14,21 @@ module.exports = async () => {
     await updateAbi();
     console.log("Front end updated!");
   }
-}
+};
 
 async function updateAbi() {
   // Update ABI for Governor contract
   const governor = await ethers.getContract("GovernorContract");
-  fs.writeFileSync(frontEndAbiFileGovernor, governor.interface.format(ethers.utils.FormatTypes.json));
-
+  fs.writeFileSync(
+    frontEndAbiFileGovernor,
+    governor.interface.format(ethers.utils.FormatTypes.json)
+  );
   // Update ABI for HazardProposal contract
   const hazardProposal = await ethers.getContract("HazardProposal");
-  fs.writeFileSync(frontEndAbiFileHazardProposal, hazardProposal.interface.format(ethers.utils.FormatTypes.json));
+  fs.writeFileSync(
+    frontEndAbiFileHazardProposal,
+    hazardProposal.interface.format(ethers.utils.FormatTypes.json)
+  );
 
   console.log("ABIs updated in front end.");
 }

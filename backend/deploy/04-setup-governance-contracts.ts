@@ -6,7 +6,8 @@ import { ethers } from "hardhat";
 const setupContracts: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { getNamedAccounts, deployments } = hre;
     const { log } = deployments;
-    const { deployer } = await getNamedAccounts();
+    const [deployer] = await ethers.getSigners();
+    console.log("Deployer Address:", deployer.address);
 
     log("----------------------------------------------------");
     log("Setting up contracts for roles...");
@@ -21,14 +22,15 @@ const setupContracts: DeployFunction = async function (hre: HardhatRuntimeEnviro
     const proposerRole = await timeLock.PROPOSER_ROLE();
     const executorRole = await timeLock.EXECUTOR_ROLE();
     const adminRole = await timeLock.TIMELOCK_ADMIN_ROLE();
-    
-    const isAdmin = await timeLock.hasRole(adminRole, deployer);
+
+    // Check if the deployer has the admin role
+    const isAdmin = await timeLock.hasRole(adminRole, deployer.address);
     console.log("Is Deployer Admin:", isAdmin);
-    console.log("Deploying from account:", deployer);
+    console.log("Deploying from account:", deployer.address);
 
     if (!isAdmin) {
         console.log("Granting adminRole to deployer...");
-        const tx = await timeLock.grantRole(adminRole, deployer);
+        const tx = await timeLock.grantRole(adminRole, deployer.address);
         await tx.wait();
     }
 
@@ -40,7 +42,7 @@ const setupContracts: DeployFunction = async function (hre: HardhatRuntimeEnviro
     await executorTx.wait(1);
 
     // Then revoke the admin role if necessary
-    const revokeTx = await timeLock.revokeRole(adminRole, deployer);
+    const revokeTx = await timeLock.revokeRole(adminRole, deployer.address);
     await revokeTx.wait(1);
 
     // Now, anything the timeLock wants to do has to go through the governance process!

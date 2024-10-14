@@ -1,25 +1,18 @@
 const express = require("express");
 const { createProposal } = require("../controllers/proposalController");
-const tsNode = require("ts-node");
 
-tsNode.register({ transpileOnly: true });  // Register ts-node for TypeScript support
-
-const { propose } = require("../scripts/propose");
-
+// Initialize express router
 const router = express.Router();
 
-router.post("/createProposal", async (req, res) => {
-    const { title, description, coordinates } = req.body;
-    const args = [title, description, coordinates.lat, coordinates.lng];
-    const functionToCall = "storeHazard";
-    
-    try {
-    //   const result = await propose(args, functionToCall, description);
-      res.status(200).json({ success: true, result });
-    } catch (error) {
-      console.error("Proposal creation error:", error);
-      res.status(500).json({ success: false, message: "Failed to create proposal." });
-    }
+// Define the POST route to handle proposal submissions
+router.post("/", async (req, res) => {
+  try {
+    await createProposal(req, res);
+    return res.status(200).json({ message: "Proposal submitted successfully" });
+  } catch (error) {
+    console.error("Error creating proposal:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 });
 
 module.exports = router;

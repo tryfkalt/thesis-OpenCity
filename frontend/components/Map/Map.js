@@ -14,46 +14,45 @@ const markerIcon = new L.Icon({
 
 const Map = ({ markers, onMapClick }) => {
   const [mapMarkers, setMapMarkers] = useState(markers || []);
-  const [inputLat, setInputLat] = useState("");
-  const [inputLng, setInputLng] = useState("");
+  // const [inputLat, setInputLat] = useState("");
+  // const [inputLng, setInputLng] = useState("");
 
   useEffect(() => {
     setMapMarkers(markers); // Sync markers with props
   }, [markers]);
 
-  const updateMarkerPosition = (newPosition) => {
-    setMapMarkers([newPosition]);
-    setInputLat(newPosition.lat);
-    setInputLng(newPosition.lng);
-  };
+  // const updateMarkerPosition = (newPosition) => {
+  //   setMapMarkers([newPosition]);
+  //   setInputLat(newPosition.lat);
+  //   setInputLng(newPosition.lng);
+  // };
 
   // Handle map click to add marker
   const MapClickHandler = () => {
     useMapEvents({
       click(e) {
         const { lat, lng } = e.latlng;
-        onMapClick(e.latlng);
-        updateMarkerPosition(e.latlng);
+        onMapClick({ lat, lng });
       },
     });
     return null;
   };
 
   // Handle manual coordinates submission
-  const handleAddMarker = () => {
-    const lat = parseFloat(inputLat);
-    const lng = parseFloat(inputLng);
-    if (!isNaN(lat) && !isNaN(lng)) {
-      const newMarker = { lat, lng };
-      updateMarkerPosition(newMarker);
-    } else {
-      alert("Please enter valid latitude and longitude values.");
-    }
-  };
+  // const handleAddMarker = () => {
+  //   const lat = parseFloat(inputLat);
+  //   const lng = parseFloat(inputLng);
+  //   if (!isNaN(lat) && !isNaN(lng)) {
+  //     const newMarker = { lat, lng };
+  //     updateMarkerPosition(newMarker);
+  //   } else {
+  //     alert("Please enter valid latitude and longitude values.");
+  //   }
+  // };
 
   return (
     <div>
-      {/* Input fields for Latitude and Longitude */}
+      {/* Input fields for Latitude and Longitude
       <div className={styles["input-container"]}>
         <label>
           Latitude:
@@ -76,7 +75,7 @@ const Map = ({ markers, onMapClick }) => {
         <button onClick={handleAddMarker} style={{ marginLeft: "10px" }}>
           Add Marker
         </button>
-      </div>
+      </div> */}
 
       {/* Map with markers */}
       <MapContainer className={styles["map-container"]} center={[51.505, -0.09]} zoom={13}>

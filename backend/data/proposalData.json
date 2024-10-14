@@ -16,11 +16,19 @@
     }
   },
   {
-    "title": "metamak",
+    "title": "metamask",
     "description": "test",
     "coordinates": {
       "lat": 53,
       "lng": -0.2
+    }
+  },
+  {
+    "title": "",
+    "description": "",
+    "coordinates": {
+      "lat": 51.51794948862318,
+      "lng": -0.10044008875237599
     }
   }
 ]

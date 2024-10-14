@@ -177,4 +177,19 @@
 .map-container {
   height: 40rem;
   width: 100%;
+  padding: 20px;
+  padding-top: 100px;
+}
+
+.proposal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+  max-width: 500px;
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin: auto;
 }
