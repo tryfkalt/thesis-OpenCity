@@ -43,8 +43,8 @@ export default function Home() {
         <div>Please connect to a Wallet</div>
       )}
       <div>
-        <Proposal onProposalSubmit={handleProposalSubmit} coordinates={selectedCoords} setCoordinates={setSelectedCoords}/>
-        <Map markers={proposals} onMapClick={setSelectedCoords} />
+      <Proposal onProposalSubmit={handleProposalSubmit} coordinates={selectedCoords} setCoordinates={setSelectedCoords} />
+      <Map markers={proposals} onMapClick={setSelectedCoords} />
       </div>
     </div>
   );

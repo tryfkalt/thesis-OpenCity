@@ -1,7 +1,7 @@
 const express = require("express");
 const dotenv = require("dotenv");
-const proposalRoutes = require("./routes/proposalRoutes");
-const corsMiddleware = require("./middlewares/cors");
+const proposalRoutes = require("./routes/proposalRoutes.js");
+const corsMiddleware = require("./middlewares/cors.js");
 
 dotenv.config();
 

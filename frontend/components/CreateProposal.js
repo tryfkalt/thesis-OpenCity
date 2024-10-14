@@ -80,7 +80,7 @@ const Proposal = ({ onProposalSubmit, coordinates, setCoordinates }) => {
           lng: coordinates.lng,
         },
       };
-
+      onProposalSubmit(proposalData);
       // Send the proposal data to the backend
       const response = await axios.post("http://localhost:5000/", proposalData);
       console.log("Proposal submitted:", response.data);
@@ -124,7 +124,7 @@ const Proposal = ({ onProposalSubmit, coordinates, setCoordinates }) => {
 
   return (
     <div className={styles["proposal-form"]}>
-      <Form
+      <Form className={styles["form-content"]}
         onSubmit={createProposal}
         data={[
           { name: "Title", type: "text", value: "Title", key: "title" },

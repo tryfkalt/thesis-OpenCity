@@ -46,7 +46,7 @@ async function propose(args: any, functionToCall: string, proposalDescription: s
     // };
 }
 
-function storeProposalId(proposalId: any) {
+async function storeProposalId(proposalId: any) {
     const chainId = network.config.chainId!.toString();
     let proposals: any;
 
@@ -66,4 +66,4 @@ propose(STORE_PARAMS, FUNC, PROPOSAL_DESCRIPTION).then(() => process.exit(0)).ca
     process.exit(1);
 });
 
-module.exports = { propose }; 
+module.exports = { propose, storeProposalId }; 

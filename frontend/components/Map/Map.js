@@ -4,93 +4,72 @@ import { useState, useEffect } from "react";
 import styles from "../../styles/Home.module.css";
 import L from "leaflet";
 
-// Custom marker icon
-const markerIcon = new L.Icon({
+// Custom marker icons
+const defaultMarkerIcon = new L.Icon({
   iconUrl: "/marker.png",
-  iconSize: [50, 50], // Adjust icon size
-  iconAnchor: [25, 50], // Adjust anchor to point tip at the location
+  iconSize: [50, 50],
+  iconAnchor: [25, 50],
+  popupAnchor: [0, -50],
+});
+
+const submittedMarkerIcon = new L.Icon({
+  iconUrl: "/location.png", // Change this path to your submitted marker icon
+  iconSize: [50, 50],
+  iconAnchor: [25, 50],
   popupAnchor: [0, -50],
 });
 
 const Map = ({ markers, onMapClick }) => {
-  const [mapMarkers, setMapMarkers] = useState(markers || []);
-  // const [inputLat, setInputLat] = useState("");
-  // const [inputLng, setInputLng] = useState("");
+  const [mapMarkers, setMapMarkers] = useState([]);
+  const [draggableMarker, setDraggableMarker] = useState({
+    position: { lat: 51.505, lng: -0.09 }, // Initial position
+    draggable: true,
+    icon: defaultMarkerIcon,
+  });
 
   useEffect(() => {
-    setMapMarkers(markers); // Sync markers with props
+    if (markers && markers.length) {
+      setMapMarkers(markers);
+    }
   }, [markers]);
 
-  // const updateMarkerPosition = (newPosition) => {
-  //   setMapMarkers([newPosition]);
-  //   setInputLat(newPosition.lat);
-  //   setInputLng(newPosition.lng);
-  // };
-
-  // Handle map click to add marker
-  const MapClickHandler = () => {
-    useMapEvents({
-      click(e) {
-        const { lat, lng } = e.latlng;
-        onMapClick({ lat, lng });
-      },
-    });
-    return null;
+  // Update the draggable marker position and notify parent component
+  const handleDragEnd = (event) => {
+    const { lat, lng } = event.target.getLatLng();
+    setDraggableMarker((prev) => ({ ...prev, position: { lat, lng } }));
+    onMapClick({ lat, lng }); // Update form coordinates
   };
-
-  // Handle manual coordinates submission
-  // const handleAddMarker = () => {
-  //   const lat = parseFloat(inputLat);
-  //   const lng = parseFloat(inputLng);
-  //   if (!isNaN(lat) && !isNaN(lng)) {
-  //     const newMarker = { lat, lng };
-  //     updateMarkerPosition(newMarker);
-  //   } else {
-  //     alert("Please enter valid latitude and longitude values.");
-  //   }
-  // };
 
   return (
     <div>
-      {/* Input fields for Latitude and Longitude
-      <div className={styles["input-container"]}>
-        <label>
-          Latitude:
-          <input
-            type="text"
-            value={inputLat}
-            onChange={(e) => setInputLat(e.target.value)}
-            placeholder="Enter latitude"
-          />
-        </label>
-        <label style={{ marginLeft: "10px" }}>
-          Longitude:
-          <input
-            type="text"
-            value={inputLng}
-            onChange={(e) => setInputLng(e.target.value)}
-            placeholder="Enter longitude"
-          />
-        </label>
-        <button onClick={handleAddMarker} style={{ marginLeft: "10px" }}>
-          Add Marker
-        </button>
-      </div> */}
-
-      {/* Map with markers */}
-      <MapContainer className={styles["map-container"]} center={[51.505, -0.09]} zoom={13}>
+      <MapContainer className={styles["map-container"]} center={draggableMarker.position} zoom={13}>
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
+
+        {/* Draggable initial marker */}
+        <Marker
+          position={draggableMarker.position}
+          draggable={draggableMarker.draggable}
+          eventHandlers={{ dragend: handleDragEnd }}
+          icon={draggableMarker.icon}
+        >
+          <Popup>
+            Coordinates: {draggableMarker.position.lat.toFixed(4)}, {draggableMarker.position.lng.toFixed(4)}
+          </Popup>
+        </Marker>
+
+        {/* Display submitted markers */}
         {mapMarkers.map((marker, idx) => (
-          <Marker key={idx} position={marker} icon={markerIcon}>
+          <Marker key={idx} position={marker.coordinates} icon={submittedMarkerIcon}>
             <Popup>
-              Coordinates: {marker.lat.toFixed(4)}, {marker.lng.toFixed(4)}
+              Proposal: {marker.title}
+              <br />
+              Coordinates: {marker.coordinates.lat.toFixed(4)}, {marker.coordinates.lng.toFixed(4)}
             </Popup>
           </Marker>
         ))}
-        <MapClickHandler />
       </MapContainer>
     </div>
   );
