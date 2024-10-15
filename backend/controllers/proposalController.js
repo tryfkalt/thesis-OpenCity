@@ -1,8 +1,9 @@
 const fs = require("fs");
 const path = require("path");
+const { network, ethers } = require("hardhat");
 
 const createProposal = async (req, res) => {
-  const { title, description, coordinates } = req.body;
+  const { title, description, coordinates, proposalId } = req.body;
   const lat = parseFloat(coordinates.lat); // Use parseFloat to handle decimals
   const lng = parseFloat(coordinates.lng);
 
@@ -14,6 +15,7 @@ const createProposal = async (req, res) => {
       lat,
       lng,
     },
+    proposalId,
   };
 
   // Define the file path for saving proposals
@@ -29,9 +31,10 @@ const createProposal = async (req, res) => {
   // Append the new proposal
   proposals.push(proposalData);
 
-  // Store Proposal ID;
-
-  await storeProposalId(proposalData);
+  // Get the chain ID
+  const chainId = network.config.chainId.toString();
+  // Store Proposal ID with chain ID
+  await storeProposalId(proposalData.proposalId, chainId); // Pass chainId as an argument
 
   // Write updated proposals to the file
   try {
@@ -43,20 +46,18 @@ const createProposal = async (req, res) => {
   }
 };
 
-async function storeProposalId(proposalId) {
-  
-  console.log(chainId);
+async function storeProposalId(proposalId, chainId) {
   let proposals;
   const proposalsFile = "proposals.json";
   if (fs.existsSync(proposalsFile)) {
     proposals = JSON.parse(fs.readFileSync(proposalsFile, "utf8"));
   } else {
     proposals = {};
-    proposals[chainId] = [];
+    proposals[chainId] = []; // Initialize with the chainId
   }
-  // console.log(proposals);
-  proposals[chainId].push(proposalId.toString());
-  fs.writeFileSync(proposalsFile, JSON.stringify(proposals), "utf8");
+
+  proposals[chainId].push(proposalId); // Use the proposal ID
+  fs.writeFileSync(proposalsFile, JSON.stringify(proposals, null, 2), "utf8");
 }
 
 module.exports = { createProposal };

@@ -67,7 +67,9 @@ const Proposal = ({ onProposalSubmit, coordinates, setCoordinates }) => {
 
   const handleSuccess = async (tx) => {
     try {
-      await tx.wait(1);
+      const proposalReceipt = await tx.wait(1);
+      const proposalId = proposalReceipt.events[0].args.proposalId;
+      
       setMessage("Proposal submitted successfully on the blockchain!");
       console.log("Success!");
 
@@ -79,6 +81,7 @@ const Proposal = ({ onProposalSubmit, coordinates, setCoordinates }) => {
           lat: coordinates.lat,
           lng: coordinates.lng,
         },
+        proposalId: proposalId.toString(),
       };
       onProposalSubmit(proposalData);
       // Send the proposal data to the backend
