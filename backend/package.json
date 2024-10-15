@@ -35,7 +35,7 @@
     "format": "yarn prettier --write .",
     "typechain": "yarn hardhat typechain",
     "ci:clean": "rm -rf ./artifacts ./cache .;types",
-    "start": "ts-node server.js"
+    "dev": "ts-node server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",

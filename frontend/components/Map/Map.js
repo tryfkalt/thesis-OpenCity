@@ -13,7 +13,7 @@ const defaultMarkerIcon = new L.Icon({
 });
 
 const submittedMarkerIcon = new L.Icon({
-  iconUrl: "/location.png", // Change this path to your submitted marker icon
+  iconUrl: "/location.png", 
   iconSize: [50, 50],
   iconAnchor: [25, 50],
   popupAnchor: [0, -50],

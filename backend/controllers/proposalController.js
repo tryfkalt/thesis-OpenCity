@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const { network, ethers } = require("hardhat");
+const { pinJSONToIPFS } = require("../pinataClient");
 
 const createProposal = async (req, res) => {
   const { title, description, coordinates, proposalId } = req.body;
@@ -31,13 +32,17 @@ const createProposal = async (req, res) => {
   // Append the new proposal
   proposals.push(proposalData);
 
-  // Get the chain ID
-  const chainId = network.config.chainId.toString();
-  // Store Proposal ID with chain ID
-  await storeProposalId(proposalData.proposalId, chainId); // Pass chainId as an argument
-
-  // Write updated proposals to the file
   try {
+    // Upload proposal data to IPFS via Pinata
+    const pinataResult = await pinJSONToIPFS(proposalData);
+    const ipfsUrl = `https://gateway.pinata.cloud/ipfs/${pinataResult.IpfsHash}`;
+    
+    // Get the chain ID
+    const chainId = network.config.chainId.toString();
+    // Store Proposal ID with chain ID and IPFS hash
+    await storeProposalId(proposalData.proposalId, chainId, pinataResult.IpfsHash);
+
+    // Write updated proposals to the file
     fs.writeFileSync(proposalsDataPath, JSON.stringify(proposals, null, 2), "utf8");
     res.status(200).json({ message: "Proposal submitted successfully", proposal: proposalData });
   } catch (error) {
@@ -46,17 +51,20 @@ const createProposal = async (req, res) => {
   }
 };
 
-async function storeProposalId(proposalId, chainId) {
+async function storeProposalId(proposalId, chainId, ipfsHash) {
   let proposals;
   const proposalsFile = "proposals.json";
   if (fs.existsSync(proposalsFile)) {
     proposals = JSON.parse(fs.readFileSync(proposalsFile, "utf8"));
   } else {
     proposals = {};
-    proposals[chainId] = []; // Initialize with the chainId
   }
 
-  proposals[chainId].push(proposalId); // Use the proposal ID
+  if (!proposals[chainId]) {
+    proposals[chainId] = [];
+  }
+
+  proposals[chainId].push({ proposalId, ipfsHash }); // Store both proposal ID and IPFS hash
   fs.writeFileSync(proposalsFile, JSON.stringify(proposals, null, 2), "utf8");
 }
 

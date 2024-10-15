@@ -10,88 +10,106 @@ import {
 } from "../constants";
 import { useNotification, Form } from "web3uikit";
 import axios from "axios";
+import dotenv from "dotenv";
+
+dotenv.config();
+
+const PINATA_API_KEY = process.env.NEXT_PUBLIC_PINATA_API_KEY;
+const PINATA_API_SECRET = process.env.NEXT_PUBLIC_PINATA_SECRET_API_KEY;
+const PINATA_JWT = process.env.NEXT_PUBLIC_PINATA_JWT;
 
 const Proposal = ({ onProposalSubmit, coordinates, setCoordinates }) => {
   const { isWeb3Enabled, chainId: chainIdHex } = useMoralis();
-  const chainId = parseInt(chainIdHex);
+  const chainId = parseInt(chainIdHex, 16); // Convert hex chainId to integer
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  // const [coordinates, setCoordinates] = useState({ lat: "", lng: "" });
-  const [message, setMessage] = useState(""); // State for success/error messages
-
-  useEffect(() => {
-    setCoordinates(coordinates);
-  }, [coordinates]);
+  const [loading, setLoading] = useState(false); // Loading state
+  const [message, setMessage] = useState(""); // Message for success or error
 
   const governorAddress =
     chainId in contractAddressesGovernor ? contractAddressesGovernor[chainId][0] : null;
-
   const hazardAddress =
     chainId in contractAddressesHazard ? contractAddressesHazard[chainId][0] : null;
 
   const dispatch = useNotification();
   const { runContractFunction } = useWeb3Contract();
 
+  // Sync initial coordinates state with component state
+  useEffect(() => {
+    setCoordinates(coordinates);
+  }, [coordinates]);
+
   async function createProposal(data) {
-    console.log("Creating proposal...");
-    const title = data.data[0].inputResult;
-    const description = data.data[1].inputResult;
-    const lat = ethers.BigNumber.from(parseFloat(coordinates.lat).toFixed(0));
-    const lng = ethers.BigNumber.from(parseFloat(coordinates.lng).toFixed(0));
+    try {
+      setLoading(true);
+      setMessage("");
+      console.log("Creating proposal...");
 
-    const functionToCall = "storeHazard";
-    const proposalInterface = new ethers.utils.Interface(abiHazardProposal);
-    const args = [title, description, lat, lng];
-    const proposalDescription = description;
-    const encodedFunctionCall = proposalInterface.encodeFunctionData(functionToCall, args);
+      // Extract input values
+      const title = data.data[0].inputResult;
+      const description = data.data[1].inputResult;
+      const lat = ethers.BigNumber.from(parseFloat(coordinates.lat).toFixed(0));
+      const lng = ethers.BigNumber.from(parseFloat(coordinates.lng).toFixed(0));
 
-    const createProposalOptions = {
-      abi: abiGovernor,
-      contractAddress: governorAddress,
-      functionName: "propose",
-      params: {
-        targets: [hazardAddress],
-        values: [0],
-        calldatas: [encodedFunctionCall],
-        description: proposalDescription,
-      },
-    };
+      const functionToCall = "storeHazard";
+      const proposalInterface = new ethers.utils.Interface(abiHazardProposal);
+      const args = [title, description, lat, lng];
+      const encodedFunctionCall = proposalInterface.encodeFunctionData(functionToCall, args);
 
-    await runContractFunction({
-      params: createProposalOptions,
-      onSuccess: (tx) => handleSuccess(tx),
-      onError: (error) => handleError(error),
-    });
+      const createProposalOptions = {
+        abi: abiGovernor,
+        contractAddress: governorAddress,
+        functionName: "propose",
+        params: {
+          targets: [hazardAddress],
+          values: [0],
+          calldatas: [encodedFunctionCall],
+          description,
+        },
+      };
+
+      // Run contract function to propose
+      await runContractFunction({
+        params: createProposalOptions,
+        onSuccess: (tx) => handleSuccess(tx, { title, description, coordinates }),
+        onError: (error) => handleError(error),
+      });
+    } catch (error) {
+      setMessage("Error creating proposal: " + error.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
-  const handleSuccess = async (tx) => {
+  const handleSuccess = async (tx, proposalData) => {
     try {
       const proposalReceipt = await tx.wait(1);
-      const proposalId = proposalReceipt.events[0].args.proposalId;
-      
-      setMessage("Proposal submitted successfully on the blockchain!");
-      console.log("Success!");
+      const proposalId = proposalReceipt.events[0].args.proposalId.toString();
 
-      // Clear form fields
-      const proposalData = {
-        title,
-        description,
-        coordinates: {
-          lat: coordinates.lat,
-          lng: coordinates.lng,
-        },
-        proposalId: proposalId.toString(),
+      // Add the proposal ID to the proposal data
+      proposalData = {
+        ...proposalData,
+        proposalId,
       };
-      onProposalSubmit(proposalData);
-      // Send the proposal data to the backend
-      const response = await axios.post("http://localhost:5000/", proposalData);
-      console.log("Proposal submitted:", response.data);
+
+      // Pin proposal data to IPFS using Pinata
+      const pinataResponse = await pinToIPFS(proposalData);
+      const ipfsHash = pinataResponse?.data?.IpfsHash;
+
+      if (!ipfsHash) {
+        throw new Error("Failed to pin data to IPFS");
+      }
+
+      // Send proposal data (including IPFS hash) to backend
+      const response = await axios.post("http://localhost:5000/", {
+        ...proposalData,
+        ipfsHash,
+      });
 
       setMessage("Proposal submitted successfully on the blockchain and saved to backend!");
-      setTitle("");
-      setDescription("");
-      setCoordinates({ lat: "", lng: "" });
+
+      // Dispatch success notification
       dispatch({
         type: "success",
         message: "Proposal submitted successfully!",
@@ -99,19 +117,42 @@ const Proposal = ({ onProposalSubmit, coordinates, setCoordinates }) => {
         position: "topR",
         icon: "bell",
       });
+
+      // Reset form fields and coordinates
+      setTitle("");
+      setDescription("");
+      setCoordinates({ lat: "", lng: "" });
+      onProposalSubmit(proposalData);
     } catch (error) {
-      console.error("Error waiting for transaction or saving proposal:", error);
-      setMessage("Failed to submit proposal or save data. Please try again.");
+      console.error("Error saving proposal:", error);
+      setMessage("Failed to save proposal. Please check the console for details.");
+    }
+  };
+
+  const pinToIPFS = async (proposalData) => {
+    try {
+      const url = `https://api.pinata.cloud/pinning/pinJSONToIPFS`;
+      const response = await axios.post(url, proposalData, {
+        headers: {
+          Authorization: `Bearer ${PINATA_JWT}`,
+        },
+      });
+      console.log("IPFS response:", response);
+      return response;
+    } catch (error) {
+      console.error("Error pinning data to IPFS:", error);
+      setMessage("Failed to pin data to IPFS.");
+      throw error;
     }
   };
 
   const handleError = (error) => {
-    console.error("Proposal error:", error);
-    setMessage("Proposal submission failed. See console for details.");
+    console.error("Proposal submission error:", error);
+    setMessage("Proposal submission failed. Please see console for details.");
+    setLoading(false);
   };
 
   async function updateUI() {
-    // Update UI based on web3 connection
     if (isWeb3Enabled) {
       console.log("Web3 is enabled!");
     } else {
@@ -120,14 +161,13 @@ const Proposal = ({ onProposalSubmit, coordinates, setCoordinates }) => {
   }
 
   useEffect(() => {
-    if (isWeb3Enabled) {
-      updateUI();
-    }
+    if (isWeb3Enabled) updateUI();
   }, [isWeb3Enabled]);
 
   return (
     <div className={styles["proposal-form"]}>
-      <Form className={styles["form-content"]}
+      <Form
+        className={styles["form-content"]}
         onSubmit={createProposal}
         data={[
           { name: "Title", type: "text", value: "Title", key: "title" },
@@ -136,7 +176,9 @@ const Proposal = ({ onProposalSubmit, coordinates, setCoordinates }) => {
           { name: "Longitude", type: "text", value: coordinates.lng, key: "lng" },
         ]}
         title="Create Proposal"
+        disabled={loading} // Disable form while loading
       />
+      {loading && <p>Submitting proposal...</p>}
       {message && <p>{message}</p>}
     </div>
   );
