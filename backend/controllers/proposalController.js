@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const { network, ethers } = require("hardhat");
 const { pinJSONToIPFS } = require("../pinataClient");
+const axios = require("axios");
 
 const createProposal = async (req, res) => {
   const { title, description, coordinates, proposalId } = req.body;
@@ -36,7 +37,7 @@ const createProposal = async (req, res) => {
     // Upload proposal data to IPFS via Pinata
     const pinataResult = await pinJSONToIPFS(proposalData);
     const ipfsUrl = `https://gateway.pinata.cloud/ipfs/${pinataResult.IpfsHash}`;
-    
+
     // Get the chain ID
     const chainId = network.config.chainId.toString();
     // Store Proposal ID with chain ID and IPFS hash
@@ -44,7 +45,14 @@ const createProposal = async (req, res) => {
 
     // Write updated proposals to the file
     fs.writeFileSync(proposalsDataPath, JSON.stringify(proposals, null, 2), "utf8");
-    res.status(200).json({ message: "Proposal submitted successfully", proposal: proposalData });
+    res
+      .status(200)
+      .json({
+        message: "Proposal submitted successfully",
+        proposal: proposalData,
+        ipfsHash: pinataResult.IpfsHash,
+        ipfsUrl,
+      });
   } catch (error) {
     console.error("Error writing proposal to file:", error);
     res.status(500).json({ error: "Failed to save proposal" });
@@ -68,4 +76,31 @@ async function storeProposalId(proposalId, chainId, ipfsHash) {
   fs.writeFileSync(proposalsFile, JSON.stringify(proposals, null, 2), "utf8");
 }
 
-module.exports = { createProposal };
+const getProposalData = async (req, res) => {
+  const { proposalId } = req.params;
+
+  // Load the proposals.json file
+  const proposalsFile = path.join(__dirname, "../proposals.json");
+  const proposalsData = JSON.parse(fs.readFileSync(proposalsFile, "utf8"));
+  const chainId = network.config.chainId.toString();
+
+  // Find the proposal entry by proposalId
+  const proposal = proposalsData[chainId].find((entry) => entry.proposalId === proposalId);
+
+  if (!proposal || !proposal.ipfsHash) {
+    return res.status(404).json({ error: "Proposal not found or IPFS hash missing." });
+  }
+
+  try {
+    // Fetch data from IPFS using the IPFS hash
+    const ipfsUrl = `https://gateway.pinata.cloud/ipfs/${proposal.ipfsHash}`;
+    const ipfsResponse = await axios.get(ipfsUrl);
+
+    return res.status(200).json(ipfsResponse.data);
+  } catch (error) {
+    console.error("Error fetching data from IPFS:", error);
+    return res.status(500).json({ error: "Failed to fetch proposal data from IPFS." });
+  }
+};
+
+module.exports = { createProposal, getProposalData };

@@ -67,6 +67,8 @@ const Map = ({ markers, onMapClick }) => {
               Proposal: {marker.title}
               <br />
               Coordinates: {marker.coordinates.lat.toFixed(4)}, {marker.coordinates.lng.toFixed(4)}
+              <br />
+              <button onClick={() => window.location.href = `/vote?proposalId=${marker.proposalId}`}>Vote</button>
             </Popup>
           </Marker>
         ))}

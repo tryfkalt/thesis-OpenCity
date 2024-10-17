@@ -1,5 +1,5 @@
 const express = require("express");
-const { createProposal } = require("../controllers/proposalController.js");
+const { createProposal, getProposalData } = require("../controllers/proposalController.js");
 
 // Initialize express router
 const router = express.Router();
@@ -11,6 +11,16 @@ router.post("/", async (req, res) => {
     await createProposal(req, res);
   } catch (error) {
     console.error("Error creating proposal:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.get("/proposals/:proposalId", async (req, res) => {
+  try {
+    // Call getProposalData, which handles sending the response
+    await getProposalData(req, res);
+  } catch (error) {
+    console.error("Error fetching proposal data:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });

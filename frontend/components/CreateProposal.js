@@ -107,6 +107,7 @@ const Proposal = ({ onProposalSubmit, coordinates, setCoordinates }) => {
         ipfsHash,
       });
 
+      await fetchProposalDetails(proposalId);
       setMessage("Proposal submitted successfully on the blockchain and saved to backend!");
 
       // Dispatch success notification
@@ -126,6 +127,43 @@ const Proposal = ({ onProposalSubmit, coordinates, setCoordinates }) => {
     } catch (error) {
       console.error("Error saving proposal:", error);
       setMessage("Failed to save proposal. Please check the console for details.");
+    }
+  };
+
+  const fetchProposalDetails = async (proposalId) => {
+    try {
+      const options = {
+        abi: abiGovernor,
+        contractAddress: governorAddress,
+      };
+
+      const stateOptions = {
+        ...options,
+        functionName: "state",
+        params: { proposalId },
+      };
+
+      const snapshotOptions = {
+        ...options,
+        functionName: "proposalSnapshot",
+        params: { proposalId },
+      };
+
+      const deadlineOptions = {
+        ...options,
+        functionName: "proposalDeadline",
+        params: { proposalId },
+      };
+
+      const proposalState = await runContractFunction({ params: stateOptions });
+      const proposalSnapshot = await runContractFunction({ params: snapshotOptions });
+      const proposalDeadline = await runContractFunction({ params: deadlineOptions });
+
+      console.log("Proposal State:", proposalState);
+      console.log("Proposal Snapshot (Block Number):", proposalSnapshot);
+      console.log("Proposal Deadline (Block Number):", proposalDeadline);
+    } catch (error) {
+      console.error("Error fetching proposal details:", error);
     }
   };
 
@@ -170,8 +208,8 @@ const Proposal = ({ onProposalSubmit, coordinates, setCoordinates }) => {
         className={styles["form-content"]}
         onSubmit={createProposal}
         data={[
-          { name: "Title", type: "text", value: "Title", key: "title" },
-          { name: "Description", type: "textarea", value: "Description", key: "description" },
+          { name: "Title", type: "text", value: title, key: "title" },
+          { name: "Description", type: "textarea", value: description, key: "description" },
           { name: "Latitude", type: "text", value: coordinates.lat, key: "lat" },
           { name: "Longitude", type: "text", value: coordinates.lng, key: "lng" },
         ]}
