@@ -1,8 +1,10 @@
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import { useState, useEffect } from "react";
 import styles from "../../styles/Home.module.css";
 import L from "leaflet";
+import Link from "next/link";
+import { useMoralis } from "react-moralis";
 
 // Custom marker icons
 const defaultMarkerIcon = new L.Icon({
@@ -27,6 +29,8 @@ const Map = ({ markers, onMapClick }) => {
     icon: defaultMarkerIcon,
   });
 
+  const { isWeb3Enabled, enableWeb3 } = useMoralis();
+
   useEffect(() => {
     if (markers && markers.length) {
       setMapMarkers(markers);
@@ -38,6 +42,15 @@ const Map = ({ markers, onMapClick }) => {
     const { lat, lng } = event.target.getLatLng();
     setDraggableMarker((prev) => ({ ...prev, position: { lat, lng } }));
     onMapClick({ lat, lng }); // Update form coordinates
+  };
+
+  // Ensure Web3 is enabled before voting
+  const handleVoteClick = async (proposalId) => {
+    if (!isWeb3Enabled) {
+      await enableWeb3();
+    }
+    // Navigate to the vote page with proposalId
+    window.location.href = `/vote?proposalId=${proposalId}`;
   };
 
   return (
@@ -68,7 +81,7 @@ const Map = ({ markers, onMapClick }) => {
               <br />
               Coordinates: {marker.coordinates.lat.toFixed(4)}, {marker.coordinates.lng.toFixed(4)}
               <br />
-              <button onClick={() => window.location.href = `/vote?proposalId=${marker.proposalId}`}>Vote</button>
+              <button onClick={() => handleVoteClick(marker.proposalId)}>Vote</button>
             </Popup>
           </Marker>
         ))}
