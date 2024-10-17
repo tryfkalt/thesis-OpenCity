@@ -19,7 +19,7 @@
     "react-dom": "^18",
     "react-leaflet": "^4.2.1",
     "react-moralis": "^1.4.0",
-    "web3uikit": "^0.1.159"
+    "web3uikit": "^1.0.4"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.4",

@@ -1,11 +1,10 @@
 import Head from "next/head";
 import styles from "../styles/Home.module.css";
 import Header from "../components/Header";
+import { useState } from "react";
 import { useMoralis } from "react-moralis";
 import Map from "../components/Map";
 import Proposal from "../components/CreateProposal";
-import Search from "../components/Map/Search";
-import { useState } from "react";
 
 const supportedChains = ["31337", "11155111"];
 

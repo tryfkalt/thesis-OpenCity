@@ -1,6 +1,9 @@
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import axios from "axios";
+import VoteHeader from "../components/Vote/VoteHeader";
+import VoteDetails from "../components/Vote/VoteDetails";
+import VoteForm from "../components/Vote/VoteForm";
 
 const VotePage = () => {
   const router = useRouter();
@@ -23,24 +26,18 @@ const VotePage = () => {
     }
   };
 
-  const handleVote = (vote) => {
-    console.log("Voting for proposal:", proposalId, "with vote:", vote);
-    // Add vote handling logic here
+  const handleVoteSubmission = (voteData) => {
+    console.log("Submitting vote:", voteData);
+    // You can handle vote submission logic here, such as sending the vote to your backend or blockchain
   };
 
   return (
     <div>
-      <h2>Vote on Proposal</h2>
-      {proposalDetails ? (
-        <div>
-          <h3>{proposalDetails.title}</h3>
-          <p>{proposalDetails.description}</p>
-          <button onClick={() => handleVote(true)}>Vote Yes</button>
-          <button onClick={() => handleVote(false)}>Vote No</button>
-        </div>
-      ) : (
-        <p>Loading proposal details...</p>
-      )}
+      <VoteHeader />
+      <VoteDetails proposalDetails={proposalDetails} />
+      {/* <VoteForm handleVoteSubmission={handleVoteSubmission} proposalDetails={proposalDetails} />
+     */}
+      <VoteForm proposalDetails={proposalDetails} />
     </div>
   );
 };
