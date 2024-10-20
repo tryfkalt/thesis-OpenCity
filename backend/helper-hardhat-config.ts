@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+import { ethers } from "ethers";
 
 const proposalDataPath = path.join(__dirname, "data/proposalData.json");
 
@@ -46,7 +47,7 @@ export const frontEndAbiFileHazardProposal = "../frontend/constants/abiHazardPro
 // Governor Values
 export const QUORUM_PERCENTAGE = 4; // Need 4% of voters to pass
 export const MIN_DELAY = 3600; // 1 hour - after a vote passes, you have 1 hour before you can enact
-export const VOTING_PERIOD = 1000; // blocks
+export const VOTING_PERIOD = 10; // blocks
 export const VOTING_DELAY = 1; // 1 Block - How many blocks till a proposal vote becomes active
 export const ADDRESS_ZERO = "0x0000000000000000000000000000000000000000";
 
@@ -55,8 +56,10 @@ export const STORE_PARAMS = latestProposal
   ? [
       latestProposal.title,
       latestProposal.description,
-      latestProposal.coordinates.lat  * 1e6, // multiplying lat and lng by 1e6 to convert to integer
-      latestProposal.coordinates.lng  * 1e6,
+      // latestProposal.coordinates.lat  * 1e6, // multiplying lat and lng by 1e6 to convert to integer
+      // latestProposal.coordinates.lng  * 1e6,
+      ethers.BigNumber.from(parseFloat(latestProposal.coordinates.lat).toFixed(0)),
+        ethers.BigNumber.from(parseFloat(latestProposal.coordinates.lng).toFixed(0)),
     ]
   : [
       "Default Title",

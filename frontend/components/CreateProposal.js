@@ -19,7 +19,7 @@ const PINATA_API_SECRET = process.env.NEXT_PUBLIC_PINATA_SECRET_API_KEY;
 const PINATA_JWT = process.env.NEXT_PUBLIC_PINATA_JWT;
 
 const Proposal = ({ onProposalSubmit, coordinates, setCoordinates }) => {
-  const { isWeb3Enabled, chainId: chainIdHex } = useMoralis();
+  const { isWeb3Enabled, chainId: chainIdHex, account } = useMoralis();
   const chainId = parseInt(chainIdHex, 16); // Convert hex chainId to integer
 
   const [title, setTitle] = useState("");
@@ -87,10 +87,12 @@ const Proposal = ({ onProposalSubmit, coordinates, setCoordinates }) => {
       const proposalReceipt = await tx.wait(1);
       const proposalId = proposalReceipt.events[0].args.proposalId.toString();
 
+      const proposer = account;
       // Add the proposal ID to the proposal data
       proposalData = {
         ...proposalData,
         proposalId,
+        proposer,
       };
 
       // Pin proposal data to IPFS using Pinata
@@ -154,14 +156,23 @@ const Proposal = ({ onProposalSubmit, coordinates, setCoordinates }) => {
         functionName: "proposalDeadline",
         params: { proposalId },
       };
-
+      
       const proposalState = await runContractFunction({ params: stateOptions });
       const proposalSnapshot = await runContractFunction({ params: snapshotOptions });
       const proposalDeadline = await runContractFunction({ params: deadlineOptions });
-
+      const quorumValue = await runContractFunction({ params: quorumOptions });
+      
+      // Fetch the quorum at the snapshot block number
+      const quorumOptions = {
+        abi: abiGovernor,
+        contractAddress: governorAddress,
+        functionName: "quorum",
+        params: { blockNumber: proposalSnapshot },
+      };
       console.log("Proposal State:", proposalState);
       console.log("Proposal Snapshot (Block Number):", proposalSnapshot);
       console.log("Proposal Deadline (Block Number):", proposalDeadline);
+      console.log("Quorum required:", quorumValue);
     } catch (error) {
       console.error("Error fetching proposal details:", error);
     }

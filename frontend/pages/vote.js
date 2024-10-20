@@ -6,6 +6,7 @@ import VoteHeader from "../components/Vote/VoteHeader";
 import VoteDetails from "../components/Vote/VoteDetails";
 import VoteForm from "../components/Vote/VoteForm";
 import Header from "../components/Vote/Header";
+import QueueAndExecuteProposal from "../components/Queue-Execute/QueueAndExecute";
 // import supportedChains from "../constants/supportedChains"; // Assuming you have supportedChains defined
 // import styles from "../styles/Vote.module.css"; // Assuming you have Vote specific styles
 
@@ -52,6 +53,11 @@ const VotePage = () => {
               <VoteHeader />
               <VoteDetails proposalDetails={proposalDetails} />
               <VoteForm proposalDetails={proposalDetails} />
+              <QueueAndExecuteProposal proposalDetails={proposalDetails} />
+              {/* Button to queue vote */}
+              <button onClick={() => handleVoteClick()}>
+                  Queue Vote
+                </button>
             </>
           ) : (
             <div>{`Please switch to a supported chain. The supported Chain Ids are: ${supportedChains}`}</div>

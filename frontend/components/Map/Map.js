@@ -5,6 +5,7 @@ import styles from "../../styles/Home.module.css";
 import L from "leaflet";
 import Link from "next/link";
 import { useMoralis } from "react-moralis";
+import { useRouter } from "next/router";
 
 // Custom marker icons
 const defaultMarkerIcon = new L.Icon({
@@ -20,6 +21,20 @@ const submittedMarkerIcon = new L.Icon({
   iconAnchor: [25, 50],
   popupAnchor: [0, -50],
 });
+const acceptedMarkerIcon = new L.Icon({
+  iconUrl: "/Accepted.png",
+  iconSize: [50, 50],
+  iconAnchor: [25, 50],
+  popupAnchor: [0, -50],
+});
+
+const deniedMarkerIcon = new L.Icon({
+  iconUrl: "/Denied.png",
+  iconSize: [50, 50],
+  iconAnchor: [25, 50],
+  popupAnchor: [0, -50],
+});
+
 
 const Map = ({ markers, onMapClick }) => {
   const [mapMarkers, setMapMarkers] = useState([]);
@@ -29,7 +44,8 @@ const Map = ({ markers, onMapClick }) => {
     icon: defaultMarkerIcon,
   });
 
-  const { isWeb3Enabled, enableWeb3 } = useMoralis();
+  const { isWeb3Enabled, enableWeb3, account } = useMoralis();
+  const router = useRouter();  // Use router for navigation
 
   useEffect(() => {
     if (markers && markers.length) {
@@ -45,12 +61,19 @@ const Map = ({ markers, onMapClick }) => {
   };
 
   // Ensure Web3 is enabled before voting
-  const handleVoteClick = async (proposalId) => {
+  const handleVoteClick = async (proposalId, proposer) => {
     if (!isWeb3Enabled) {
       await enableWeb3();
     }
-    // Navigate to the vote page with proposalId
-    window.location.href = `/vote?proposalId=${proposalId}`;
+
+    // Prevent the proposer from voting
+    if (account === proposer) {
+      alert("You cannot vote on your own proposal.");
+      return;
+    }
+
+    // Navigate to the vote page with proposalId using router
+    router.push(`/vote?proposalId=${proposalId}`);
   };
 
   return (
@@ -77,11 +100,19 @@ const Map = ({ markers, onMapClick }) => {
         {mapMarkers.map((marker, idx) => (
           <Marker key={idx} position={marker.coordinates} icon={submittedMarkerIcon}>
             <Popup>
-              Proposal: {marker.title}
+              <strong>Proposal:</strong> {marker.title}
               <br />
-              Coordinates: {marker.coordinates.lat.toFixed(4)}, {marker.coordinates.lng.toFixed(4)}
+              <strong>Coordinates:</strong> {marker.coordinates.lat.toFixed(4)}, {marker.coordinates.lng.toFixed(4)}
               <br />
-              <button onClick={() => handleVoteClick(marker.proposalId)}>Vote</button>
+
+              {/* Only show vote button if the current user is not the proposer */}
+              {account === marker.proposer ? (
+                <p>You cannot vote on your own proposal.</p>
+              ) : (
+                <button onClick={() => handleVoteClick(marker.proposalId, marker.proposer)}>
+                  Vote
+                </button>
+              )}
             </Popup>
           </Marker>
         ))}
