@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useMoralis } from "react-moralis";
 import Map from "../components/Map";
 import Proposal from "../components/CreateProposal";
+import DelegateComponent from "../components/Delegate";
 
 const supportedChains = ["31337", "11155111"];
 
@@ -14,7 +15,7 @@ export default function Home() {
   const [selectedCoords, setSelectedCoords] = useState({ lat: "", lng: "" });
 
   const handleProposalSubmit = (proposalData) => {
-    console.log(proposalData)
+    console.log(proposalData);
     setProposals([...proposals, proposalData]);
   };
 
@@ -26,10 +27,11 @@ export default function Home() {
     <div className={styles.container}>
       <Head>
         <title>Open World</title>
-        <meta name="description"/>
+        <meta name="description" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <Header />
+      <DelegateComponent />
       {isWeb3Enabled ? (
         <div>
           {supportedChains.includes(parseInt(chainId).toString()) ? (
@@ -42,8 +44,12 @@ export default function Home() {
         <div>Please connect to a Wallet</div>
       )}
       <div>
-      <Proposal onProposalSubmit={handleProposalSubmit} coordinates={selectedCoords} setCoordinates={setSelectedCoords} />
-      <Map markers={proposals} onMapClick={setSelectedCoords} />
+        <Proposal
+          onProposalSubmit={handleProposalSubmit}
+          coordinates={selectedCoords}
+          setCoordinates={setSelectedCoords}
+        />
+        <Map markers={proposals} onMapClick={setSelectedCoords} />
       </div>
     </div>
   );

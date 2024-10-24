@@ -10,5 +10,6 @@ export async function moveBlocks(amount: number) {
     }
     console.log(`Moved ${amount} blocks`)
 }
-moveBlocks(2);
-// moveBlocks(1001);
+// moveBlocks(2);
+
+moveBlocks(11);

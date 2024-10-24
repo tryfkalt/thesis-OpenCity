@@ -9,6 +9,7 @@ const VoteForm = ({ proposalDetails }) => {
   const dispatch = useNotification();
 
   const proposalId = proposalDetails?.proposalId || router.query.proposalId;
+  
   const { isWeb3Enabled, chainId: chainIdHex, account } = useMoralis();
   const chainId = parseInt(chainIdHex, 16);
 
@@ -124,7 +125,7 @@ const VoteForm = ({ proposalDetails }) => {
         abi: abiGovernor,
         contractAddress: governorAddress,
         functionName: "getVotes",
-        params: { account, blockNumber: snapshotBlock },
+        params: { account: account, blockNumber: snapshotBlock },
       };
       const power = await runContractFunction({ params: voterPowerOptions });
       setVoterPower(power.toString());

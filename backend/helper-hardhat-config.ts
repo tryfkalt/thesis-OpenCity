@@ -43,6 +43,8 @@ export const frontEndContractsGovernor = "../frontend/constants/contractAddresse
 export const frontEndContractsHazard = "../frontend/constants/contractAddressesHazardProposal.json"
 export const frontEndAbiFileGovernor = "../frontend/constants/abiGovernor.json"
 export const frontEndAbiFileHazardProposal = "../frontend/constants/abiHazardProposal.json"
+export const frontEndAbiFileGovernanceToken = "../frontend/constants/abiGovernanceToken.json"
+export const frontendContractsGovernanceToken = "../frontend/constants/contractAddressesGovernanceToken.json"
 
 // Governor Values
 export const QUORUM_PERCENTAGE = 4; // Need 4% of voters to pass
