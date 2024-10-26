@@ -4,7 +4,7 @@ import Header from "../components/Header";
 import { useState } from "react";
 import { useMoralis } from "react-moralis";
 import Map from "../components/Map";
-import Proposal from "../components/CreateProposal";
+import Proposal from "../components/Proposal/CreateProposal";
 import DelegateComponent from "../components/Delegate";
 
 const supportedChains = ["31337", "11155111"];

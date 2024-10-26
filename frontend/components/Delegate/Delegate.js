@@ -48,17 +48,14 @@ const DelegateComponent = () => {
     }
   };
 
-
   const handleSuccessClaimTokens = async (tx) => {
     await tx.wait(1);
     setIsClaimed(true); // Mark the tokens as claimed
-    alert("You've successfully claimed your tokens!");
     fetchVotingPower(); // Update voting power after claiming tokens
   };
 
   const handleErrorClaimTokens = (error) => {
     console.error("Error claiming tokens: ", error);
-    alert("You may have already claimed your tokens.");
   };
 
   const handleDelegateToSelf = () => {
@@ -160,6 +157,16 @@ const DelegateComponent = () => {
     } catch (error) {
       console.error("Error fetching voting power: ", error);
     }
+    const numCheckpointsOptions = {
+      abi: abiGovernanceToken,
+      contractAddress: governanceTokenAddress,
+      functionName: "numCheckpoints",
+      params: {
+        account: account,
+      },
+    };
+    const checkpoints = await runContractFunction({ params: numCheckpointsOptions });
+    console.log(`Checkpoints: ${checkpoints}`);
   };
 
   const handleGetVotes = () => {

@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useMoralis, useWeb3Contract } from "react-moralis";
 import { ethers } from "ethers";
-import styles from "../styles/Home.module.css";
+import styles from "../../styles/Home.module.css";
 import {
   abiHazardProposal,
   contractAddressesHazard,
   abiGovernor,
   contractAddressesGovernor,
-} from "../constants";
+} from "../../constants";
 import { useNotification, Form } from "web3uikit";
 import axios from "axios";
 import dotenv from "dotenv";

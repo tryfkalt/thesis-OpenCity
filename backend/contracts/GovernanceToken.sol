@@ -15,7 +15,7 @@ contract GovernanceToken is ERC20Votes {
   function claimTokens() external {
     require(!claimed[msg.sender], "Tokens already claimed.");
     claimed[msg.sender] = true;
-    _mint(msg.sender, 100); // Mint 100 tokens per user
+    _mint(msg.sender, 500); // Mint 100 tokens per user
   }
 
   function _mint(address to, uint256 amount) internal override(ERC20Votes) {

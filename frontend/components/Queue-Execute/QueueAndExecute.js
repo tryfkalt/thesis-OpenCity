@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { ethers } from "ethers";
+import axios from "axios";
 import { useMoralis, useWeb3Contract } from "react-moralis";
 import {
   abiGovernor,
@@ -58,7 +59,7 @@ const QueueAndExecuteProposal = ({ proposalDetails }) => {
 
       await runContractFunction({
         params: queueOptions,
-        onSuccess: (tx) => handleQueueSuccess(tx, { title, description, coordinates }),
+        onSuccess: (tx) => handleQueueSuccess(tx),
         onError: (error) => handleQueueError(error),
       });
     } catch (error) {
@@ -129,13 +130,29 @@ const QueueAndExecuteProposal = ({ proposalDetails }) => {
       setMessage("Executing proposal...");
 
       console.log("Executing proposal...");
-
+      const functionToCall = "storeHazard";
+      const proposalInterface = new ethers.utils.Interface(abiHazardProposal);
+      const args = [
+        proposalDetails.title,
+        proposalDetails.description,
+        ethers.BigNumber.from(parseFloat(proposalDetails.coordinates.lat).toFixed(0)),
+        ethers.BigNumber.from(parseFloat(proposalDetails.coordinates.lng).toFixed(0)),
+      ];
+      console.log(args);
+      const encodedFunctionCall = proposalInterface.encodeFunctionData(functionToCall, args);
+      console.log("Encoded function call:", encodedFunctionCall);
+      const descriptionHash = ethers.utils.keccak256(
+        ethers.utils.toUtf8Bytes(proposalDetails.description)
+      );
       const executeOptions = {
         abi: abiGovernor,
         contractAddress: governorAddress,
         functionName: "execute",
         params: {
-          proposalId: proposalDetails.proposalId,
+          targets: [hazardAddress],
+          values: [0], // No ETH sent
+          calldatas: [encodedFunctionCall],
+          descriptionHash,
         },
       };
 
