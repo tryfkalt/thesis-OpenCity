@@ -18,27 +18,19 @@ const PINATA_API_KEY = process.env.NEXT_PUBLIC_PINATA_API_KEY;
 const PINATA_API_SECRET = process.env.NEXT_PUBLIC_PINATA_SECRET_API_KEY;
 const PINATA_JWT = process.env.NEXT_PUBLIC_PINATA_JWT;
 
-const Proposal = ({ onProposalSubmit, coordinates, setCoordinates }) => {
+const ProposalForm = ({ onProposalSubmit, coordinates }) => {
   const { isWeb3Enabled, chainId: chainIdHex, account } = useMoralis();
-  const chainId = parseInt(chainIdHex, 16); // Convert hex chainId to integer
-
+  const chainId = parseInt(chainIdHex, 16);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [loading, setLoading] = useState(false); // Loading state
-  const [message, setMessage] = useState(""); // Message for success or error
+  const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
 
-  const governorAddress =
-    chainId in contractAddressesGovernor ? contractAddressesGovernor[chainId][0] : null;
-  const hazardAddress =
-    chainId in contractAddressesHazard ? contractAddressesHazard[chainId][0] : null;
+  const governorAddress = chainId in contractAddressesGovernor ? contractAddressesGovernor[chainId][0] : null;
+  const hazardAddress = chainId in contractAddressesHazard ? contractAddressesHazard[chainId][0] : null;
 
   const dispatch = useNotification();
   const { runContractFunction } = useWeb3Contract();
-
-  // Sync initial coordinates state with component state
-  useEffect(() => {
-    setCoordinates(coordinates);
-  }, [coordinates]);
 
   async function createProposal(data) {
     try {
@@ -46,7 +38,6 @@ const Proposal = ({ onProposalSubmit, coordinates, setCoordinates }) => {
       setMessage("");
       console.log("Creating proposal...");
 
-      // Extract input values
       const title = data.data[0].inputResult;
       const description = data.data[1].inputResult;
       const lat = ethers.BigNumber.from(parseFloat(coordinates.lat).toFixed(0));
@@ -69,7 +60,6 @@ const Proposal = ({ onProposalSubmit, coordinates, setCoordinates }) => {
         },
       };
 
-      // Run contract function to propose
       await runContractFunction({
         params: createProposalOptions,
         onSuccess: (tx) => handleSuccess(tx, { title, description, coordinates }),
@@ -86,25 +76,16 @@ const Proposal = ({ onProposalSubmit, coordinates, setCoordinates }) => {
     try {
       const proposalReceipt = await tx.wait(1);
       const proposalId = proposalReceipt.events[0].args.proposalId.toString();
-
       const proposer = account;
-      // Add the proposal ID to the proposal data
-      proposalData = {
-        ...proposalData,
-        proposalId,
-        proposer,
-      };
+      proposalData = { ...proposalData, proposalId, proposer };
 
-      // Pin proposal data to IPFS using Pinata
       const pinataResponse = await pinToIPFS(proposalData);
       const ipfsHash = pinataResponse?.data?.IpfsHash;
 
-      if (!ipfsHash) {
-        throw new Error("Failed to pin data to IPFS");
-      }
+      if (!ipfsHash) throw new Error("Failed to pin data to IPFS");
 
       // Send proposal data (including IPFS hash) to backend
-      const response = await axios.post("http://localhost:5000/", {
+      const response = await axios.post("http://localhost:5000/proposals", {
         ...proposalData,
         ipfsHash,
       });
@@ -121,10 +102,8 @@ const Proposal = ({ onProposalSubmit, coordinates, setCoordinates }) => {
         icon: "bell",
       });
 
-      // Reset form fields and coordinates
       setTitle("");
       setDescription("");
-      setCoordinates({ lat: "", lng: "" });
       onProposalSubmit(proposalData);
     } catch (error) {
       console.error("Error saving proposal:", error);
@@ -221,11 +200,11 @@ const Proposal = ({ onProposalSubmit, coordinates, setCoordinates }) => {
         data={[
           { name: "Title", type: "text", value: title, key: "title" },
           { name: "Description", type: "textarea", value: description, key: "description" },
-          { name: "Latitude", type: "text", value: coordinates.lat, key: "lat" },
-          { name: "Longitude", type: "text", value: coordinates.lng, key: "lng" },
+          { name: "Latitude", type: "text", value: coordinates.lat, key: "lat", disabled: true },
+          { name: "Longitude", type: "text", value: coordinates.lng, key: "lng", disabled: true },
         ]}
         title="Create Proposal"
-        disabled={loading} // Disable form while loading
+        disabled={loading}
       />
       {loading && <p>Submitting proposal...</p>}
       {message && <p>{message}</p>}
@@ -233,4 +212,4 @@ const Proposal = ({ onProposalSubmit, coordinates, setCoordinates }) => {
   );
 };
 
-export default Proposal;
+export default ProposalForm;

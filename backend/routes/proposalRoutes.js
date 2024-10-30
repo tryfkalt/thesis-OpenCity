@@ -1,11 +1,11 @@
 const express = require("express");
-const { createProposal, getProposalData } = require("../controllers/proposalController.js");
+const { createProposal, getProposalData, getProposals } = require("../controllers/proposalController.js");
 
 // Initialize express router
 const router = express.Router();
 
 // Define the POST route to handle proposal submissions
-router.post("/", async (req, res) => {
+router.post("/proposals", async (req, res) => {
   try {
     // Call createProposal, which handles sending the response
     await createProposal(req, res);
@@ -24,6 +24,17 @@ router.get("/proposals/:proposalId", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+router.get("/proposals", async (req, res) => {
+  try {
+    // Call getProposalData, which handles sending the response
+    await getProposals(req, res);
+  } catch (error) {
+    console.error("Error fetching proposal data:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 
 // Export the router
 module.exports = router;

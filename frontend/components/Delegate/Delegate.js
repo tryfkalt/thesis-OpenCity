@@ -43,13 +43,13 @@ const DelegateComponent = () => {
         onSuccess: handleSuccessClaimTokens,
         onError: handleErrorClaimTokens,
       });
+      await tx.wait(1);
     } catch (error) {
       console.error("Error claiming tokens: ", error);
     }
   };
 
-  const handleSuccessClaimTokens = async (tx) => {
-    await tx.wait(1);
+  const handleSuccessClaimTokens = () => {
     setIsClaimed(true); // Mark the tokens as claimed
     fetchVotingPower(); // Update voting power after claiming tokens
   };
@@ -74,8 +74,10 @@ const DelegateComponent = () => {
       return;
     }
 
-    // const provider = new ethers.providers.Web3Provider(Moralis.provider);
-    // const signer = provider.getSigner();
+    if (!isClaimed) {
+      // Claim tokens first if not already claimed
+      await handleClaimTokens();
+    }
 
     const addressToDelegate = delegateToSelf ? account : customAddress;
 
@@ -141,6 +143,7 @@ const DelegateComponent = () => {
     } catch (error) {
       console.error("Error fetching delegatee: ", error);
     }
+
     try {
       const votingPowerOptions = {
         abi: abiGovernanceToken,
@@ -157,6 +160,7 @@ const DelegateComponent = () => {
     } catch (error) {
       console.error("Error fetching voting power: ", error);
     }
+
     const numCheckpointsOptions = {
       abi: abiGovernanceToken,
       contractAddress: governanceTokenAddress,
@@ -181,18 +185,13 @@ const DelegateComponent = () => {
 
   return (
     <div>
-      <Button
-        text="Claim Tokens"
-        theme="primary"
-        onClick={handleClaimTokens}
-        disabled={!isWeb3Enabled || !account || isClaimed}
-      />
-      <Button onClick={openModal} text="Delegate" theme="primary" />
+      <Button onClick={openModal} text="Delegate" theme="primary" disabled={!isWeb3Enabled || !account} />
 
       <div>
         <h3>Your Voting Power: {votingPower}</h3>
       </div>
 
+      {/* Modal for delegation options */}
       <Modal
         isVisible={isModalOpen}
         onCancel={closeModal}
@@ -209,6 +208,7 @@ const DelegateComponent = () => {
         </div>
       </Modal>
 
+      {/* Modal for entering custom address */}
       <Modal
         isVisible={isCustomAddressModalOpen}
         onCancel={closeCustomAddressModal}

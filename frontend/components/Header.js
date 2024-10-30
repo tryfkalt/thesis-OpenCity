@@ -1,12 +1,24 @@
-import { ConnectButton } from "web3uikit"
+import { ConnectButton } from "web3uikit";
+import Link from "next/link";
+import styles from "../styles/Header.module.css";
 
 export default function Header() {
-    return (
-        <nav className="p-5 border-b-2 flex flex-row">
-            <h1 className="py-4 px-4 font-bold text-3xl"> Open World!</h1>
-            <div className="ml-auto py-2 px-4">
-                <ConnectButton moralisAuth={false}/>
-            </div>
-        </nav>
-    )
+  return (
+    <nav className={styles.navbar}>
+      <button className={styles.title}>Open World!</button>
+
+      <div className={styles.navLinks}>
+        <Link href="/" passHref>
+          <a className={styles.link}>Home</a>
+        </Link>
+        <Link href="/proposals" passHref>
+          <a className={styles.link}>Proposals</a>
+        </Link>
+      </div>
+
+      <div className={styles.connectButton}>
+        <ConnectButton moralisAuth={false} />
+      </div>
+    </nav>
+  );
 }

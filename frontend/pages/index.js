@@ -4,7 +4,8 @@ import Header from "../components/Header";
 import { useState } from "react";
 import { useMoralis } from "react-moralis";
 import Map from "../components/Map";
-import Proposal from "../components/Proposal/CreateProposal";
+import ProposalForm from "../components/Proposal/CreateProposal";
+import ProposalsTable from "../components/Proposal/ProposalsTable";
 import DelegateComponent from "../components/Delegate";
 
 const supportedChains = ["31337", "11155111"];
@@ -15,19 +16,15 @@ export default function Home() {
   const [selectedCoords, setSelectedCoords] = useState({ lat: "", lng: "" });
 
   const handleProposalSubmit = (proposalData) => {
-    console.log(proposalData);
     setProposals([...proposals, proposalData]);
+    console.log("Proposals", proposals);
   };
-
-  // const handleMapClick = (coords) => {
-  //   setSelectedCoords(coords);
-  // };
-
+  
   return (
     <div className={styles.container}>
       <Head>
         <title>Open World</title>
-        <meta name="description" />
+        <meta name="description" content="Proposal Map App" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <Header />
@@ -35,22 +32,20 @@ export default function Home() {
       {isWeb3Enabled ? (
         <div>
           {supportedChains.includes(parseInt(chainId).toString()) ? (
-            <div className="flex flex-row"></div>
+            <div className="flex flex-row">
+              <ProposalsTable />
+              <ProposalForm onProposalSubmit={handleProposalSubmit} coordinates={selectedCoords} />
+              <Map markers={proposals} onMapClick={setSelectedCoords} />
+            </div>
           ) : (
-            <div>{`Please switch to a supported chainId. The supported Chain Ids are: ${supportedChains}`}</div>
+            <div>{`Please switch to a supported chain. Supported Chain Ids: ${supportedChains.join(
+              ", "
+            )}`}</div>
           )}
         </div>
       ) : (
         <div>Please connect to a Wallet</div>
       )}
-      <div>
-        <Proposal
-          onProposalSubmit={handleProposalSubmit}
-          coordinates={selectedCoords}
-          setCoordinates={setSelectedCoords}
-        />
-        <Map markers={proposals} onMapClick={setSelectedCoords} />
-      </div>
     </div>
   );
 }
