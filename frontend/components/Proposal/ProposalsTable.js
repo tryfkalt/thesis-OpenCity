@@ -40,17 +40,16 @@ const ProposalsTable = () => {
               params: stateOptions,
               onSuccess: (state) => {
                 proposalState = state;
-                console.log("Fetched proposal state:", state); // Ensure state logs correctly
+                // console.log("Fetched proposal state:", state); // Ensure state logs correctly
               },
               onError: (error) => console.error("Error fetching proposal state:", error),
             });
 
             const status = getStatusText(proposalState); // Call getStatusText once state is confirmed
-            console.log("Proposal", proposal.proposalId, "status:", status);
+
             return { ...proposal, ...ipfsResponse.data, status };
           })
         );
-        console.log("Proposal details:", proposalDetails);
         setProposals(proposalDetails);
       } catch (error) {
         console.error("Error fetching proposals:", error);

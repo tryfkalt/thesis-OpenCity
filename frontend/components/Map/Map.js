@@ -1,12 +1,15 @@
 import { MapContainer, TileLayer, Marker, Popup, useMapEvent } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import styles from "../../styles/Home.module.css";
 import L from "leaflet";
 import { useMoralis, useWeb3Contract } from "react-moralis";
 import { Modal, Button } from "web3uikit";
 import { abiGovernor, contractAddressesGovernor } from "../../constants";
+import VoteDetails from "../Vote/VoteDetails";
+import VoteForm from "../Vote/VoteForm";
+import QueueAndExecuteProposal from "../Queue-Execute/QueueAndExecute";
 
 const pendingMarkerIcon = new L.Icon({
   iconUrl: "/location.png",
@@ -39,6 +42,10 @@ const Map = ({ onMapClick }) => {
   const [mapMarkers, setMapMarkers] = useState([]);
   const [defaultMarkerPosition, setDefaultMarkerPosition] = useState({ lat: 51.505, lng: -0.09 });
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProposal, setSelectedProposal] = useState(null);
+  const [parentSubmit, setParentSubmit] = useState(null);
+  const voteProposalRef = useRef(null);
+
   const governorAddress =
     chainId in contractAddressesGovernor ? contractAddressesGovernor[chainId][0] : null;
   const { runContractFunction } = useWeb3Contract();
@@ -86,6 +93,15 @@ const Map = ({ onMapClick }) => {
     }
   };
 
+  const fetchProposalDetails = async (proposalId) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/proposals/${proposalId}`);
+      setSelectedProposal(response.data); // Store the fetched proposal details in selectedProposal
+    } catch (error) {
+      console.error("Error fetching proposal details:", error);
+    }
+  };
+
   const getStatusText = (state) => {
     switch (state) {
       case 0:
@@ -113,6 +129,8 @@ const Map = ({ onMapClick }) => {
     switch (status) {
       case "Pending":
         return pendingMarkerIcon;
+      case "Active":
+        return acceptedMarkerIcon;
       case "Succeeded":
       case "Executed":
         return acceptedMarkerIcon;
@@ -128,15 +146,23 @@ const Map = ({ onMapClick }) => {
     setMapMarkers((prevMarkers) => [...prevMarkers, { ...newProposal, status: "Pending" }]);
   };
 
-  const handleVoteClick = async (proposalId, proposer) => {
+  const handleVoteClick = async (proposal) => {
     if (!isWeb3Enabled) {
       await enableWeb3();
     }
-    if (account === proposer) {
+    if (account === proposal.proposer) {
       alert("You cannot vote on your own proposal.");
       return;
     }
+    await fetchProposalDetails(proposal.proposalId); // Fetch details for the clicked proposal
     setIsModalOpen(true);
+  };
+
+  const handleVoteSubmit = async () => {
+    if (voteProposalRef.current) {
+      await voteProposalRef.current(); // Calls voteProposal in VoteForm
+    }
+    setIsModalOpen(false);
   };
 
   const MapClickHandler = () => {
@@ -157,7 +183,6 @@ const Map = ({ onMapClick }) => {
         />
         <MapClickHandler />
 
-        {/* Always display the default marker for new proposal location selection */}
         <Marker
           position={defaultMarkerPosition}
           icon={defaultMarkerIcon}
@@ -178,7 +203,6 @@ const Map = ({ onMapClick }) => {
           </Popup>
         </Marker>
 
-        {/* Render all proposal markers from mapMarkers */}
         {mapMarkers.map((marker, idx) => (
           <Marker key={idx} position={marker.coordinates} icon={getMarkerIcon(marker.status)}>
             <Popup>
@@ -190,26 +214,37 @@ const Map = ({ onMapClick }) => {
               {account === marker.proposer ? (
                 <p>You cannot vote on your own proposal.</p>
               ) : (
-                <div>
-                  <button onClick={() => handleVoteClick(marker.proposalId, marker.proposer)}>
-                    Vote
-                  </button>
-                  <Modal
-                    isVisible={isModalOpen}
-                    onCancel={() => setIsModalOpen(false)}
-                    onCloseButtonPressed={() => setIsModalOpen(false)}
-                    title="Delegate Voting Power"
-                  >
-                    <p>Delegate voting power to:</p>
-                    <Button text="Myself" theme="secondary" />
-                    <Button text="Custom Address" theme="secondary" />
-                  </Modal>
-                </div>
+                <Button
+                  onClick={() => handleVoteClick(marker)}
+                  text="Vote"
+                  theme="primary"
+                  size="small"
+                />
               )}
             </Popup>
           </Marker>
         ))}
       </MapContainer>
+
+      <Modal
+        isVisible={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        onCloseButtonPressed={() => setIsModalOpen(false)}
+        title="Vote On Proposal"
+        okText="Submit"
+        onOk={handleVoteSubmit}
+      >
+        {selectedProposal && (
+          <>
+            <VoteDetails proposalDetails={selectedProposal} />
+            <VoteForm
+              proposalDetails={selectedProposal}
+              onVoteSubmit={(voteProposal) => (voteProposalRef.current = voteProposal)}
+            />
+            <QueueAndExecuteProposal proposalDetails={selectedProposal} />
+          </>
+        )}
+      </Modal>
     </div>
   );
 };

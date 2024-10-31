@@ -9,7 +9,7 @@ import {
   abiGovernanceToken,
 } from "../../constants";
 
-const VoteForm = ({ proposalDetails }) => {
+const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
   const router = useRouter();
   const dispatch = useNotification();
 
@@ -42,8 +42,7 @@ const VoteForm = ({ proposalDetails }) => {
     const selectedVote = parseInt(event.target.value, 10); // Ensure it's an integer
     setVote(selectedVote);
     console.log("Selected vote:", selectedVote); // Should log 0, 1, or 2 directly
-};
-
+  };
 
   const handleReasonChange = (event) => setReason(event.target.value);
 
@@ -80,7 +79,7 @@ const VoteForm = ({ proposalDetails }) => {
     }
 
     setIsVoting(true);
-    console.log("Before vote:", vote)
+    console.log("Before vote:", vote);
     const voteProposalOptions = {
       abi: abiGovernor,
       contractAddress: governorAddress,
@@ -261,6 +260,13 @@ const VoteForm = ({ proposalDetails }) => {
     }
   }, [isWeb3Enabled]);
 
+  // Expose voteProposal to the parent through useEffect
+  useEffect(() => {
+    if (onVoteSubmit) {
+      onVoteSubmit(voteProposal); // Pass the function itself
+    }
+  }, [onVoteSubmit]); // Run only when onVoteSubmit is available
+
   return (
     <div>
       <h3>Cast your vote</h3>
@@ -284,11 +290,11 @@ const VoteForm = ({ proposalDetails }) => {
             placeholder="Explain why you are voting this way..."
             textarea
           />
-          <Button
+          {/* <Button
             onClick={voteProposal}
             text={isVoting ? "Submitting..." : "Submit Vote"}
             disabled={isVoting}
-          />
+          /> */}
         </>
       )}
     </div>
