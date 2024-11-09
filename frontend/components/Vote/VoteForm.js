@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import { useMoralis, useWeb3Contract } from "react-moralis";
 import { useNotification, Radios, Input, Button } from "web3uikit";
@@ -46,7 +46,7 @@ const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
 
   const handleReasonChange = (event) => setReason(event.target.value);
 
-  async function voteProposal() {
+  const voteProposal = useCallback(async () => {
     console.log("Vote when submitting", vote);
     if (!proposalId) {
       dispatch({
@@ -102,11 +102,13 @@ const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
     } finally {
       setIsVoting(false);
     }
-  }
+  }, [vote, proposalId, isWeb3Enabled, governorAddress, reason]);
+
+
 
   const handleSuccess = async (tx) => {
     await tx.wait(1);
-
+    console.log("i came here! 1")
     const proposalVotesOptions = {
       abi: abiGovernor,
       contractAddress: governorAddress,
@@ -265,7 +267,7 @@ const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
     if (onVoteSubmit) {
       onVoteSubmit(voteProposal); // Pass the function itself
     }
-  }, [onVoteSubmit]); // Run only when onVoteSubmit is available
+  }, [onVoteSubmit, voteProposal]); // Run only when onVoteSubmit is available
 
   return (
     <div>

@@ -1,0 +1,45 @@
+/* QueueAndExecuteProposal.module.css */
+
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+    margin-top: 20px;
+  }
+  
+  .queueButton,
+  .executeButton {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  
+  .queueButton {
+    background-color: #007bff;
+    color: #fff;
+  }
+  
+  .queueButton:disabled {
+    background-color: #b0d4ff;
+    cursor: not-allowed;
+  }
+  
+  .executeButton {
+    background-color: #28a745;
+    color: #fff;
+  }
+  
+  .executeButton:disabled {
+    background-color: #a8e0b2;
+    cursor: not-allowed;
+  }
+  
+  .message {
+    font-size: 0.9rem;
+    color: #555;
+    margin-top: 10px;
+  }
+  

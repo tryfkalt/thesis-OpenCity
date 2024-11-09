@@ -1,19 +1,22 @@
 // pages/proposals.js
 import { useEffect, useState } from "react";
-import axios from "axios";
-import { abiGovernor, contractAddressesGovernor } from "../constants";
-import { Table, Avatar, Tag } from "web3uikit";
 import { useMoralis, useWeb3Contract } from "react-moralis";
-import styles from "../styles/Home.module.css";
+import axios from "axios";
+import { Table, Avatar, Tag, Button, Modal } from "web3uikit";
+import { abiGovernor, contractAddressesGovernor } from "../constants";
 import Header from "../components/Header";
+import styles from "../styles/ProposalsPage.module.css";
+import { useRouter } from "next/router";
 
 const ProposalsPage = () => {
   const { isWeb3Enabled, chainId: chainIdHex, account } = useMoralis();
   const chainId = parseInt(chainIdHex, 16);
   const [proposals, setProposals] = useState([]);
+  const { runContractFunction } = useWeb3Contract();
+  const router = useRouter();
+
   const governorAddress =
     chainId in contractAddressesGovernor ? contractAddressesGovernor[chainId][0] : null;
-  const { runContractFunction } = useWeb3Contract();
 
   useEffect(() => {
     const fetchProposalsMetadata = async () => {
@@ -115,10 +118,22 @@ const ProposalsPage = () => {
     <span key={`${proposal.proposalId}-proposer`}>{proposal.proposer}</span>,
   ]);
 
+  const handleProposalCreate = () => {
+    router.push("/proposal/create");
+  };
+
+  const handleRowClick = (proposalId) => {
+    console.log("Row clicked:", proposalId);
+    router.push(`/proposal/${proposalId}`);
+  };
+
   return (
     <div className={styles.container}>
       <h2>Proposals</h2>
       <Header />
+      <div className={styles.proposalButton}>
+        <Button text="+New Proposal" theme="primary" onClick={handleProposalCreate} />
+      </div>
       <Table
         columnsConfig="80px 2fr 1fr 1fr 2fr"
         data={tableData}
@@ -133,7 +148,7 @@ const ProposalsPage = () => {
         maxPages={3}
         pageSize={5}
         onPageNumberChanged={() => {}}
-        onRowClick={(e, row) => console.log("Row clicked:", row)}
+        onRowClick={(row) => handleRowClick(proposals[row].proposalId)}
       />
     </div>
   );

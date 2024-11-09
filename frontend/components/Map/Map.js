@@ -1,18 +1,25 @@
 import { MapContainer, TileLayer, Marker, Popup, useMapEvent } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import styles from "../../styles/Home.module.css";
-import L from "leaflet";
+// import "../../styles/Cluster.module.css";
+import L, { divIcon, point } from "leaflet";
+import MarkerClusterGroup from "react-leaflet-markercluster";
 import { useMoralis, useWeb3Contract } from "react-moralis";
 import { Modal, Button } from "web3uikit";
 import { abiGovernor, contractAddressesGovernor } from "../../constants";
 import VoteDetails from "../Vote/VoteDetails";
+import SearchBar from "./SearchBar";
 import VoteForm from "../Vote/VoteForm";
-import QueueAndExecuteProposal from "../Queue-Execute/QueueAndExecute";
 
 const pendingMarkerIcon = new L.Icon({
-  iconUrl: "/location.png",
+  iconUrl: "/Pending.png",
+  iconSize: [50, 50],
+  iconAnchor: [25, 50],
+  popupAnchor: [0, -50],
+});
+const activeMarkerIcon = new L.Icon({
+  iconUrl: "/Active.png",
   iconSize: [50, 50],
   iconAnchor: [25, 50],
   popupAnchor: [0, -50],
@@ -30,20 +37,20 @@ const deniedMarkerIcon = new L.Icon({
   popupAnchor: [0, -50],
 });
 const defaultMarkerIcon = new L.Icon({
-  iconUrl: "/marker.png",
+  iconUrl: "/Default.png",
   iconSize: [50, 50],
   iconAnchor: [25, 50],
   popupAnchor: [0, -50],
 });
 
-const Map = ({ onMapClick }) => {
+const Map = ({ onMapClick, proposalStatus }) => {
   const { isWeb3Enabled, chainId: chainIdHex, account, enableWeb3 } = useMoralis();
   const chainId = parseInt(chainIdHex, 16);
   const [mapMarkers, setMapMarkers] = useState([]);
   const [defaultMarkerPosition, setDefaultMarkerPosition] = useState({ lat: 51.505, lng: -0.09 });
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
-  const [parentSubmit, setParentSubmit] = useState(null);
+  // const [parentSubmit, setParentSubmit] = useState(null);
   const voteProposalRef = useRef(null);
 
   const governorAddress =
@@ -130,7 +137,7 @@ const Map = ({ onMapClick }) => {
       case "Pending":
         return pendingMarkerIcon;
       case "Active":
-        return acceptedMarkerIcon;
+        return activeMarkerIcon;
       case "Succeeded":
       case "Executed":
         return acceptedMarkerIcon;
@@ -147,9 +154,9 @@ const Map = ({ onMapClick }) => {
   };
 
   const handleVoteClick = async (proposal) => {
-    if (!isWeb3Enabled) {
-      await enableWeb3();
-    }
+    // if (!isWeb3Enabled) {
+    //   await enableWeb3();
+    // }
     if (account === proposal.proposer) {
       alert("You cannot vote on your own proposal.");
       return;
@@ -160,6 +167,7 @@ const Map = ({ onMapClick }) => {
 
   const handleVoteSubmit = async () => {
     if (voteProposalRef.current) {
+      console.log("Vote before submission:", voteProposalRef.current);
       await voteProposalRef.current(); // Calls voteProposal in VoteForm
     }
     setIsModalOpen(false);
@@ -181,49 +189,58 @@ const Map = ({ onMapClick }) => {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
-        <MapClickHandler />
+        <SearchBar />
+        <MarkerClusterGroup showCoverageOnHover={false}>
+          <MapClickHandler />
 
-        <Marker
-          position={defaultMarkerPosition}
-          icon={defaultMarkerIcon}
-          draggable={true}
-          eventHandlers={{
-            dragend: (e) => {
-              const marker = e.target;
-              const position = marker.getLatLng();
-              setDefaultMarkerPosition({ lat: position.lat, lng: position.lng });
-              onMapClick({ lat: position.lat, lng: position.lng });
-            },
-          }}
-        >
-          <Popup>
-            <strong>New Proposal Location</strong>
-            <br />
-            Drag or click on the map to choose location.
-          </Popup>
-        </Marker>
-
-        {mapMarkers.map((marker, idx) => (
-          <Marker key={idx} position={marker.coordinates} icon={getMarkerIcon(marker.status)}>
+          <Marker
+            position={defaultMarkerPosition}
+            icon={defaultMarkerIcon}
+            draggable={true}
+            eventHandlers={{
+              dragend: (e) => {
+                const marker = e.target;
+                const position = marker.getLatLng();
+                setDefaultMarkerPosition({ lat: position.lat, lng: position.lng });
+                onMapClick({ lat: position.lat, lng: position.lng });
+              },
+            }}
+          >
             <Popup>
-              <strong>Proposal:</strong> {marker.title}
+              <strong>New Proposal Location</strong>
               <br />
-              <strong>Coordinates:</strong> {marker.coordinates.lat.toFixed(4)},{" "}
-              {marker.coordinates.lng.toFixed(4)}
-              <br />
-              {account === marker.proposer ? (
-                <p>You cannot vote on your own proposal.</p>
-              ) : (
-                <Button
-                  onClick={() => handleVoteClick(marker)}
-                  text="Vote"
-                  theme="primary"
-                  size="small"
-                />
-              )}
+              Drag or click on the map to choose location.
             </Popup>
           </Marker>
-        ))}
+
+          {mapMarkers.map((marker, idx) => (
+            <Marker key={idx} position={marker.coordinates} icon={getMarkerIcon(marker.status)}>
+              <Popup>
+                <strong>Proposal:</strong> {marker.title}
+                <br />
+                <strong>Coordinates:</strong> {marker.coordinates.lat.toFixed(4)},{" "}
+                {marker.coordinates.lng.toFixed(4)}
+                <br />
+                {marker.status === "Pending" ? (
+                  <p>Proposal vote hasn't started yet.</p>
+                ) : marker.status === "Queued" ? (
+                  <p>Proposal is pending execution.</p>
+                ) : account === marker.proposer ? (
+                  <p>You cannot vote on your own proposal.</p>
+                ) : (
+                  proposalStatus == "Active" && (
+                    <Button
+                      onClick={() => handleVoteClick(marker)}
+                      text="Vote"
+                      theme="primary"
+                      size="small"
+                    />
+                  )
+                )}
+              </Popup>
+            </Marker>
+          ))}
+        </MarkerClusterGroup>
       </MapContainer>
 
       <Modal
@@ -239,9 +256,10 @@ const Map = ({ onMapClick }) => {
             <VoteDetails proposalDetails={selectedProposal} />
             <VoteForm
               proposalDetails={selectedProposal}
-              onVoteSubmit={(voteProposal) => (voteProposalRef.current = voteProposal)}
+              onVoteSubmit={(voteProposal) => {
+                voteProposalRef.current = voteProposal;
+              }}
             />
-            <QueueAndExecuteProposal proposalDetails={selectedProposal} />
           </>
         )}
       </Modal>

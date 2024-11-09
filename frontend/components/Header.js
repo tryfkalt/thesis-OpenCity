@@ -5,7 +5,11 @@ import styles from "../styles/Header.module.css";
 export default function Header() {
   return (
     <nav className={styles.navbar}>
-      <button className={styles.title}>Open World!</button>
+      <div className={styles.title}>
+        <Link href="/" passHref>
+          <a className={styles.link}>OpenWorld</a>
+        </Link>
+      </div>
 
       <div className={styles.navLinks}>
         <Link href="/" passHref>

@@ -139,7 +139,6 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
       const proposalState = await runContractFunction({ params: stateOptions });
       const proposalSnapshot = await runContractFunction({ params: snapshotOptions });
       const proposalDeadline = await runContractFunction({ params: deadlineOptions });
-      const quorumValue = await runContractFunction({ params: quorumOptions });
       
       // Fetch the quorum at the snapshot block number
       const quorumOptions = {
@@ -148,6 +147,9 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
         functionName: "quorum",
         params: { blockNumber: proposalSnapshot },
       };
+      
+      const quorumValue = await runContractFunction({ params: quorumOptions });
+      
       console.log("Proposal State:", proposalState);
       console.log("Proposal Snapshot (Block Number):", proposalSnapshot);
       console.log("Proposal Deadline (Block Number):", proposalDeadline);

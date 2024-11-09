@@ -3,10 +3,12 @@ import axios from "axios";
 import { abiGovernor, contractAddressesGovernor } from "../../constants";
 import { Table, Avatar, Tag } from "web3uikit";
 import { useMoralis, useWeb3Contract } from "react-moralis";
+import { useRouter } from "next/router";
 
-import styles from "../../styles/Home.module.css";
+import styles from "../../styles/ProposalsTable.module.css";
 
 const ProposalsTable = () => {
+  const router = useRouter();
   const { isWeb3Enabled, chainId: chainIdHex, account } = useMoralis();
   const chainId = parseInt(chainIdHex, 16); // Convert hex chainId to integer
 
@@ -128,9 +130,13 @@ const ProposalsTable = () => {
   //   `${proposal.coordinates.lat}, ${proposal.coordinates.lng}`, // Coordinates remain in the Coordinates column
   //   proposal.proposer,
   // ]);
+  const handleRowClick = (proposalId) => {
+    console.log("Row clicked:", proposalId);
+    router.push(`/proposal/${proposalId}`);
+  };
 
   return (
-    <div>
+    <div className={styles.container}>
       <h2>Recent Proposals</h2>
       <Table
         columnsConfig="80px 2fr 1fr 1fr 2fr"
@@ -146,7 +152,7 @@ const ProposalsTable = () => {
         maxPages={3}
         pageSize={5}
         onPageNumberChanged={() => {}}
-        onRowClick={(e, row) => console.log("Row clicked:", row)}
+        onRowClick={(row) => handleRowClick(proposals[row].proposalId)}
       />
     </div>
   );

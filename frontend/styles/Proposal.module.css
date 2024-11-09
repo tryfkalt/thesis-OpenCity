@@ -1,0 +1,125 @@
+/* Proposal.module.css */
+
+.container {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: Arial, sans-serif;
+  }
+  
+  /* Local header classes */
+  .headerTitle {
+    font-size: 2rem;
+    color: #333;
+    margin-bottom: 20px;
+  }
+  
+  .subHeaderTitle {
+    font-size: 1.5rem;
+    color: #444;
+    margin-top: 30px;
+    margin-bottom: 15px;
+  }
+  
+  /* Proposal details section */
+  .proposalDetails {
+    width: 400px;
+    background-color: #f9f9f9;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+  }
+  
+  .proposalDetails p {
+    margin: 8px 0;
+    color: #555;
+  }
+  
+  /* Voting stats section */
+  .voteStats {
+    display: flex;
+    justify-content: space-around;
+    background-color: #eaf4fc;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+  }
+  
+  .voteStats div {
+    text-align: center;
+    color: #333;
+  }
+  
+  .voteStatsTitle {
+    font-size: 1.2rem;
+    color: #007bff;
+    margin-bottom: 5px;
+  }
+  
+  .voteStatsText {
+    font-size: 1rem;
+    color: #555;
+  }
+  
+  /* Status section */
+  .status {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    border-radius: 8px;
+    background-color: #f0f0f5;
+    color: #333;
+    font-size: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+  }
+  
+  .statusIcon {
+    font-size: 1.5rem;
+    color: #28a745;
+  }
+  
+  /* Voting Button */
+  .voteButton {
+    display: flex;
+    justify-content: center;
+    margin-top: 20px;
+  }
+  
+  /* Map Section */
+  .mapContainer {
+    margin-top: 20px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  /* Queue and Execute Section */
+  .queueExecute {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    border-radius: 8px;
+    background-color: #ffe6e6;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+  }
+  
+  .queueExecuteButton {
+    background-color: #dc3545;
+    color: #fff;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    border: none;
+    font-size: 1rem;
+  }
+  
+  .queueExecuteButton:hover {
+    background-color: #c82333;
+  }
+  

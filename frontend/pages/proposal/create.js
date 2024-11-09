@@ -1,39 +1,32 @@
-import Head from "next/head";
-import styles from "../styles/Home.module.css";
-import Header from "../components/Header";
 import { useState } from "react";
 import { useMoralis } from "react-moralis";
-import Map from "../components/Map";
-import ProposalForm from "../components/Proposal/CreateProposal";
-import ProposalsTable from "../components/Proposal/ProposalsTable";
-import DelegateComponent from "../components/Delegate";
+import ProposalForm from "../../components/Proposal/CreateProposal";
+import Map from "../../components/Map";
+import Header from "../../components/Header";
+import styles from "../../styles/Home.module.css";
 
 const supportedChains = ["31337", "11155111"];
 
-export default function Home() {
+const CreateProposalPage = () => {
+  const [coordinates, setCoordinates] = useState({ lat: 0, lng: 0 });
   const { isWeb3Enabled, chainId } = useMoralis();
   const [proposals, setProposals] = useState([]);
   const [selectedCoords, setSelectedCoords] = useState({ lat: "", lng: "" });
-
+  const handleMapClick = (newCoordinates) => {
+    setCoordinates(newCoordinates);
+  };
   const handleProposalSubmit = (proposalData) => {
     setProposals([...proposals, proposalData]);
     console.log("Proposals", proposals);
   };
-
   return (
     <div className={styles.container}>
-      <Head>
-        <title>Open World</title>
-        <meta name="description" content="Proposal Map App" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
       <Header />
       {isWeb3Enabled ? (
-        <>
-          <DelegateComponent />
+        <div>
           {supportedChains.includes(parseInt(chainId).toString()) ? (
             <div className="flex flex-row">
-              <ProposalsTable />
+              <ProposalForm onProposalSubmit={handleProposalSubmit} coordinates={selectedCoords} />
               <Map markers={proposals} onMapClick={setSelectedCoords} />
             </div>
           ) : (
@@ -41,10 +34,11 @@ export default function Home() {
               ", "
             )}`}</div>
           )}
-        </>
+        </div>
       ) : (
         <div>Please connect to a Wallet</div>
       )}
     </div>
   );
-}
+};
+export default CreateProposalPage;
