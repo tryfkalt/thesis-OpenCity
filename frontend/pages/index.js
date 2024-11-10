@@ -49,6 +49,7 @@ export default function Home() {
       ) : (
         <div>Please connect to a Wallet</div>
       )}
+      <footer className={styles.footer}>© 2024 Open World. All rights reserved.</footer>
     </div>
   );
 }

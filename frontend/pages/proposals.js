@@ -129,10 +129,10 @@ const ProposalsPage = () => {
 
   return (
     <div className={styles.container}>
-      <h2>Proposals</h2>
       <Header />
+      <h2 className={styles.title}>Current Proposals</h2>
       <div className={styles.proposalButton}>
-        <Button text="+New Proposal" theme="primary" onClick={handleProposalCreate} />
+        <Button text="+New Proposal" theme="primary" onClick={handleProposalCreate} size="large"/>
       </div>
       <Table
         columnsConfig="80px 2fr 1fr 1fr 2fr"

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMoralis, useWeb3Contract } from "react-moralis";
 import { ethers } from "ethers";
-import styles from "../../styles/Home.module.css";
+import styles from "../../styles/ProposalForm.module.css";
 import {
   abiHazardProposal,
   contractAddressesHazard,
@@ -26,8 +26,10 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
-  const governorAddress = chainId in contractAddressesGovernor ? contractAddressesGovernor[chainId][0] : null;
-  const hazardAddress = chainId in contractAddressesHazard ? contractAddressesHazard[chainId][0] : null;
+  const governorAddress =
+    chainId in contractAddressesGovernor ? contractAddressesGovernor[chainId][0] : null;
+  const hazardAddress =
+    chainId in contractAddressesHazard ? contractAddressesHazard[chainId][0] : null;
 
   const dispatch = useNotification();
   const { runContractFunction } = useWeb3Contract();
@@ -135,11 +137,11 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
         functionName: "proposalDeadline",
         params: { proposalId },
       };
-      
+
       const proposalState = await runContractFunction({ params: stateOptions });
       const proposalSnapshot = await runContractFunction({ params: snapshotOptions });
       const proposalDeadline = await runContractFunction({ params: deadlineOptions });
-      
+
       // Fetch the quorum at the snapshot block number
       const quorumOptions = {
         abi: abiGovernor,
@@ -147,9 +149,9 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
         functionName: "quorum",
         params: { blockNumber: proposalSnapshot },
       };
-      
+
       const quorumValue = await runContractFunction({ params: quorumOptions });
-      
+
       console.log("Proposal State:", proposalState);
       console.log("Proposal Snapshot (Block Number):", proposalSnapshot);
       console.log("Proposal Deadline (Block Number):", proposalDeadline);
@@ -200,13 +202,37 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
         className={styles["form-content"]}
         onSubmit={createProposal}
         data={[
-          { name: "Title", type: "text", value: title, key: "title" },
-          { name: "Description", type: "textarea", value: description, key: "description" },
-          { name: "Latitude", type: "text", value: coordinates.lat, key: "lat", disabled: true },
-          { name: "Longitude", type: "text", value: coordinates.lng, key: "lng", disabled: true },
+          { name: "Title", type: "text", value: title, key: "title", inputWidth: "100%" },
+          {
+            name: "Description",
+            type: "textarea",
+            value: description,
+            key: "description",
+            inputWidth: "100%",
+          },
+          {
+            name: "Latitude",
+            type: "text",
+            value: coordinates.lat,
+            key: "lat",
+            disabled: true,
+            inputWidth: "100%",
+          },
+          {
+            name: "Longitude",
+            type: "text",
+            value: coordinates.lng,
+            key: "lng",
+            disabled: true,
+            inputWidth: "100%",
+          },
         ]}
         title="Create Proposal"
         disabled={loading}
+        buttonConfig={{ isLoading: loading,
+          loadingText: 'Submitting',
+          text: 'Submit',
+          theme: 'primary' }}
       />
       {loading && <p>Submitting proposal...</p>}
       {message && <p>{message}</p>}

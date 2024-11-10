@@ -1,0 +1,44 @@
+/* CreateProposalPage.module.css */
+.container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    padding: 20px;
+}
+
+.content {
+    display: flex;
+    justify-content: space-between;
+    padding: 16px;
+    flex: 1;
+}
+
+.proposalForm {
+    flex: 1;
+    margin-top: 60px;
+}
+
+.map {
+    flex: 2;
+    height: 600px;
+    padding: 16px;
+    margin-top: 60px;
+}
+
+.footer {
+    display: flex;
+    padding: 2rem 0;
+    border-top: 1px solid #eaeaea;
+    justify-content: center;
+    align-items: center;
+    font-family: "Montserrat", sans-serif;
+    margin-top: auto;
+}
+
+.footer a {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-grow: 1;
+    font-family: "Montserrat", sans-serif;
+}

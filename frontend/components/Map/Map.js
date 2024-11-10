@@ -11,6 +11,7 @@ import { abiGovernor, contractAddressesGovernor } from "../../constants";
 import VoteDetails from "../Vote/VoteDetails";
 import SearchBar from "./SearchBar";
 import VoteForm from "../Vote/VoteForm";
+import { useRouter } from "next/router";
 
 const pendingMarkerIcon = new L.Icon({
   iconUrl: "/Pending.png",
@@ -44,6 +45,7 @@ const defaultMarkerIcon = new L.Icon({
 });
 
 const Map = ({ onMapClick, proposalStatus }) => {
+  const router = useRouter();
   const { isWeb3Enabled, chainId: chainIdHex, account, enableWeb3 } = useMoralis();
   const chainId = parseInt(chainIdHex, 16);
   const [mapMarkers, setMapMarkers] = useState([]);
@@ -149,8 +151,8 @@ const Map = ({ onMapClick, proposalStatus }) => {
     }
   };
 
-  const handleNewProposalSubmission = (newProposal) => {
-    setMapMarkers((prevMarkers) => [...prevMarkers, { ...newProposal, status: "Pending" }]);
+  const handleProposalCreate = () => {
+    router.push("/proposal/create");
   };
 
   const handleVoteClick = async (proposal) => {
@@ -213,9 +215,18 @@ const Map = ({ onMapClick, proposalStatus }) => {
             }}
           >
             <Popup>
-              <strong>New Proposal Location</strong>
+              <strong style={{ color: "Green", margin: "auto" }}>New Proposal Location</strong>
               <br />
               Drag or click on the map to choose location.
+              <Button
+                id="popUpNew"
+                text="+ New Proposal"
+                size="small"
+                theme="colored"
+                color="green"
+                style={{ margin: "auto", marginTop:"15px" }}
+                onClick={handleProposalCreate}
+              />
             </Popup>
           </Marker>
 
