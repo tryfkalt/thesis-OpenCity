@@ -7,7 +7,11 @@ export default function Header() {
     <nav className={styles.navbar}>
       <div className={styles.title}>
         <Link href="/" passHref>
-          <a className={styles.link}>OpenWorld</a>
+          <a className={styles.link}>
+            <img src="/favicon.png" alt="App Logo" className={styles.logo} />{" "}
+            {/* Add the logo image */}
+            <p className={styles.logoText}>OpenWorld</p>
+          </a>
         </Link>
       </div>
 

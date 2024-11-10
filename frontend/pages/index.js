@@ -4,7 +4,6 @@ import Header from "../components/Header";
 import { useState } from "react";
 import { useMoralis } from "react-moralis";
 import Map from "../components/Map";
-import ProposalForm from "../components/Proposal/CreateProposal";
 import ProposalsTable from "../components/Proposal/ProposalsTable";
 import DelegateComponent from "../components/Delegate";
 
@@ -34,7 +33,7 @@ export default function Home() {
           {supportedChains.includes(parseInt(chainId).toString()) ? (
             <div className="flex flex-row">
               <ProposalsTable />
-              <Map markers={proposals} onMapClick={setSelectedCoords} />
+              <Map /*markers={proposals} */ onMapClick={setSelectedCoords} />
             </div>
           ) : (
             <div>{`Please switch to a supported chain. Supported Chain Ids: ${supportedChains.join(
