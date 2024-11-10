@@ -27,6 +27,11 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <Header />
+      <section className={styles.hero}>
+        <h1>Open World: Decentralized Governance for the World </h1>
+        <p>Explore, propose, and vote on changes to the world.</p>
+      </section>
+
       {isWeb3Enabled ? (
         <>
           <DelegateComponent />
