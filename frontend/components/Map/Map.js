@@ -175,9 +175,16 @@ const Map = ({ onMapClick, proposalStatus }) => {
 
   const MapClickHandler = () => {
     useMapEvent("click", (e) => {
-      const newCoords = { lat: e.latlng.lat, lng: e.latlng.lng };
-      setDefaultMarkerPosition(newCoords);
-      onMapClick(newCoords);
+      // Check if the click originated from the search bar or its children
+      const clickedElement = e.originalEvent.target;
+      const isClickInsideSearchBar = clickedElement.closest(".mapboxgl-ctrl-geocoder") !== null;
+
+      // Only update marker position if click is outside the search bar
+      if (!isClickInsideSearchBar) {
+        const newCoords = { lat: e.latlng.lat, lng: e.latlng.lng };
+        setDefaultMarkerPosition(newCoords);
+        onMapClick(newCoords);
+      }
     });
     return null;
   };
@@ -189,10 +196,9 @@ const Map = ({ onMapClick, proposalStatus }) => {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
+        <MapClickHandler />
         <SearchBar />
         <MarkerClusterGroup showCoverageOnHover={false}>
-          <MapClickHandler />
-
           <Marker
             position={defaultMarkerPosition}
             icon={defaultMarkerIcon}

@@ -6,10 +6,6 @@ import mapboxgl from "mapbox-gl";
 import "leaflet/dist/leaflet.css";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
 
-// Import marker icon images from Leaflet
-import markerIcon from "leaflet/dist/images/marker-icon.png";
-import markerShadow from "leaflet/dist/images/marker-shadow.png";
-
 // Define custom marker icon for Leaflet
 const defaultMarkerIcon = new L.Icon({
   iconUrl: "/Default.png",
@@ -35,6 +31,7 @@ const SearchBar = () => {
     // Update map view and add a marker when search result is found
     geocoder.on("result", (e) => {
       const { center, place_name } = e.result;
+      console.log(center, place_name);
       map.setView([center[1], center[0]], 13);
 
       L.marker([center[1], center[0]], { icon: defaultMarkerIcon })

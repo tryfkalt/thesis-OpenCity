@@ -174,12 +174,12 @@
   margin: 10px 0;
 }
 
-.map-container {
+/* .map-container {
   height: 40rem;
   width: 100%;
   padding: 20px;
   padding-top: 100px;
-}
+} */
 
 .proposal-form {
   display: flex;
