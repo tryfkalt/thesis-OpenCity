@@ -130,11 +130,31 @@ const ProposalDetails = () => {
         <>
           <h2 className={styles.headerTitle}>Proposal Details</h2>
           <div className={styles.proposalDetails}>
-            <p>Title: {proposal.title}</p>
-            <p>Description: {proposal.description}</p>
-            <p>Status: {status}</p>
-            <p>Coordinates: {`${proposal.coordinates.lat}, ${proposal.coordinates.lng}`}</p>
-            <p>Proposer: {proposal.proposer}</p>
+            <p className={styles.proposalTitle}>Title: {proposal.title}</p>
+            <p className={styles.proposalDescription}>Description: {proposal.description}</p>
+            <p className={styles.proposalCoords}>
+              Coordinates: {`${proposal.coordinates.lat}, ${proposal.coordinates.lng}`}
+            </p>
+            <p
+              className={`${styles.proposalStatus} ${
+                status === "Pending"
+                  ? styles.statusPending
+                  : status === "Active"
+                  ? styles.statusActive
+                  : status === "Succeeded"
+                  ? styles.statusSucceeded
+                  : status === "Defeated"
+                  ? styles.statusDefeated
+                  : status === "Queued"
+                  ? styles.statusQueued
+                  : status === "Executed"
+                  ? styles.statusExecuted
+                  : ""
+              }`}
+            >
+              Status: {status}
+            </p>
+            <p className={styles.proposalProposer}>Proposer: {proposal.proposer}</p>
             {status != "Pending" ? (
               <p>
                 Quorum: {votes.for} out of {quorum}
@@ -157,7 +177,15 @@ const ProposalDetails = () => {
               <p className={styles.voteStatsText}>{votes.abstain}</p>
             </div>
           </div>
-          <p>Majority Support: {majoritySupport === "Yes" ? "Yes" : "No"}</p>
+          <div className={styles.supportContainer}>
+            <p
+              className={`${styles.proposalSupport} ${
+                majoritySupport === "Yes" ? styles.supportYes : styles.supportNo
+              }`}
+            >
+              Majority Support: {majoritySupport === "Yes" ? "Yes" : "No"}
+            </p>
+          </div>
 
           {/* {status === "Active" && (
             <div className={styles.voteButton}>
@@ -182,6 +210,7 @@ const ProposalDetails = () => {
               // markers={[proposal]}
               onMapClick={setSelectedCoords}
               proposalStatus={status}
+              idCoords={{ lat: proposal.coordinates.lat, lng: proposal.coordinates.lng }}
             />
           </div>
         </>

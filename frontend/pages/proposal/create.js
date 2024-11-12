@@ -1,25 +1,31 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMoralis } from "react-moralis";
 import ProposalForm from "../../components/Proposal/CreateProposal";
 import Map from "../../components/Map";
 import Header from "../../components/Header";
 import styles from "../../styles/CreateProposalPage.module.css";
+import { useRouter } from "next/router";
 
 const supportedChains = ["31337", "11155111"];
 
 const CreateProposalPage = () => {
-  const [coordinates, setCoordinates] = useState({ lat: 0, lng: 0 });
+  const router = useRouter();
+  const { lat, lng } = router.query;
   const { isWeb3Enabled, chainId } = useMoralis();
   const [proposals, setProposals] = useState([]);
-  const [selectedCoords, setSelectedCoords] = useState({ lat: "", lng: "" });
+  const [selectedCoords, setSelectedCoords] = useState({ lat: lat ?? 51.505, lng: lng ?? -0.09 });
+  console.log("Selected:", selectedCoords);
+  const [isStatic, setIsStatic] = useState(true); // Start with true
 
-  const handleMapClick = (newCoordinates) => {
-    setCoordinates(newCoordinates);
-  };
+  // Set isStatic to false after the initial render
+  useEffect(() => {
+    if (isStatic) {
+      setIsStatic(false);
+    }
+  }, []);
 
   const handleProposalSubmit = (proposalData) => {
     setProposals([...proposals, proposalData]);
-    console.log("Proposals", proposals);
   };
 
   return (
@@ -36,7 +42,16 @@ const CreateProposalPage = () => {
                 />
               </div>
               <div className={styles.map}>
-                <Map markers={proposals} onMapClick={setSelectedCoords} />
+                {isStatic ? (
+                  <Map
+                    markers={proposals}
+                    onMapClick={setSelectedCoords}
+                    createCoords={{ lat: lat ?? 51.505, lng: lng ?? -0.09 }}
+                    staticMarker={isStatic}
+                  />
+                ) : (
+                  <Map markers={proposals} onMapClick={setSelectedCoords} staticMarker={isStatic} />
+                )}
               </div>
             </div>
           ) : (

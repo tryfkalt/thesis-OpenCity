@@ -1,3 +1,22 @@
 [
-  
+  {
+    "title": "test1",
+    "description": "test1",
+    "coordinates": {
+      "lat": 51.51664802308177,
+      "lng": -0.0439453125
+    },
+    "proposalId": "29803463924796967666233954623720676677532146253584983685190698125622764993784",
+    "proposer": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
+  },
+  {
+    "title": "Road Issue",
+    "description": "Help with this road issue",
+    "coordinates": {
+      "lat": 51.5106922693391,
+      "lng": -0.042355304939925016
+    },
+    "proposalId": "87150065304345380470933957426325031372770322717678976531615908540667449310549",
+    "proposer": "0x3c44cdddb6a900fa2b585dd299e03d12fa4293bc"
+  }
 ]

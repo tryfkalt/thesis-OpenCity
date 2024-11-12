@@ -130,7 +130,7 @@ const ProposalsPage = () => {
   return (
     <div className={styles.container}>
       <Header />
-      <h2 className={styles.title}>Current Proposals</h2>
+      <h2 className={styles.title}>Recent Proposals</h2>
       <div className={styles.proposalButton}>
         <Button text="+New Proposal" theme="primary" onClick={handleProposalCreate} size="large"/>
       </div>

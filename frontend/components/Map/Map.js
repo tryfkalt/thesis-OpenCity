@@ -44,20 +44,29 @@ const defaultMarkerIcon = new L.Icon({
   popupAnchor: [0, -50],
 });
 
-const Map = ({ onMapClick, proposalStatus }) => {
+const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords }) => {
   const router = useRouter();
   const { isWeb3Enabled, chainId: chainIdHex, account, enableWeb3 } = useMoralis();
   const chainId = parseInt(chainIdHex, 16);
   const [mapMarkers, setMapMarkers] = useState([]);
-  const [defaultMarkerPosition, setDefaultMarkerPosition] = useState({ lat: 51.505, lng: -0.09 });
+  const [defaultMarkerPosition, setDefaultMarkerPosition] = useState(
+    createCoords || { lat: 51.505, lng: -0.09 }
+  );
+  const [defaultMarkerPopupContent, setDefaultMarkerPopupContent] =
+    useState("New Proposal Location");
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
-  // const [parentSubmit, setParentSubmit] = useState(null);
   const voteProposalRef = useRef(null);
 
   const governorAddress =
     chainId in contractAddressesGovernor ? contractAddressesGovernor[chainId][0] : null;
   const { runContractFunction } = useWeb3Contract();
+  useEffect(() => {
+    if (createCoords) {
+      setDefaultMarkerPosition(createCoords);
+    }
+  }, [createCoords]);
 
   useEffect(() => {
     if (isWeb3Enabled && governorAddress) {
@@ -152,9 +161,14 @@ const Map = ({ onMapClick, proposalStatus }) => {
   };
 
   const handleProposalCreate = () => {
-    router.push("/proposal/create");
+    router.push({
+      pathname: "/proposal/create",
+      query: {
+        lat: defaultMarkerPosition.lat,
+        lng: defaultMarkerPosition.lng,
+      },
+    });
   };
-
   const handleVoteClick = async (proposal) => {
     // if (!isWeb3Enabled) {
     //   await enableWeb3();
@@ -165,6 +179,11 @@ const Map = ({ onMapClick, proposalStatus }) => {
     }
     await fetchProposalDetails(proposal.proposalId); // Fetch details for the clicked proposal
     setIsModalOpen(true);
+  };
+
+  const handleSearchResult = ({ lat, lng, place_name }) => {
+    setDefaultMarkerPosition({ lat, lng });
+    setDefaultMarkerPopupContent(place_name);
   };
 
   const handleVoteSubmit = async () => {
@@ -180,7 +199,6 @@ const Map = ({ onMapClick, proposalStatus }) => {
       // Check if the click originated from the search bar or its children
       const clickedElement = e.originalEvent.target;
       const isClickInsideSearchBar = clickedElement.closest(".mapboxgl-ctrl-geocoder") !== null;
-
       // Only update marker position if click is outside the search bar
       if (!isClickInsideSearchBar) {
         const newCoords = { lat: e.latlng.lat, lng: e.latlng.lng };
@@ -193,13 +211,17 @@ const Map = ({ onMapClick, proposalStatus }) => {
 
   return (
     <div>
-      <MapContainer className={styles["map-container"]} center={[51.505, -0.09]} zoom={13}>
+      <MapContainer
+        className={styles["map-container"]}
+        center={createCoords || idCoords || [51.505, -0.09]}
+        zoom={13}
+      >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
         <MapClickHandler />
-        <SearchBar />
+        <SearchBar onSearchResult={handleSearchResult} />
         <MarkerClusterGroup showCoverageOnHover={false}>
           <Marker
             position={defaultMarkerPosition}
@@ -214,20 +236,28 @@ const Map = ({ onMapClick, proposalStatus }) => {
               },
             }}
           >
-            <Popup>
-              <strong style={{ color: "Green", margin: "auto" }}>New Proposal Location</strong>
-              <br />
-              Drag or click on the map to choose location.
-              <Button
-                id="popUpNew"
-                text="+ New Proposal"
-                size="small"
-                theme="colored"
-                color="green"
-                style={{ margin: "auto", marginTop:"15px" }}
-                onClick={handleProposalCreate}
-              />
-            </Popup>
+            {!staticMarker && (
+              <Popup>
+                <strong style={{ color: "Green", margin: "auto" }}>New Proposal Location</strong>
+                <br />
+                Drag or click on the map to choose location.
+                <Button
+                  id="popUpNew"
+                  text="+ New Proposal"
+                  size="small"
+                  theme="colored"
+                  color="green"
+                  style={{ margin: "auto", marginTop: "15px" }}
+                  onClick={handleProposalCreate}
+                />
+              </Popup>
+            )}
+
+            {staticMarker && (
+              <Popup open>
+                <strong>Hello</strong>
+              </Popup>
+            )}
           </Marker>
 
           {mapMarkers.map((marker, idx) => (
@@ -238,10 +268,15 @@ const Map = ({ onMapClick, proposalStatus }) => {
                 <strong>Coordinates:</strong> {marker.coordinates.lat.toFixed(4)},{" "}
                 {marker.coordinates.lng.toFixed(4)}
                 <br />
+                <br />
                 {marker.status === "Pending" ? (
                   <p>Proposal vote hasn't started yet.</p>
                 ) : marker.status === "Queued" ? (
                   <p>Proposal is pending execution.</p>
+                ) : marker.status === "Defeated" ? (
+                  <p>Proposal not successful.</p>
+                ) : marker.status === "Succeeded" ? (
+                  <p>Proposal successful, waiting to queue.</p>
                 ) : account === marker.proposer ? (
                   <p>You cannot vote on your own proposal.</p>
                 ) : (
@@ -254,6 +289,13 @@ const Map = ({ onMapClick, proposalStatus }) => {
                     />
                   )
                 )}
+                <a
+                  href={`/proposal/${marker.proposalId}`}
+                  // target="_blank"
+                  // rel="noopener noreferrer"
+                >
+                  View Details
+                </a>
               </Popup>
             </Marker>
           ))}
