@@ -2,7 +2,12 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { useMoralis, useWeb3Contract } from "react-moralis";
 import axios from "axios";
-import { abiGovernor, contractAddressesGovernor } from "../../constants";
+import {
+  abiGovernor,
+  contractAddressesGovernor,
+  abiGovernanceToken,
+  contractAddressesGovernanceToken,
+} from "../../constants";
 import Header from "../../components/Header";
 import Map from "../../components/Map";
 import QueueProposal from "../../components/Queue-Execute/QueueProposal";
@@ -25,6 +30,7 @@ const ProposalDetails = () => {
   const [showDefaultMarker, setShowDefaultMarker] = useState(false);
   const [votes, setVotes] = useState({ for: 0, against: 0, abstain: 0 });
   const [majoritySupport, setMajoritySupport] = useState("");
+  const [participationRate, setParticipationRate] = useState(0);
 
   const { runContractFunction } = useWeb3Contract();
 
@@ -88,11 +94,28 @@ const ProposalDetails = () => {
         params: { proposalId: id },
       };
 
+      const governanceTokenAddress = contractAddressesGovernanceToken[chainId]?.[0];
+
+      const totalSupplyOptions = {
+        abi: abiGovernanceToken,
+        contractAddress: governanceTokenAddress,
+        functionName: "totalSupply",
+        params: {},
+      };
+
+      const totalSupply = await runContractFunction({ params: totalSupplyOptions });
+      const totalSupplyInt = parseInt(totalSupply.toString());
+      console.log("Total supply:", totalSupplyInt);
+
       const voteCounts = await runContractFunction({ params: voteOptions });
       const forVotes = parseInt(voteCounts.forVotes.toString());
       const againstVotes = parseInt(voteCounts.againstVotes.toString());
       const abstainVotes = parseInt(voteCounts.abstainVotes.toString());
 
+      const votesCast = forVotes + againstVotes + abstainVotes;
+      const participationRate = (votesCast / totalSupplyInt) * 100;
+
+      setParticipationRate(participationRate);
       setVotes({ for: forVotes, against: againstVotes, abstain: abstainVotes });
       setMajoritySupport(forVotes > againstVotes ? "Yes" : "No");
     } catch (error) {
@@ -185,6 +208,20 @@ const ProposalDetails = () => {
             >
               Majority Support: {majoritySupport === "Yes" ? "Yes" : "No"}
             </p>
+          </div>
+          <h3 className={styles.subHeaderTitle}>Participation Rate</h3>
+          <div className={styles.participationRateContainer}>
+            <div className={styles.participationRateText}>
+              <span>{participationRate}%</span>
+              {/* <span>{votesCast.toLocaleString()} votes cast</span> */}
+            </div>
+            <div className={styles.progressBarBackground}>
+              <div
+                className={styles.progressBarFill}
+                style={{ width: `${participationRate}%` }}
+              ></div>
+            </div>
+            <p className={styles.participationLabel}>Participation rate</p>
           </div>
 
           {/* {status === "Active" && (

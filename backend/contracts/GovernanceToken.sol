@@ -4,33 +4,38 @@ pragma solidity ^0.8.8;
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 
 contract GovernanceToken is ERC20Votes {
-  uint256 public s_maxTokens = 10000;
-  mapping(address => bool) public claimed;
+    uint256 public s_maxTokens = 10000;
+    address public deployer;
+    mapping(address => bool) public claimed;
 
-  constructor() ERC20("TryfToken", "TT") ERC20Permit("TryfToken") {
-    _mint(msg.sender, s_maxTokens);
-  }
+    constructor() ERC20("TryfToken", "TT") ERC20Permit("TryfToken") {
+        deployer = msg.sender;
+        _mint(deployer, s_maxTokens); // Mint the entire supply to the deployer
+    }
 
-  // Function for users to claim tokens
-  function claimTokens() external {
-    require(!claimed[msg.sender], "Tokens already claimed.");
-    claimed[msg.sender] = true;
-    _mint(msg.sender, 500); // Mint 100 tokens per user
-  }
+    // Function for users to claim tokens without increasing the total supply
+    function claimTokens() external {
+        require(!claimed[msg.sender], "Tokens already claimed.");
+        require(balanceOf(deployer) >= 500, "Not enough tokens to claim."); // Ensure deployer has enough tokens
 
-  function _mint(address to, uint256 amount) internal override(ERC20Votes) {
-    super._mint(to, amount);
-  }
+        claimed[msg.sender] = true;
+        _transfer(deployer, msg.sender, 500); // Transfer from deployer to user
+    }
 
-  function _burn(address account, uint256 amount) internal override(ERC20Votes) {
-    super._burn(account, amount);
-  }
+    // Overrides for ERC20Votes compatibility
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 amount
+    ) internal override(ERC20Votes) {
+        super._afterTokenTransfer(from, to, amount);
+    }
 
-  function _afterTokenTransfer(
-    address from,
-    address to,
-    uint256 amount
-  ) internal override(ERC20Votes) {
-    super._afterTokenTransfer(from, to, amount);
-  }
+    function _mint(address to, uint256 amount) internal override(ERC20Votes) {
+        super._mint(to, amount);
+    }
+
+    function _burn(address account, uint256 amount) internal override(ERC20Votes) {
+        super._burn(account, amount);
+    }
 }

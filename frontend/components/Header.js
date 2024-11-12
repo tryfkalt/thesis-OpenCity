@@ -10,7 +10,7 @@ export default function Header() {
           <a className={styles.link}>
             <img src="/favicon.png" alt="App Logo" className={styles.logo} />{" "}
             {/* Add the logo image */}
-            <p className={styles.logoText}>OpenWorld</p>
+            <p className={styles.logoText}>OpenCity</p>
           </a>
         </Link>
       </div>
