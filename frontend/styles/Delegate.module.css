@@ -49,8 +49,7 @@
 }
 
 .modalButtonGroup {
-  display: flex;
-  gap: 15px;
+  display: inline-block;
   justify-content: center;
   font-family: 'Montserrat', sans-serif;
 }

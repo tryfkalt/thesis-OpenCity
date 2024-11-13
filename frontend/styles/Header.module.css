@@ -7,7 +7,7 @@
   justify-content: space-between;
   background-color: #f3f3f3;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
 }
 
 .title {
@@ -18,35 +18,53 @@
   align-items: center;
   cursor: pointer;
 }
+/* Updated styles for better overlay effect */
+.logoContainer {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100px;
+  height: 70px;
+}
 
 .logo {
-  width: 50px;
-  height: 50px;
-  margin-right: 0.5rem;
+  width: 70px;
+  height: 70px;
+  z-index: 1;
 }
 
 .logoText {
-  font-size: 24px;
+  font-size: 17.5px;
   font-weight: bold;
+  font-family: "Montserrat", sans-serif;
   color: #333;
-  font-family: 'Montserrat', sans-serif;
+  position: absolute;
+  top: 50%;
+  opacity: 0.99;
+  text-align: center;
+  z-index: 2; /* Ensure text is layered above the image */
+  /* Optional: add shadow for contrast */
+  text-shadow: 0px 0px 3px rgba(255, 255, 255, 0.8);
 }
+
 .navLinks {
   display: flex;
   gap: 24px;
   margin-left: auto;
   align-items: center;
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
 }
 
 .link {
   text-decoration: none;
   font-weight: 600;
-  display: flex;
+  color: #667;
+  display: inline-block;
+  /* display: flex; */
   align-items: center;
-  justify-content: center;
-  color: #666;
-  font-family: 'Montserrat', sans-serif;
+  /* justify-content: right; */
+  font-family: "Montserrat", sans-serif;
 }
 
 .link:hover {
@@ -55,6 +73,5 @@
 
 .connectButton {
   margin-left: 16px;
-  font-family: 'Montserrat', sans-serif;
+  font-family: "Montserrat", sans-serif;
 }
-

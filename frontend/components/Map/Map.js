@@ -283,14 +283,16 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
                   proposalStatus == "Active" && (
                     <Button
                       onClick={() => handleVoteClick(marker)}
-                      text="Vote"
+                      text="Vote Here"
                       theme="primary"
-                      size="small"
+                      size="medium"
+                      style={{ margin: "auto" }}
                     />
                   )
                 )}
                 <a
                   href={`/proposal/${marker.proposalId}`}
+                  style={{ display: "block", textAlign: "center", marginTop: "10px" }}
                   // target="_blank"
                   // rel="noopener noreferrer"
                 >

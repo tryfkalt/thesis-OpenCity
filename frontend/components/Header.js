@@ -8,9 +8,10 @@ export default function Header() {
       <div className={styles.title}>
         <Link href="/" passHref>
           <a className={styles.link}>
-            <img src="/favicon.png" alt="App Logo" className={styles.logo} />{" "}
-            {/* Add the logo image */}
-            <p className={styles.logoText}>OpenCity</p>
+            <div className={styles.logoContainer}>
+              <p className={styles.logoText}>OpenCity</p>
+              <img src="/favicon2.png" alt="App Logo" className={styles.logo} />
+            </div>
           </a>
         </Link>
       </div>

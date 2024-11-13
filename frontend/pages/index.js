@@ -24,7 +24,6 @@ export default function Home() {
       if (isWeb3Enabled && chainId) {
         try {
           const governanceTokenAddress = contractAddressesGovernanceToken[chainId]?.[0];
-          console.log("Governance Token Address:", governanceTokenAddress);
           const totalSupplyOptions = {
             abi: abiGovernanceToken,
             contractAddress: governanceTokenAddress,
