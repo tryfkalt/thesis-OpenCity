@@ -1,0 +1,56 @@
+/* QueueAndExecuteProposal.module.css */
+
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.queueButton,
+.executeButton {
+  padding: 15px 30px;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.3s;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.queueButton {
+  background-color: #007bff;
+  color: #fff;
+}
+
+.queueButton:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+.queueButton:disabled {
+  background-color: #b0d4ff;
+  cursor: not-allowed;
+}
+
+.executeButton {
+  background-color: #28a745;
+  color: #fff;
+}
+
+.executeButton:hover {
+  background-color: #1e7e34;
+  transform: translateY(-2px);
+}
+
+.executeButton:disabled {
+  background-color: #a8e0b2;
+  cursor: not-allowed;
+}
+
+.message {
+  font-size: 0.9rem;
+  color: #555;
+  margin-top: 10px;
+}

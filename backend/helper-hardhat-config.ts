@@ -54,21 +54,29 @@ export const VOTING_DELAY = 1; // 1 Block - How many blocks till a proposal vote
 export const ADDRESS_ZERO = "0x0000000000000000000000000000000000000000";
 
 // Set STORE_PARAMS with data from the latest proposal, or default values if no proposal found
-export const STORE_PARAMS = latestProposal
+export const STORE_PARAMS = latestProposal && latestProposal.coordinates
   ? [
       latestProposal.title,
       latestProposal.description,
-      // latestProposal.coordinates.lat  * 1e6, // multiplying lat and lng by 1e6 to convert to integer
-      // latestProposal.coordinates.lng  * 1e6,
-      ethers.BigNumber.from(parseFloat(latestProposal.coordinates.lat).toFixed(0)),
-        ethers.BigNumber.from(parseFloat(latestProposal.coordinates.lng).toFixed(0)),
+      // Ensure coordinates are valid before using BigNumber
+      ethers.BigNumber.from(
+        isNaN(parseFloat(latestProposal.coordinates[0]))
+          ? 0 // Fallback value if NaN
+          : parseFloat(latestProposal.coordinates[0]).toFixed(0)
+      ),
+      ethers.BigNumber.from(
+        isNaN(parseFloat(latestProposal.coordinates[1]))
+          ? 0 // Fallback value if NaN
+          : parseFloat(latestProposal.coordinates[1]).toFixed(0)
+      ),
     ]
   : [
       "Default Title",
       "Default Description",
-      0,
-      0,
+      ethers.BigNumber.from(0),
+      ethers.BigNumber.from(0),
     ];
+
 
 export const FUNC = "storeHazard" as const;
 export const PROPOSAL_DESCRIPTION = "Proposal to store hazard information.";

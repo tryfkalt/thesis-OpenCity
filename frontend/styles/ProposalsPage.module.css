@@ -1,0 +1,27 @@
+.container {
+  padding: 0 2rem;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.proposalButton {
+  max-width: fit-content;
+  margin-left: auto;
+  /* margin-right: auto; */
+  font-family: 'Montserrat', sans-serif;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.title{
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 20px;
+  font-family: 'Montserrat', sans-serif;
+}

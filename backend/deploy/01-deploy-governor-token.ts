@@ -28,6 +28,8 @@ const deployGovernanceToken: DeployFunction = async function (hre: HardhatRuntim
 
 const delegate = async (governanceTokenAddress: string, delegatedAccount: string) => {
     const governanceToken = await ethers.getContractAt("GovernanceToken", governanceTokenAddress);
+    const totalSupply = await governanceToken.totalSupply();
+    console.log("Max supply: ", totalSupply.toNumber());
     const transactionResponse = await governanceToken.delegate(delegatedAccount);
     await transactionResponse.wait();
     console.log(`Checkpoints: ${await governanceToken.numCheckpoints(delegatedAccount)}`);

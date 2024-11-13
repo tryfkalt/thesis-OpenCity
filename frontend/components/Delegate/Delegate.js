@@ -3,6 +3,7 @@ import { ethers } from "ethers";
 import { useMoralis, useWeb3Contract } from "react-moralis";
 import { Modal, Input, Button } from "web3uikit";
 import { abiGovernanceToken, contractAddressesGovernanceToken } from "../../constants";
+import styles from "../../styles/Delegate.module.css";
 
 const DelegateComponent = () => {
   const [isClaimed, setIsClaimed] = useState(false);
@@ -43,13 +44,13 @@ const DelegateComponent = () => {
         onSuccess: handleSuccessClaimTokens,
         onError: handleErrorClaimTokens,
       });
+      await tx.wait(1);
     } catch (error) {
       console.error("Error claiming tokens: ", error);
     }
   };
 
-  const handleSuccessClaimTokens = async (tx) => {
-    await tx.wait(1);
+  const handleSuccessClaimTokens = () => {
     setIsClaimed(true); // Mark the tokens as claimed
     fetchVotingPower(); // Update voting power after claiming tokens
   };
@@ -64,6 +65,7 @@ const DelegateComponent = () => {
   };
 
   const handleDelegateToAddress = () => {
+    closeModal();
     setDelegateToSelf(false);
     openCustomAddressModal();
   };
@@ -73,9 +75,11 @@ const DelegateComponent = () => {
       console.error("Governance token contract address not found for this chain.");
       return;
     }
-
-    // const provider = new ethers.providers.Web3Provider(Moralis.provider);
-    // const signer = provider.getSigner();
+    console.log("isClaimed", isClaimed);
+    if (!isClaimed) {
+      // Claim tokens first if not already claimed
+      await handleClaimTokens();
+    }
 
     const addressToDelegate = delegateToSelf ? account : customAddress;
 
@@ -141,6 +145,7 @@ const DelegateComponent = () => {
     } catch (error) {
       console.error("Error fetching delegatee: ", error);
     }
+
     try {
       const votingPowerOptions = {
         abi: abiGovernanceToken,
@@ -154,9 +159,15 @@ const DelegateComponent = () => {
       const votes = await runContractFunction({ params: votingPowerOptions });
       console.log("votes", votes.toString());
       setVotingPower(votes.toString());
+      if (votes.toString() === "0") {
+        setIsClaimed(false);
+      } else {
+        setIsClaimed(true);
+      }
     } catch (error) {
       console.error("Error fetching voting power: ", error);
     }
+
     const numCheckpointsOptions = {
       abi: abiGovernanceToken,
       contractAddress: governanceTokenAddress,
@@ -173,6 +184,11 @@ const DelegateComponent = () => {
     fetchVotingPower();
   };
 
+  // Reset isClaimed whenever the account changes
+  useEffect(() => {
+    fetchVotingPower();
+  }, [account]);
+
   useEffect(() => {
     if (Moralis.provider) {
       fetchVotingPower();
@@ -180,53 +196,65 @@ const DelegateComponent = () => {
   }, [Moralis.provider, chainId]);
 
   return (
-    <div>
-      <Button
-        text="Claim Tokens"
-        theme="primary"
-        onClick={handleClaimTokens}
-        disabled={!isWeb3Enabled || !account || isClaimed}
-      />
-      <Button onClick={openModal} text="Delegate" theme="primary" />
-
-      <div>
-        <h3>Your Voting Power: {votingPower}</h3>
+    <div className={styles.container}>
+      <div className={styles.votingPowerBox}>
+        <h3 className={styles.votingPowerTitle}>Your Voting Power</h3>
+        <Button
+          style={{ marginLeft: "auto", marginRight: "auto" }}
+          onClick={openModal}
+          text="Delegate"
+          theme="primary"
+          disabled={!isWeb3Enabled || !account}
+        />
+        <p>{votingPower}</p>
+        <Button
+          onClick={handleGetVotes}
+          text="Get Voting Power"
+          style={{ marginLeft: "auto", marginRight: "auto" }}
+          color="blue"
+        />
       </div>
 
-      <Modal
-        isVisible={isModalOpen}
-        onCancel={closeModal}
-        onCloseButtonPressed={closeModal}
-        onOk={handleDelegate}
-        title="Delegate Voting Power"
-        okText="Confirm Delegation"
-        cancelText="Cancel"
-      >
-        <div>
-          <p>Delegate voting power to:</p>
-          <Button onClick={handleDelegateToSelf} text="Myself" theme="secondary" />
-          <Button onClick={handleDelegateToAddress} text="Custom Address" theme="secondary" />
-        </div>
-      </Modal>
+      {/* Modal for delegation options */}
+      <div className={styles.modalOverlay}>
+        <Modal
+          isVisible={isModalOpen}
+          onCancel={closeModal}
+          onCloseButtonPressed={closeModal}
+          onOk={handleDelegate}
+          title="Delegate Voting Power"
+          okText="Confirm Delegation"
+          cancelText="Cancel"
+        >
+          <div className={styles.modalContent}>
+            <p>Delegate voting power to:</p>
+            <div className={styles.modalButtonGroup}>
+              <Button onClick={handleDelegateToSelf} text="Myself" theme="secondary" />
+              <Button onClick={handleDelegateToAddress} text="Custom Address" theme="secondary" />
+            </div>
+          </div>
+        </Modal>
+      </div>
 
-      <Modal
-        isVisible={isCustomAddressModalOpen}
-        onCancel={closeCustomAddressModal}
-        onCloseButtonPressed={closeCustomAddressModal}
-        onOk={handleDelegate}
-        title="Enter Custom Address"
-        okText="Confirm Address & Delegate"
-        cancelText="Cancel"
-      >
-        <Input
-          label="Custom Address"
-          value={customAddress}
-          onChange={(e) => setCustomAddress(e.target.value)}
-          placeholder="Enter ETH address to delegate"
-        />
-      </Modal>
-
-      <Button onClick={handleGetVotes} text="Get Voting Power" />
+      <div className={styles.modalCustomOverlay}>
+        {/* Modal for entering custom address */}
+        <Modal
+          isVisible={isCustomAddressModalOpen}
+          onCancel={closeCustomAddressModal}
+          onCloseButtonPressed={closeCustomAddressModal}
+          onOk={handleDelegate}
+          title="Enter Custom Address"
+          okText="Confirm Address & Delegate"
+          cancelText="Cancel"
+        >
+          <Input
+            label="Custom Address"
+            value={customAddress}
+            onChange={(e) => setCustomAddress(e.target.value)}
+            placeholder="Enter ETH address to delegate"
+          />
+        </Modal>
+      </div>
     </div>
   );
 };

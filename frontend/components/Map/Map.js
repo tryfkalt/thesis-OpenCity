@@ -1,22 +1,26 @@
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import { useState, useEffect } from "react";
+import { MapContainer, TileLayer, Marker, Popup, useMapEvent } from "react-leaflet";
+import { useState, useEffect, useRef } from "react";
+import axios from "axios";
 import styles from "../../styles/Home.module.css";
-import L from "leaflet";
-import Link from "next/link";
-import { useMoralis } from "react-moralis";
+// import "../../styles/Cluster.module.css";
+import L, { divIcon, point } from "leaflet";
+import MarkerClusterGroup from "react-leaflet-markercluster";
+import { useMoralis, useWeb3Contract } from "react-moralis";
+import { Modal, Button } from "web3uikit";
+import { abiGovernor, contractAddressesGovernor } from "../../constants";
+import VoteDetails from "../Vote/VoteDetails";
+import SearchBar from "./SearchBar";
+import VoteForm from "../Vote/VoteForm";
 import { useRouter } from "next/router";
 
-// Custom marker icons
-const defaultMarkerIcon = new L.Icon({
-  iconUrl: "/marker.png",
+const pendingMarkerIcon = new L.Icon({
+  iconUrl: "/Pending.png",
   iconSize: [50, 50],
   iconAnchor: [25, 50],
   popupAnchor: [0, -50],
 });
-
-const submittedMarkerIcon = new L.Icon({
-  iconUrl: "/location.png", 
+const activeMarkerIcon = new L.Icon({
+  iconUrl: "/Active.png",
   iconSize: [50, 50],
   iconAnchor: [25, 50],
   popupAnchor: [0, -50],
@@ -27,96 +31,299 @@ const acceptedMarkerIcon = new L.Icon({
   iconAnchor: [25, 50],
   popupAnchor: [0, -50],
 });
-
 const deniedMarkerIcon = new L.Icon({
   iconUrl: "/Denied.png",
   iconSize: [50, 50],
   iconAnchor: [25, 50],
   popupAnchor: [0, -50],
 });
+const defaultMarkerIcon = new L.Icon({
+  iconUrl: "/Default.png",
+  iconSize: [50, 50],
+  iconAnchor: [25, 50],
+  popupAnchor: [0, -50],
+});
 
-
-const Map = ({ markers, onMapClick }) => {
+const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords }) => {
+  const router = useRouter();
+  const { isWeb3Enabled, chainId: chainIdHex, account, enableWeb3 } = useMoralis();
+  const chainId = parseInt(chainIdHex, 16);
   const [mapMarkers, setMapMarkers] = useState([]);
-  const [draggableMarker, setDraggableMarker] = useState({
-    position: { lat: 51.505, lng: -0.09 }, // Initial position
-    draggable: true,
-    icon: defaultMarkerIcon,
-  });
+  const [defaultMarkerPosition, setDefaultMarkerPosition] = useState(
+    createCoords || { lat: 51.505, lng: -0.09 }
+  );
+  const [defaultMarkerPopupContent, setDefaultMarkerPopupContent] =
+    useState("New Proposal Location");
 
-  const { isWeb3Enabled, enableWeb3, account } = useMoralis();
-  const router = useRouter();  // Use router for navigation
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProposal, setSelectedProposal] = useState(null);
+  const voteProposalRef = useRef(null);
+
+  const governorAddress =
+    chainId in contractAddressesGovernor ? contractAddressesGovernor[chainId][0] : null;
+  const { runContractFunction } = useWeb3Contract();
+  useEffect(() => {
+    if (createCoords) {
+      setDefaultMarkerPosition(createCoords);
+    }
+  }, [createCoords]);
 
   useEffect(() => {
-    if (markers && markers.length) {
-      setMapMarkers(markers);
+    if (isWeb3Enabled && governorAddress) {
+      fetchProposalsMetadata();
     }
-  }, [markers]);
+  }, [isWeb3Enabled, governorAddress]);
 
-  // Update the draggable marker position and notify parent component
-  const handleDragEnd = (event) => {
-    const { lat, lng } = event.target.getLatLng();
-    setDraggableMarker((prev) => ({ ...prev, position: { lat, lng } }));
-    onMapClick({ lat, lng }); // Update form coordinates
+  const fetchProposalsMetadata = async () => {
+    try {
+      const metadataResponse = await axios.get("http://localhost:5000/proposals");
+      const metadata = metadataResponse.data;
+
+      const proposalDetails = await Promise.all(
+        metadata.map(async (proposal) => {
+          const ipfsResponse = await axios.get(
+            `https://gateway.pinata.cloud/ipfs/${proposal.ipfsHash}`
+          );
+          const stateOptions = {
+            abi: abiGovernor,
+            contractAddress: governorAddress,
+            functionName: "state",
+            params: { proposalId: proposal.proposalId },
+          };
+
+          let proposalState;
+          await runContractFunction({
+            params: stateOptions,
+            onSuccess: (state) => {
+              proposalState = state;
+            },
+            onError: (error) => console.error("Error fetching proposal state:", error),
+          });
+
+          const status = getStatusText(proposalState);
+          return { ...proposal, ...ipfsResponse.data, status };
+        })
+      );
+
+      setMapMarkers(proposalDetails);
+    } catch (error) {
+      console.error("Error fetching proposals:", error);
+    }
   };
 
-  // Ensure Web3 is enabled before voting
-  const handleVoteClick = async (proposalId, proposer) => {
-    if (!isWeb3Enabled) {
-      await enableWeb3();
+  const fetchProposalDetails = async (proposalId) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/proposals/${proposalId}`);
+      setSelectedProposal(response.data); // Store the fetched proposal details in selectedProposal
+    } catch (error) {
+      console.error("Error fetching proposal details:", error);
     }
+  };
 
-    // Prevent the proposer from voting
-    if (account === proposer) {
+  const getStatusText = (state) => {
+    switch (state) {
+      case 0:
+        return "Pending";
+      case 1:
+        return "Active";
+      case 2:
+        return "Canceled";
+      case 3:
+        return "Defeated";
+      case 4:
+        return "Succeeded";
+      case 5:
+        return "Queued";
+      case 6:
+        return "Expired";
+      case 7:
+        return "Executed";
+      default:
+        return "Unknown";
+    }
+  };
+
+  const getMarkerIcon = (status) => {
+    switch (status) {
+      case "Pending":
+        return pendingMarkerIcon;
+      case "Active":
+        return activeMarkerIcon;
+      case "Succeeded":
+      case "Executed":
+        return acceptedMarkerIcon;
+      case "Defeated":
+      case "Canceled":
+        return deniedMarkerIcon;
+      default:
+        return defaultMarkerIcon;
+    }
+  };
+
+  const handleProposalCreate = () => {
+    router.push({
+      pathname: "/proposal/create",
+      query: {
+        lat: defaultMarkerPosition.lat,
+        lng: defaultMarkerPosition.lng,
+      },
+    });
+  };
+  const handleVoteClick = async (proposal) => {
+    // if (!isWeb3Enabled) {
+    //   await enableWeb3();
+    // }
+    if (account === proposal.proposer) {
       alert("You cannot vote on your own proposal.");
       return;
     }
+    await fetchProposalDetails(proposal.proposalId); // Fetch details for the clicked proposal
+    setIsModalOpen(true);
+  };
 
-    // Navigate to the vote page with proposalId using router
-    router.push(`/vote?proposalId=${proposalId}`);
+  const handleSearchResult = ({ lat, lng, place_name }) => {
+    setDefaultMarkerPosition({ lat, lng });
+    setDefaultMarkerPopupContent(place_name);
+  };
+
+  const handleVoteSubmit = async () => {
+    if (voteProposalRef.current) {
+      console.log("Vote before submission:", voteProposalRef.current);
+      await voteProposalRef.current(); // Calls voteProposal in VoteForm
+    }
+    setIsModalOpen(false);
+  };
+
+  const MapClickHandler = () => {
+    useMapEvent("click", (e) => {
+      // Check if the click originated from the search bar or its children
+      const clickedElement = e.originalEvent.target;
+      const isClickInsideSearchBar = clickedElement.closest(".mapboxgl-ctrl-geocoder") !== null;
+      // Only update marker position if click is outside the search bar
+      if (!isClickInsideSearchBar) {
+        const newCoords = { lat: e.latlng.lat, lng: e.latlng.lng };
+        setDefaultMarkerPosition(newCoords);
+        onMapClick(newCoords);
+      }
+    });
+    return null;
   };
 
   return (
     <div>
-      <MapContainer className={styles["map-container"]} center={draggableMarker.position} zoom={13}>
+      <MapContainer
+        className={styles["map-container"]}
+        center={createCoords || idCoords || [51.505, -0.09]}
+        zoom={13}
+      >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
+        <MapClickHandler />
+        <SearchBar onSearchResult={handleSearchResult} />
+        <MarkerClusterGroup showCoverageOnHover={false}>
+          <Marker
+            position={defaultMarkerPosition}
+            icon={defaultMarkerIcon}
+            draggable={true}
+            eventHandlers={{
+              dragend: (e) => {
+                const marker = e.target;
+                const position = marker.getLatLng();
+                setDefaultMarkerPosition({ lat: position.lat, lng: position.lng });
+                onMapClick({ lat: position.lat, lng: position.lng });
+              },
+            }}
+          >
+            {!staticMarker && (
+              <Popup>
+                <strong style={{ color: "Green", margin: "auto" }}>New Proposal Location</strong>
+                <br />
+                Drag or click on the map to choose location.
+                <Button
+                  id="popUpNew"
+                  text="+ New Proposal"
+                  size="small"
+                  theme="colored"
+                  color="green"
+                  style={{ margin: "auto", marginTop: "15px" }}
+                  onClick={handleProposalCreate}
+                />
+              </Popup>
+            )}
 
-        {/* Draggable initial marker */}
-        <Marker
-          position={draggableMarker.position}
-          draggable={draggableMarker.draggable}
-          eventHandlers={{ dragend: handleDragEnd }}
-          icon={draggableMarker.icon}
-        >
-          <Popup>
-            Coordinates: {draggableMarker.position.lat.toFixed(4)}, {draggableMarker.position.lng.toFixed(4)}
-          </Popup>
-        </Marker>
-
-        {/* Display submitted markers */}
-        {mapMarkers.map((marker, idx) => (
-          <Marker key={idx} position={marker.coordinates} icon={submittedMarkerIcon}>
-            <Popup>
-              <strong>Proposal:</strong> {marker.title}
-              <br />
-              <strong>Coordinates:</strong> {marker.coordinates.lat.toFixed(4)}, {marker.coordinates.lng.toFixed(4)}
-              <br />
-
-              {/* Only show vote button if the current user is not the proposer */}
-              {account === marker.proposer ? (
-                <p>You cannot vote on your own proposal.</p>
-              ) : (
-                <button onClick={() => handleVoteClick(marker.proposalId, marker.proposer)}>
-                  Vote
-                </button>
-              )}
-            </Popup>
+            {staticMarker && (
+              <Popup open>
+                <strong>Hello</strong>
+              </Popup>
+            )}
           </Marker>
-        ))}
+
+          {mapMarkers.map((marker, idx) => (
+            <Marker key={idx} position={marker.coordinates} icon={getMarkerIcon(marker.status)}>
+              <Popup>
+                <strong>Proposal:</strong> {marker.title}
+                <br />
+                <strong>Coordinates:</strong> {marker.coordinates.lat.toFixed(4)},{" "}
+                {marker.coordinates.lng.toFixed(4)}
+                <br />
+                <br />
+                {marker.status === "Pending" ? (
+                  <p>Proposal vote hasn't started yet.</p>
+                ) : marker.status === "Queued" ? (
+                  <p>Proposal is pending execution.</p>
+                ) : marker.status === "Defeated" ? (
+                  <p>Proposal not successful.</p>
+                ) : marker.status === "Succeeded" ? (
+                  <p>Proposal successful, waiting to queue.</p>
+                ) : account === marker.proposer ? (
+                  <p>You cannot vote on your own proposal.</p>
+                ) : (
+                  proposalStatus == "Active" && (
+                    <Button
+                      onClick={() => handleVoteClick(marker)}
+                      text="Vote Here"
+                      theme="primary"
+                      size="medium"
+                      style={{ margin: "auto" }}
+                    />
+                  )
+                )}
+                <a
+                  href={`/proposal/${marker.proposalId}`}
+                  style={{ display: "block", textAlign: "center", marginTop: "10px" }}
+                  // target="_blank"
+                  // rel="noopener noreferrer"
+                >
+                  View Details
+                </a>
+              </Popup>
+            </Marker>
+          ))}
+        </MarkerClusterGroup>
       </MapContainer>
+
+      <Modal
+        isVisible={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        onCloseButtonPressed={() => setIsModalOpen(false)}
+        title="Vote On Proposal"
+        okText="Submit"
+        onOk={handleVoteSubmit}
+      >
+        {selectedProposal && (
+          <>
+            <VoteDetails proposalDetails={selectedProposal} />
+            <VoteForm
+              proposalDetails={selectedProposal}
+              onVoteSubmit={(voteProposal) => {
+                voteProposalRef.current = voteProposal;
+              }}
+            />
+          </>
+        )}
+      </Modal>
     </div>
   );
 };

@@ -5,7 +5,8 @@ const { pinJSONToIPFS } = require("../pinataClient");
 const axios = require("axios");
 
 const createProposal = async (req, res) => {
-  const { title, description, coordinates, proposalId } = req.body;
+  console.log("Request body received:", req.body);
+  const { title, description, coordinates, proposalId, proposer } = req.body;
   const lat = parseFloat(coordinates.lat); // Use parseFloat to handle decimals
   const lng = parseFloat(coordinates.lng);
 
@@ -18,8 +19,9 @@ const createProposal = async (req, res) => {
       lng,
     },
     proposalId,
+    proposer
   };
-
+  
   // Define the file path for saving proposals
   const proposalsDataPath = path.join(__dirname, "../data/proposalData.json");
 
@@ -29,7 +31,6 @@ const createProposal = async (req, res) => {
     const existingData = fs.readFileSync(proposalsDataPath, "utf8");
     proposals = JSON.parse(existingData);
   }
-
   // Append the new proposal
   proposals.push(proposalData);
 
@@ -45,14 +46,12 @@ const createProposal = async (req, res) => {
 
     // Write updated proposals to the file
     fs.writeFileSync(proposalsDataPath, JSON.stringify(proposals, null, 2), "utf8");
-    res
-      .status(200)
-      .json({
-        message: "Proposal submitted successfully",
-        proposal: proposalData,
-        ipfsHash: pinataResult.IpfsHash,
-        ipfsUrl,
-      });
+    res.status(200).json({
+      message: "Proposal submitted successfully",
+      proposal: proposalData,
+      ipfsHash: pinataResult.IpfsHash,
+      ipfsUrl,
+    });
   } catch (error) {
     console.error("Error writing proposal to file:", error);
     res.status(500).json({ error: "Failed to save proposal" });
@@ -103,4 +102,18 @@ const getProposalData = async (req, res) => {
   }
 };
 
-module.exports = { createProposal, getProposalData };
+const getProposals = async (req, res) => {
+  const proposalsFile = path.join(__dirname, "../proposals.json");
+  const proposalsData = JSON.parse(fs.readFileSync(proposalsFile, "utf8"));
+  const chainId = network.config.chainId.toString();
+
+  const chainProposals = proposalsData[chainId];
+
+  if (!chainProposals) {
+    return res.status(404).json({ error: "No proposals found for this chain." });
+  }
+
+  return res.status(200).json(chainProposals);
+};
+
+module.exports = { createProposal, getProposalData, getProposals };

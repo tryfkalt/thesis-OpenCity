@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import { useMoralis, useWeb3Contract } from "react-moralis";
 import { useNotification, Radios, Input, Button } from "web3uikit";
@@ -9,7 +9,7 @@ import {
   abiGovernanceToken,
 } from "../../constants";
 
-const VoteForm = ({ proposalDetails }) => {
+const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
   const router = useRouter();
   const dispatch = useNotification();
 
@@ -42,12 +42,11 @@ const VoteForm = ({ proposalDetails }) => {
     const selectedVote = parseInt(event.target.value, 10); // Ensure it's an integer
     setVote(selectedVote);
     console.log("Selected vote:", selectedVote); // Should log 0, 1, or 2 directly
-};
-
+  };
 
   const handleReasonChange = (event) => setReason(event.target.value);
 
-  async function voteProposal() {
+  const voteProposal = useCallback(async () => {
     console.log("Vote when submitting", vote);
     if (!proposalId) {
       dispatch({
@@ -80,7 +79,7 @@ const VoteForm = ({ proposalDetails }) => {
     }
 
     setIsVoting(true);
-    console.log("Before vote:", vote)
+    console.log("Before vote:", vote);
     const voteProposalOptions = {
       abi: abiGovernor,
       contractAddress: governorAddress,
@@ -103,11 +102,13 @@ const VoteForm = ({ proposalDetails }) => {
     } finally {
       setIsVoting(false);
     }
-  }
+  }, [vote, proposalId, isWeb3Enabled, governorAddress, reason]);
+
+
 
   const handleSuccess = async (tx) => {
     await tx.wait(1);
-
+    console.log("i came here! 1")
     const proposalVotesOptions = {
       abi: abiGovernor,
       contractAddress: governorAddress,
@@ -261,6 +262,13 @@ const VoteForm = ({ proposalDetails }) => {
     }
   }, [isWeb3Enabled]);
 
+  // Expose voteProposal to the parent through useEffect
+  useEffect(() => {
+    if (onVoteSubmit) {
+      onVoteSubmit(voteProposal); // Pass the function itself
+    }
+  }, [onVoteSubmit, voteProposal]); // Run only when onVoteSubmit is available
+
   return (
     <div>
       <h3>Cast your vote</h3>
@@ -284,11 +292,11 @@ const VoteForm = ({ proposalDetails }) => {
             placeholder="Explain why you are voting this way..."
             textarea
           />
-          <Button
+          {/* <Button
             onClick={voteProposal}
             text={isVoting ? "Submitting..." : "Submit Vote"}
             disabled={isVoting}
-          />
+          /> */}
         </>
       )}
     </div>
