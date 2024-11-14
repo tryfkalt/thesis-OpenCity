@@ -233,11 +233,11 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
                 const position = marker.getLatLng();
                 setDefaultMarkerPosition({ lat: position.lat, lng: position.lng });
                 onMapClick({ lat: position.lat, lng: position.lng });
-              },
-            }}
-          >
-            {!staticMarker && (
-              <Popup>
+                },
+              }}
+              >
+              {!staticMarker && (
+                <Popup>
                 <strong style={{ color: "Green", margin: "auto" }}>New Proposal Location</strong>
                 <br />
                 Drag or click on the map to choose location.
@@ -250,19 +250,19 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
                   style={{ margin: "auto", marginTop: "15px" }}
                   onClick={handleProposalCreate}
                 />
-              </Popup>
-            )}
+                </Popup>
+              )}
 
-            {staticMarker && (
-              <Popup open>
+              {staticMarker && (
+                <Popup open>
                 <strong>Hello</strong>
-              </Popup>
-            )}
-          </Marker>
+                </Popup>
+              )}
+              </Marker>
 
-          {mapMarkers.map((marker, idx) => (
-            <Marker key={idx} position={marker.coordinates} icon={getMarkerIcon(marker.status)}>
-              <Popup>
+              {mapMarkers.map((marker, idx) => (
+              <Marker key={idx} position={marker.coordinates} icon={getMarkerIcon(marker.status)}>
+                <Popup>
                 <strong>Proposal:</strong> {marker.title}
                 <br />
                 <strong>Coordinates:</strong> {marker.coordinates.lat.toFixed(4)},{" "}
@@ -277,17 +277,19 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
                   <p>Proposal not successful.</p>
                 ) : marker.status === "Succeeded" ? (
                   <p>Proposal successful, waiting to queue.</p>
+                ) : marker.status === "Executed" ? (
+                  <p>Proposal executed.</p>
                 ) : account === marker.proposer ? (
                   <p>You cannot vote on your own proposal.</p>
                 ) : (
                   proposalStatus == "Active" && (
-                    <Button
-                      onClick={() => handleVoteClick(marker)}
-                      text="Vote Here"
-                      theme="primary"
-                      size="medium"
-                      style={{ margin: "auto" }}
-                    />
+                  <Button
+                    onClick={() => handleVoteClick(marker)}
+                    text="Vote Here"
+                    theme="primary"
+                    size="medium"
+                    style={{ margin: "auto" }}
+                  />
                   )
                 )}
                 <a

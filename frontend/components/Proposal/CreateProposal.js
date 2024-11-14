@@ -21,6 +21,8 @@ const PINATA_JWT = process.env.NEXT_PUBLIC_PINATA_JWT;
 const ProposalForm = ({ onProposalSubmit, coordinates }) => {
   const { isWeb3Enabled, chainId: chainIdHex, account } = useMoralis();
   const chainId = parseInt(chainIdHex, 16);
+
+  console.log("Chain ID:", chainId);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
@@ -61,7 +63,6 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
           description,
         },
       };
-
       await runContractFunction({
         params: createProposalOptions,
         onSuccess: (tx) => handleSuccess(tx, { title, description, coordinates }),
@@ -77,6 +78,7 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
   const handleSuccess = async (tx, proposalData) => {
     try {
       const proposalReceipt = await tx.wait(1);
+      console.log("Hello");
       const proposalId = proposalReceipt.events[0].args.proposalId.toString();
       const proposer = account;
       proposalData = { ...proposalData, proposalId, proposer };

@@ -21,6 +21,9 @@ const DelegateComponent = () => {
   const [ethAmount, setEthAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const [tokenBalance, setTokenBalance] = useState("0");
+  const [delegatedBalance, setDelegatedBalance] = useState("0"); // New state to track delegated tokens
+  const [delegatedPower, setDelegatedPower] = useState("0");
+  const [previousVotingPower, setPreviousVotingPower] = useState("0");
 
   const { isWeb3Enabled, chainId: chainIdHex, account } = useMoralis();
   const chainId = parseInt(chainIdHex, 16);
@@ -44,37 +47,6 @@ const DelegateComponent = () => {
     setEthAmount("");
   };
 
-  // const handleClaimTokens = async () => {
-  //   setLoading(true);
-  //   try {
-  //     const claimTokensOptions = {
-  //       abi: abiGovernanceToken,
-  //       contractAddress: governanceTokenAddress,
-  //       functionName: "claimTokens",
-  //       params: {},
-  //     };
-  //     const tx = await runContractFunction({
-  //       params: claimTokensOptions,
-  //       onSuccess: handleSuccessClaimTokens,
-  //       onError: handleErrorClaimTokens,
-  //     });
-  //     await tx.wait(1);
-  //   } catch (error) {
-  //     console.error("Error claiming tokens:", error);
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-  // const handleSuccessClaimTokens = () => {
-  //   setIsClaimed(true);
-  //   fetchVotingPower();
-  // };
-
-  // const handleErrorClaimTokens = (error) => {
-  //   console.error("Error claiming tokens:", error);
-  // };
-
   const handleDelegateToSelf = () => {
     setDelegateToSelf(true);
     setIsCustomAddressModalOpen(false);
@@ -95,13 +67,10 @@ const DelegateComponent = () => {
       return;
     }
 
-    // if (!isClaimed) {
-    //   await handleClaimTokens();
-    // }
-
     setLoading(true);
 
     const addressToDelegate = delegateToSelf ? account : customAddress;
+    console.log("Address to delegate:", addressToDelegate);
     const delegateOptions = {
       abi: abiGovernanceToken,
       contractAddress: governanceTokenAddress,
@@ -116,8 +85,10 @@ const DelegateComponent = () => {
         onError: handleError,
       });
       await tx.wait(1);
-      closeModal();
+      fetchTokenBalance();
       fetchVotingPower();
+      closeModal();
+      closeCustomAddressModal();
     } catch (error) {
       console.error("Error delegating voting power:", error);
     } finally {
@@ -127,8 +98,8 @@ const DelegateComponent = () => {
 
   const handleSuccess = async (tx) => {
     await tx.wait(1);
-    fetchVotingPower();
     setTokenBalance("0");
+    fetchVotingPower();
   };
 
   const handleError = (error) => {
@@ -145,8 +116,15 @@ const DelegateComponent = () => {
         params: { account },
       };
       const votes = await runContractFunction({ params: votingPowerOptions });
-      setVotingPower(votes.toString());
-      setIsClaimed(votes.toString() !== "0");
+      const newVotingPower = votes.toString();
+
+      // Calculate newly delegated tokens if there was a prior delegation
+      if (parseInt(previousVotingPower) < parseInt(newVotingPower)) {
+        setDelegatedBalance(newVotingPower); // Manually track delegated tokens
+      }
+      setVotingPower(newVotingPower);
+      setPreviousVotingPower(newVotingPower); // Update previous voting power
+      setIsClaimed(newVotingPower !== "0");
     } catch (error) {
       console.error("Error fetching voting power:", error);
     } finally {
@@ -176,7 +154,8 @@ const DelegateComponent = () => {
       };
       const balance = await runContractFunction({ params: tokenBalanceOptions });
       setTokenBalance(balance.toString());
-      // console.log("Token balance:", balance.toString());
+      console.log("Token balance:", balance.toString());
+      // console.log("Delegated Balance", delegatedBalance);
     } catch (error) {
       console.error("Error fetching token balance:", error);
     } finally {
@@ -222,6 +201,7 @@ const DelegateComponent = () => {
   useEffect(() => {
     if (isWeb3Enabled && account) {
       fetchDeployerBalance();
+      fetchTokenBalance();
       fetchVotingPower();
     }
   }, [account, chainId, isWeb3Enabled]);
@@ -248,9 +228,17 @@ const DelegateComponent = () => {
         <p className={styles.votingPowerText}>
           Total voting power: <span>{votingPower !== "0" ? votingPower : "-"}</span>
         </p>
-        <p className={styles.delegationStatus}>
-          {tokenBalance !== "0" ? `${tokenBalance} TT not delegated` : "0 TT delegated"}
-        </p>
+        {/* 
+        <p className={styles.tokenBalance}>
+          TRYF TOKENS: <span>{tokenBalance}</span>
+        </p> */}
+        {/* <p className={styles.delegationStatus}>
+          {parseInt(tokenBalance) > parseInt(delegatedBalance)
+            ? `${parseInt(tokenBalance) - parseInt(delegatedBalance)} TT not delegated`
+            : parseInt(tokenBalance) === 0
+            ? "0 TT not delegated"
+            : `${delegatedBalance} TT delegated`}
+        </p> */}
         <Button
           onClick={openModal}
           text="Delegate"
@@ -258,13 +246,6 @@ const DelegateComponent = () => {
           disabled={!isWeb3Enabled || !account || loading}
           style={{ margin: "auto" }}
         />
-        {/* <Button
-          onClick={fetchVotingPower}
-          text="Get Voting Power"
-          color="blue"
-          disabled={loading}
-          style={{ margin: "auto" }}
-        /> */}
       </div>
 
       {/* Delegate Voting Power Modal */}
@@ -281,8 +262,20 @@ const DelegateComponent = () => {
         <div className={styles.modalContent}>
           <p>Delegate voting power to:</p>
           <div className={styles.modalButtonGroup}>
-            <Button onClick={handleDelegateToSelf} text="Myself" theme="secondary" />
-            <Button onClick={handleDelegateToAddress} text="Custom Address" theme="secondary" />
+            <Button
+              onClick={handleDelegateToSelf}
+              text="Myself"
+              theme="secondary"
+              size="large"
+              style={{ margin: "auto" }}
+            />
+            <Button
+              onClick={handleDelegateToAddress}
+              text="Custom Address"
+              theme="secondary"
+              size="large"
+              style={{ margin: "auto", marginTop: "1rem" }}
+            />
           </div>
         </div>
       </Modal>
@@ -296,10 +289,12 @@ const DelegateComponent = () => {
         title="Enter Custom Address"
         okText="Confirm Address & Delegate"
         cancelText="Cancel"
+        style={{ zIndex: 2000 }}
       >
         <Input
           label="Custom Address"
           value={customAddress}
+          style={{ marginBottom: "1.5rem" }}
           onChange={(e) => setCustomAddress(e.target.value)}
           placeholder="Enter ETH address to delegate"
         />
@@ -311,7 +306,7 @@ const DelegateComponent = () => {
         onCancel={closeExchangeModal}
         onCloseButtonPressed={closeExchangeModal}
         onOk={handleExchangeTokens}
-        title="Exchange ETH for TryfTokens - TT "
+        title="Exchange ETH for TryfTokens - TT"
         okText="Confirm Exchange"
         cancelText="Cancel"
         style={{ zIndex: 2000 }}
@@ -320,6 +315,7 @@ const DelegateComponent = () => {
           label="ETH Amount"
           value={ethAmount}
           onChange={(e) => setEthAmount(e.target.value)}
+          style={{ marginBottom: "1.5rem" }}
           placeholder="Enter amount in ETH"
           type="number"
         />
@@ -327,4 +323,5 @@ const DelegateComponent = () => {
     </div>
   );
 };
+
 export default DelegateComponent;
