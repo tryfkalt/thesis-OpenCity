@@ -5,6 +5,8 @@ const {
   frontEndContractsHazard,
   frontEndAbiFileGovernanceToken,
   frontendContractsGovernanceToken,
+  // frontendAbiFileTokenExchange,
+  // frontendContractsTokenExchange,
 } = require("../helper-hardhat-config");
 const fs = require("fs");
 const { network, ethers } = require("hardhat");
@@ -39,6 +41,13 @@ async function updateAbi() {
     governanceToken.interface.format(ethers.utils.FormatTypes.json)
   );
 
+  // // Update ABI for TokenExchange contract
+  // const tokenExchange = await ethers.getContract("TokenExchange");
+  // fs.writeFileSync(
+  //   frontendAbiFileTokenExchange,
+  //   tokenExchange.interface.format(ethers.utils.FormatTypes.json)
+  // );
+
   console.log("ABIs updated in front end.");
 }
 
@@ -46,6 +55,7 @@ async function updateContractAddresses() {
   const governor = await ethers.getContract("GovernorContract");
   const hazardProposal = await ethers.getContract("HazardProposal");
   const governanceToken = await ethers.getContract("GovernanceToken");
+  // const tokenExchange = await ethers.getContract("TokenExchange");
 
   // Load the existing contract addresses JSON files
   const governorAddresses = JSON.parse(fs.readFileSync(frontEndContractsGovernor, "utf8"));
@@ -53,6 +63,9 @@ async function updateContractAddresses() {
   const governanceTokenAddresses = JSON.parse(
     fs.readFileSync(frontendContractsGovernanceToken, "utf8")
   );
+  // const tokenExchangeAddresses = JSON.parse(
+  //   fs.readFileSync(frontendContractsTokenExchange, "utf8")
+  // );
   const chainId = network.config.chainId.toString();
 
   // Update the address for the Governor contract
@@ -82,6 +95,15 @@ async function updateContractAddresses() {
     governanceTokenAddresses[chainId] = [governanceToken.address];
   }
 
+  // // Update the address for the TokenExchange contract
+  // if (chainId in tokenExchangeAddresses) {
+  //   if (!tokenExchangeAddresses[chainId].includes(tokenExchange.address)) {
+  //     tokenExchangeAddresses[chainId] = tokenExchange.address;
+  //   }
+  // } else {
+  //   tokenExchangeAddresses[chainId] = [tokenExchange.address];
+  // }
+
   // Write the updated addresses back to the files
   fs.writeFileSync(frontEndContractsGovernor, JSON.stringify(governorAddresses, null, 2));
   fs.writeFileSync(frontEndContractsHazard, JSON.stringify(hazardAddresses, null, 2));
@@ -89,6 +111,7 @@ async function updateContractAddresses() {
     frontendContractsGovernanceToken,
     JSON.stringify(governanceTokenAddresses, null, 2)
   );
+  // fs.writeFileSync(frontendContractsTokenExchange, JSON.stringify(tokenExchangeAddresses, null, 2));
   console.log("Contract addresses updated in front end.");
 }
 
