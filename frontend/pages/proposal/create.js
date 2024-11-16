@@ -14,8 +14,8 @@ const CreateProposalPage = () => {
   const { isWeb3Enabled, chainId } = useMoralis();
   const [proposals, setProposals] = useState([]);
   const [selectedCoords, setSelectedCoords] = useState({ lat: lat ?? 51.505, lng: lng ?? -0.09 });
-  const [isStatic, setIsStatic] = useState(true); // Start with true
-
+  const [isStatic, setIsStatic] = useState(true);
+  const [proposalThreshold, setProposalThreshold] = useState("0");
   // Set isStatic to false after the initial render
   useEffect(() => {
     if (isStatic) {
