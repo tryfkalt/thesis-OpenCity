@@ -3,6 +3,8 @@ import Link from "next/link";
 import styles from "../styles/Header.module.css";
 import { useState, useEffect } from "react";
 import axios from "axios";
+import { useMoralis } from "react-moralis";
+import { contractAddressesGovernor, contractAddressesGovernanceToken } from "../constants";
 
 export default function Header() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -10,6 +12,16 @@ export default function Header() {
   const [governanceSettings, setGovernanceSettings] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [copiedIcon, setCopiedIcon] = useState({});
+
+  const { chainId: chainIdHex } = useMoralis();
+  const chainId = parseInt(chainIdHex, 16);
+  const governorAddress =
+    chainId in contractAddressesGovernor ? contractAddressesGovernor[chainId][0] : null;
+  const governanceTokenAddress =
+    chainId in contractAddressesGovernanceToken
+      ? contractAddressesGovernanceToken[chainId][0]
+      : null;
 
   const toggleDropdown = () => {
     setIsDropdownOpen(!isDropdownOpen);
@@ -17,13 +29,13 @@ export default function Header() {
 
   const openModal = async () => {
     setIsModalOpen(true);
-    setIsDropdownOpen(false); // Close dropdown when opening modal
+    setIsDropdownOpen(false);
     await fetchGovernorSettings();
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setGovernanceSettings(null); // Clear settings on close
+    setGovernanceSettings(null);
   };
 
   const fetchGovernorSettings = async () => {
@@ -32,18 +44,26 @@ export default function Header() {
 
     try {
       const response = await axios.get("http://localhost:5000/api/settings");
-      console.log(response);
-      if (!response.ok) {
-        throw new Error("Failed to fetch governance settings");
-      }
-
-      const data = await response.json();
+      const data = await response.data;
       setGovernanceSettings(data);
     } catch (err) {
       setError(err.message);
     } finally {
       setLoading(false);
     }
+  };
+
+  // Function to handle copy and icon state
+  const handleCopy = (key, text) => {
+    navigator.clipboard.writeText(text);
+
+    // Set icon to "copied.png" for the specific key
+    setCopiedIcon((prevState) => ({ ...prevState, [key]: true }));
+
+    // Revert icon back to "copy.png" after 2 seconds
+    setTimeout(() => {
+      setCopiedIcon((prevState) => ({ ...prevState, [key]: false }));
+    }, 2000);
   };
 
   return (
@@ -66,8 +86,6 @@ export default function Header() {
         <Link href="/proposals" passHref>
           <a className={styles.link}>Proposals</a>
         </Link>
-
-        {/* Dropdown Menu */}
         <div className={styles.moreDropdown}>
           <button className={styles.moreButton} onClick={toggleDropdown}>
             More
@@ -93,7 +111,7 @@ export default function Header() {
             <button className={styles.closeButton} onClick={closeModal}>
               &times;
             </button>
-            <h2>Contracts and Parameters</h2>
+            <h2 className={styles.h2Title}>Contracts and Parameters</h2>
 
             {loading ? (
               <p>Loading...</p>
@@ -101,25 +119,98 @@ export default function Header() {
               <p className={styles.error}>{error}</p>
             ) : governanceSettings ? (
               <div className={styles.parameters}>
-                <p>
-                  <strong>Proposal Threshold:</strong> {governanceSettings.proposalThreshold}
-                </p>
-                <p>
-                  <strong>Quorum Needed:</strong> {governanceSettings.quorum}
-                </p>
-                <p>
-                  <strong>Proposal Delay:</strong> {governanceSettings.proposalDelay}
-                </p>
-                <p>
-                  <strong>Voting Period:</strong> {governanceSettings.votingPeriod}
-                </p>
-                <h3>Token Details</h3>
-                <p>
-                  <strong>Token Name:</strong> {governanceSettings.tokenName}
-                </p>
-                <p>
-                  <strong>Token Symbol:</strong> {governanceSettings.tokenSymbol}
-                </p>
+                <div className={styles.parametersBox}>
+                  <h3>Parameters</h3>
+                  <div className={styles.parameterRow}>
+                    <p>
+                      <strong>Proposal Threshold:</strong>
+                    </p>
+                    <p>{governanceSettings.proposalThreshold} TT</p>
+                  </div>
+                  <div className={styles.parameterRow}>
+                    <p>
+                      <strong>Quorum Needed:</strong>
+                    </p>
+                    <p>{governanceSettings.quorumPercentage}% to pass vote</p>
+                  </div>
+                  <div className={styles.parameterRow}>
+                    <p>
+                      <strong>Proposal Delay:</strong>
+                    </p>
+                    <p>{governanceSettings.votingDelay} blocks</p>
+                  </div>
+                  <div className={styles.parameterRow}>
+                    <p>
+                      <strong>Voting Period:</strong>
+                    </p>
+                    <p>{governanceSettings.votingPeriod} blocks</p>
+                  </div>
+                </div>
+
+                <div>
+                  <h3>Contracts</h3>
+                  {/* Governor Contract Row */}
+                  <div className={styles.contractRow}>
+                    <p>
+                      <strong>Governor Contract:</strong> {governorAddress}
+                    </p>
+                    <div className={styles.iconContainer}>
+                      <img
+                        src={copiedIcon["governor"] ? "copied.png" : "copy.png"}
+                        alt="Copy Governor Address"
+                        className={`${styles.copyIcon} ${
+                          copiedIcon["governor"] ? styles.animate : ""
+                        }`}
+                        onClick={() => handleCopy("governor", governorAddress)}
+                      />
+                      <span className={styles.tooltipCopy}>
+                        {copiedIcon["governor"] ? "Address Copied!" : "Copy to Clipboard"}
+                      </span>
+                    </div>
+                    <div className={styles.iconContainer}>
+                      <a
+                        className={styles.redirectButton}
+                        href={`https://etherscan.io/address/${governanceTokenAddress}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <img src="etherscan.png" alt="Etherscan" className={styles.etherscanIcon} />
+                      </a>
+                      <span className={styles.tooltipEther}>View on Etherscan</span>
+                    </div>
+                  </div>
+
+                  {/* GovernanceToken Contract Row */}
+                  <div className={styles.contractRow}>
+                    <p>
+                      <strong>GovernanceToken Contract:</strong> {governanceTokenAddress}
+                    </p>
+                    <div className={styles.iconContainer}>
+                      <img
+                        src={copiedIcon["token"] ? "copied.png" : "copy.png"}
+                        alt="Copy Token Address"
+                        className={`${styles.copyIcon} ${
+                          copiedIcon["token"] ? styles.animate : ""
+                        }`}
+                        onClick={() => handleCopy("token", governanceTokenAddress)}
+                      />
+                      <span className={styles.tooltipCopy}>
+                        {copiedIcon["token"] ? "Address Copied!" : "Copy to Clipboard"}
+                      </span>
+                    </div>
+                    <div className={styles.iconContainer}>
+                      <a
+                        className={styles.redirectButton}
+                        href={`https://etherscan.io/address/${governanceTokenAddress}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <img src="etherscan.png" alt="Etherscan" className={styles.etherscanIcon} />
+                      </a>
+                      <span className={styles.tooltipEther}>View on Etherscan</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : (
               <p>No data available</p>
