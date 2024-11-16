@@ -1,13 +1,14 @@
 import { ConnectButton } from "web3uikit";
 import Link from "next/link";
 import styles from "../styles/Header.module.css";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useMoralis } from "react-moralis";
 import { contractAddressesGovernor, contractAddressesGovernanceToken } from "../constants";
 
 export default function Header() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [governanceSettings, setGovernanceSettings] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -24,7 +25,13 @@ export default function Header() {
       : null;
 
   const toggleDropdown = () => {
-    setIsDropdownOpen(!isDropdownOpen);
+    setIsDropdownOpen((prev) => !prev);
+  };
+
+  const handleClickOutside = (event) => {
+    if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+      setIsDropdownOpen(false);
+    }
   };
 
   const openModal = async () => {
@@ -66,6 +73,13 @@ export default function Header() {
     }, 2000);
   };
 
+  useEffect(() => {
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   return (
     <nav className={styles.navbar}>
       <div className={styles.title}>
@@ -86,17 +100,15 @@ export default function Header() {
         <Link href="/proposals" passHref>
           <a className={styles.link}>Proposals</a>
         </Link>
-        <div className={styles.moreDropdown}>
+        <div className={styles.moreDropdown} ref={dropdownRef}>
           <button className={styles.moreButton} onClick={toggleDropdown}>
             More
           </button>
-          {isDropdownOpen && (
-            <div className={styles.dropdownContent}>
-              <button className={styles.dropdownItem} onClick={openModal}>
-                Contracts and Parameters
-              </button>
-            </div>
-          )}
+          <div className={`${styles.dropdownContent} ${isDropdownOpen ? styles.open : ""}`}>
+            <button className={styles.dropdownItem} onClick={openModal}>
+              Contracts and Parameters
+            </button>
+          </div>
         </div>
       </div>
 

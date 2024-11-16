@@ -22,7 +22,6 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
   const { isWeb3Enabled, chainId: chainIdHex, account } = useMoralis();
   const chainId = parseInt(chainIdHex, 16);
 
-  console.log("Chain ID:", chainId);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
