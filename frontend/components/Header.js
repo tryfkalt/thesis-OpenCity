@@ -168,7 +168,7 @@ export default function Header() {
                     </p>
                     <div className={styles.iconContainer}>
                       <img
-                        src={copiedIcon["governor"] ? "copied.png" : "copy.png"}
+                        src={copiedIcon["governor"] ? "/copied.png" : "/copy.png"}
                         alt="Copy Governor Address"
                         className={`${styles.copyIcon} ${
                           copiedIcon["governor"] ? styles.animate : ""
@@ -186,7 +186,7 @@ export default function Header() {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <img src="etherscan.png" alt="Etherscan" className={styles.etherscanIcon} />
+                        <img src="/etherscan.png" alt="Etherscan" className={styles.etherscanIcon} />
                       </a>
                       <span className={styles.tooltipEther}>View on Etherscan</span>
                     </div>
@@ -199,7 +199,7 @@ export default function Header() {
                     </p>
                     <div className={styles.iconContainer}>
                       <img
-                        src={copiedIcon["token"] ? "copied.png" : "copy.png"}
+                        src={copiedIcon["token"] ? "/copied.png" : "/copy.png"}
                         alt="Copy Token Address"
                         className={`${styles.copyIcon} ${
                           copiedIcon["token"] ? styles.animate : ""
@@ -217,7 +217,7 @@ export default function Header() {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <img src="etherscan.png" alt="Etherscan" className={styles.etherscanIcon} />
+                        <img src="/etherscan.png" alt="Etherscan" className={styles.etherscanIcon} />
                       </a>
                       <span className={styles.tooltipEther}>View on Etherscan</span>
                     </div>
