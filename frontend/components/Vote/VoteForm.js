@@ -58,7 +58,15 @@ const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
       });
       return;
     }
-
+    if (voterPower === "0" || voterPower === null) {
+      dispatch({
+        type: "error",
+        message: "You have zero voting power and cannot vote on this proposal.",
+        title: "No Voting Power",
+        position: "topR",
+      });
+      return;
+    }
     if (vote === null) {
       dispatch({
         type: "error",
@@ -193,9 +201,10 @@ const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
   };
   const handleError = (error) => {
     console.error("Error voting on proposal:", error);
+    const errorMessage = error?.message || "An unknown error occurred while voting.";
     dispatch({
       type: "error",
-      message: error?.message || "An unknown error occurred while voting.",
+      message: errorMessage || "An unknown error occurred while voting.",
       title: "Vote Failed",
       position: "topR",
     });
@@ -321,6 +330,7 @@ const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
               padding: "12px",
               fontSize: "14px",
             }}
+            validation={{ required: true }}
           />
         </>
       ) : (
