@@ -68,23 +68,3 @@ type VoteCast @entity(immutable: true) {
   blockTimestamp: BigInt!
   transactionHash: Bytes!
 }
-type HazardAdded @entity(immutable: true) {
-  id: Bytes!
-  hazardId: BigInt! # uint256
-  title: String! # string
-  description: String! # string
-  latitude: BigInt! # int256
-  longitude: BigInt! # int256
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}
-
-type OwnershipTransferred @entity(immutable: true) {
-  id: Bytes!
-  previousOwner: Bytes! # address
-  newOwner: Bytes! # address
-  blockNumber: BigInt!
-  blockTimestamp: BigInt!
-  transactionHash: Bytes!
-}

@@ -16,8 +16,6 @@ import {
   TimelockChange,
   VoteCast
 } from "../generated/schema"
-import { Bytes, Address } from "@graphprotocol/graph-ts";
-
 
 export function handleProposalCanceled(event: ProposalCanceledEvent): void {
   let entity = new ProposalCanceled(
@@ -38,7 +36,7 @@ export function handleProposalCreated(event: ProposalCreatedEvent): void {
   )
   entity.proposalId = event.params.proposalId
   entity.proposer = event.params.proposer
-  entity.targets = event.params.targets.map<Bytes>(target => target as Bytes)
+  entity.targets = event.params.targets
   entity.values = event.params.values
   entity.signatures = event.params.signatures
   entity.calldatas = event.params.calldatas

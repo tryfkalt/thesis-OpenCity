@@ -20,7 +20,7 @@ const deployGovernorContract: DeployFunction = async function (hre: HardhatRunti
     });
     log("GovernorContract deployed to: " + governorContract.address);
     if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
-        await verify(governorContract.address, [governanceToken.address, timeLock.address, QUORUM_PERCENTAGE, VOTING_PERIOD, VOTING_DELAY], "contracts/governance_standard/GovernorContract.sol:GovernorContract");
+        await verify(governorContract.address, [governanceToken.address, timeLock.address, QUORUM_PERCENTAGE, VOTING_PERIOD, VOTING_DELAY, PROPOSAL_THRESHOLD], "contracts/governance_standard/GovernorContract.sol:GovernorContract");
     };
 }
 

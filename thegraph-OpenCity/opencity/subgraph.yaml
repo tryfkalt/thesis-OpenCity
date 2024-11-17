@@ -8,9 +8,9 @@ dataSources:
     name: GovernorContract
     network: sepolia
     source:
-      address: "0x4D4d07C37F6Fb33BD290B712A63b75fd6a3FB356"
+      address: "0xF7e52cef9861E41866426ACc90928e0A55D2ba44"
       abi: GovernorContract
-      startBlock: 6852555
+      startBlock: 7097094
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7
@@ -42,26 +42,3 @@ dataSources:
         - event: VoteCast(indexed address,uint256,uint8,uint256,string)
           handler: handleVoteCast
       file: ./src/governor-contract.ts
-  - kind: ethereum
-    name: HazardProposal
-    network: sepolia
-    source:
-      address: "0x3E449d6b795B44f647bA9e641c6092A29d5D9734"
-      abi: HazardProposal
-      startBlock: 6857437
-    mapping:
-      kind: ethereum/events
-      apiVersion: 0.0.7
-      language: wasm/assemblyscript
-      entities:
-        - HazardAdded
-        - OwnershipTransferred
-      abis:
-        - name: HazardProposal
-          file: ./abis/HazardProposal.json
-      eventHandlers:
-        - event: HazardAdded(uint256,string,string,int256,int256)
-          handler: handleHazardAdded
-        - event: OwnershipTransferred(indexed address,indexed address)
-          handler: handleOwnershipTransferred
-      file: ./src/hazard-proposal.ts
