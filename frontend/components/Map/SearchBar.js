@@ -1,18 +1,9 @@
 import React, { useEffect, useRef } from "react";
 import { useMap } from "react-leaflet";
-import * as L from "leaflet";
 import MapboxGeocoder from "@mapbox/mapbox-gl-geocoder";
 import mapboxgl from "mapbox-gl";
 import "leaflet/dist/leaflet.css";
 import "@mapbox/mapbox-gl-geocoder/dist/mapbox-gl-geocoder.css";
-
-// // Define custom marker icon for Leaflet
-// const defaultMarkerIcon = new L.Icon({
-//   iconUrl: "/Default.png",
-//   iconSize: [50, 50],
-//   iconAnchor: [25, 50],
-//   popupAnchor: [0, -50],
-// });
 
 const SearchBar = ({ onSearchResult }) => {
   const map = useMap();
@@ -34,10 +25,6 @@ const SearchBar = ({ onSearchResult }) => {
       map.setView([center[1], center[0]], 13);
 
       onSearchResult({ lat: center[1], lng: center[0], place_name });
-      // L.marker([center[1], center[0]], { icon: defaultMarkerIcon })
-      //   .addTo(map)
-      //   .bindPopup(place_name)
-      //   .openPopup();
     });
 
     geocoderContainerRef.current.appendChild(geocoder.onAdd(map));

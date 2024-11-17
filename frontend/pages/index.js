@@ -8,12 +8,12 @@ import ProposalsTable from "../components/Proposal/ProposalsTable";
 import DelegateComponent from "../components/Delegate";
 import { abiGovernanceToken, contractAddressesGovernanceToken } from "../constants";
 const supportedChains = ["31337", "11155111"];
+import {Radios} from "web3uikit"
 
 export default function Home() {
   const { isWeb3Enabled, chainId: chainIdHex, account } = useMoralis();
   const chainId = parseInt(chainIdHex, 16);
 
-  const [proposals, setProposals] = useState([]);
   const [selectedCoords, setSelectedCoords] = useState({ lat: "", lng: "" });
   const [totalSupply, setTotalSupply] = useState(null);
 
@@ -42,10 +42,6 @@ export default function Home() {
     fetchTotalSupply();
   }, [isWeb3Enabled, chainId]);
 
-  const handleProposalSubmit = (proposalData) => {
-    setProposals([...proposals, proposalData]);
-    console.log("Proposals", proposals);
-  };
 
   return (
     <div className={styles.container}>
@@ -86,7 +82,7 @@ export default function Home() {
       ) : (
         <div>Please connect to a Wallet</div>
       )}
-      <footer className={styles.footer}>© 2024 Open World. All rights reserved.</footer>
+      <footer className={styles.footer}>© 2024 OpenCity. All rights reserved.</footer>
     </div>
   );
 }

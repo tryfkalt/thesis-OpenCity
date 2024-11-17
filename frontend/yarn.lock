@@ -8886,7 +8886,7 @@ web3-utils@1.5.2:
 
 web3uikit@^1.0.4:
   version "1.0.4"
-  resolved "https://registry.npmjs.org/web3uikit/-/web3uikit-1.0.4.tgz"
+  resolved "https://registry.yarnpkg.com/web3uikit/-/web3uikit-1.0.4.tgz#2e04dc4e1f390da41ce554e83438fc1d19780ef0"
   integrity sha512-tN9fMmQ68gKIkd1Wt0nXxxfvqwKbVBcJZuDtIWzHDsSqbryU7BpTEjYrd4UCo5KWCVNGacujCxn9JknP15lwRQ==
   dependencies:
     "@web3uikit/config" "*"

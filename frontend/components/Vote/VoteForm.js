@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import { useMoralis, useWeb3Contract } from "react-moralis";
-import { useNotification, Radios, Input, Button } from "web3uikit";
+import { useNotification, Radios, Input, Button, TextArea } from "web3uikit";
 import {
   abiGovernor,
   contractAddressesGovernor,
   contractAddressesGovernanceToken,
   abiGovernanceToken,
 } from "../../constants";
+import styles from "../../styles/VoteForm.module.css";
 
 const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
   const router = useRouter();
@@ -104,11 +105,9 @@ const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
     }
   }, [vote, proposalId, isWeb3Enabled, governorAddress, reason]);
 
-
-
   const handleSuccess = async (tx) => {
     await tx.wait(1);
-    console.log("i came here! 1")
+    console.log("i came here! 1");
     const proposalVotesOptions = {
       abi: abiGovernor,
       contractAddress: governorAddress,
@@ -149,7 +148,7 @@ const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
       };
       const snapshotBlock = await runContractFunction({ params: snapshotOptions });
       setSnapshotBlock(snapshotBlock);
-      console.log("Proposal snapshot block:", snapshotBlock);
+      console.log("Proposal snapshot block:", snapshotBlock.toString());
 
       // Get voter power at snapshot block
       const voterPowerOptions = {
@@ -270,34 +269,62 @@ const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
   }, [onVoteSubmit, voteProposal]); // Run only when onVoteSubmit is available
 
   return (
-    <div>
-      <h3>Cast your vote</h3>
-      <p>Voting power at snapshot: {voterPower ? voterPower : "Loading..."}</p>
-      <Button onClick={handleGetVotes} text="Get Voting Power" />
-      {/* Disable voting if the user is the proposer */}
-      {isProposer ? (
-        <p>You cannot vote on your own proposal.</p>
-      ) : (
+    <div className={styles.voteForm}>
+      <h3 className={styles.voteFormHeader}>Cast your vote</h3>
+      <p className={styles.voteFormPower}>
+        Voting power at snapshot: {voterPower || "Loading..."} TT
+      </p>
+      <div style={{ display: "flex", justifyContent: "center" }}>
+        <Button
+          onClick={handleGetVotes}
+          text="Get Voting Power"
+          theme="secondary"
+          style={{
+            padding: "10px 15px",
+            fontSize: "14px",
+            marginBottom: "24px",
+            marginLeft: "20px",
+            color: "#fff",
+            backgroundColor: "#68738d",
+            border: "none",
+            cursor: "pointer",
+            borderRadius: "8px",
+            boxShadow: "0px 2px 5px rgba(0, 0, 0, 0.2)",
+            transition: "background-color 0.3s ease",
+          }}
+          onMouseOver={(e) => (e.target.style.backgroundColor = "#5a6278")}
+          onMouseOut={(e) => (e.target.style.backgroundColor = "#68738d")}
+          onMouseDown={(e) => (e.target.style.backgroundColor = "#4e5568")}
+          onMouseUp={(e) => (e.target.style.backgroundColor = "#5a6278")}
+        />
+      </div>
+      {!isProposer ? (
         <>
-          <Radios
-            id="radios"
-            items={["No", "Yes", "Abstain"]}
-            onChange={handleVoteChange}
-            title="Do you agree with this proposal?"
-          />
-          <Input
+          <div className={styles.voteFormRadios}>
+            <Radios
+              id="radios"
+              items={["No", "Yes", "Abstain"]}
+              onChange={handleVoteChange}
+              title="Do you agree with this proposal?"
+            />
+          </div>
+
+          <TextArea
             label="State your reason"
             value={reason}
             onChange={handleReasonChange}
             placeholder="Explain why you are voting this way..."
-            textarea
+            width="100%"
+            style={{
+              width: "100%",
+              height: "50px",
+              padding: "12px",
+              fontSize: "14px",
+            }}
           />
-          {/* <Button
-            onClick={voteProposal}
-            text={isVoting ? "Submitting..." : "Submit Vote"}
-            disabled={isVoting}
-          /> */}
         </>
+      ) : (
+        <p className={styles.voteFormError}>You cannot vote on your own proposal.</p>
       )}
     </div>
   );

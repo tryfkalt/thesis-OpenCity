@@ -7,6 +7,8 @@ import {
   contractAddressesHazard,
   abiGovernor,
   contractAddressesGovernor,
+  abiGovernanceToken,
+  contractAddressesGovernanceToken,
 } from "../../constants";
 import { useNotification, Form } from "web3uikit";
 import axios from "axios";
@@ -26,16 +28,57 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
   const [description, setDescription] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [canPropose, setCanPropose] = useState(false);
+  const [proposalThreshold, setProposalThreshold] = useState(null);
 
   const governorAddress =
     chainId in contractAddressesGovernor ? contractAddressesGovernor[chainId][0] : null;
+  const governanceTokenAddress =
+    chainId in contractAddressesGovernanceToken
+      ? contractAddressesGovernanceToken[chainId][0]
+      : null;
   const hazardAddress =
     chainId in contractAddressesHazard ? contractAddressesHazard[chainId][0] : null;
 
   const dispatch = useNotification();
   const { runContractFunction } = useWeb3Contract();
 
+  async function checkProposalEligibility() {
+    try {
+      const thresholdOptions = {
+        abi: abiGovernor,
+        contractAddress: governorAddress,
+        functionName: "proposalThreshold",
+      };
+      const votingPowerOptions = {
+        abi: abiGovernanceToken,
+        contractAddress: governanceTokenAddress,
+        functionName: "getVotes",
+        params: { account },
+      };
+
+      const [threshold, votingPower] = await Promise.all([
+        runContractFunction({ params: thresholdOptions }),
+        runContractFunction({ params: votingPowerOptions }),
+      ]);
+      console.log("Proposal Threshold:", threshold.toString());
+      console.log("Voting Power:", votingPower.toString());
+      setProposalThreshold(threshold);
+      setCanPropose(ethers.BigNumber.from(votingPower).gte(threshold));
+    } catch (error) {
+      console.error("Error checking proposal eligibility:", error);
+    }
+  }
   async function createProposal(data) {
+    if (!canPropose) {
+      dispatch({
+        type: "error",
+        message: "Proposal threshold not met. Voting power must be greater than threshold.",
+        title: "Transaction Notification",
+        position: "topR",
+      });
+      return;
+    }
     try {
       setLoading(true);
       setMessage("");
@@ -102,7 +145,6 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
         message: "Proposal submitted successfully!",
         title: "Transaction Notification",
         position: "topR",
-        icon: "bell",
       });
 
       setTitle("");
@@ -154,8 +196,8 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
       const quorumValue = await runContractFunction({ params: quorumOptions });
 
       console.log("Proposal State:", proposalState);
-      console.log("Proposal Snapshot (Block Number):", proposalSnapshot);
-      console.log("Proposal Deadline (Block Number):", proposalDeadline);
+      console.log("Proposal Snapshot (Block Number):", proposalSnapshot.toString());
+      console.log("Proposal Deadline (Block Number):", proposalDeadline.toString());
       console.log("Quorum required:", quorumValue);
     } catch (error) {
       console.error("Error fetching proposal details:", error);
@@ -192,6 +234,11 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
       console.log("Web3 is not enabled.");
     }
   }
+  useEffect(() => {
+    if (isWeb3Enabled && account && governorAddress) {
+      checkProposalEligibility();
+    }
+  }, [isWeb3Enabled, account, governorAddress]);
 
   useEffect(() => {
     if (isWeb3Enabled) updateUI();
@@ -230,10 +277,12 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
         ]}
         title="Create Proposal"
         disabled={loading}
-        buttonConfig={{ isLoading: loading,
-          loadingText: 'Submitting',
-          text: 'Submit',
-          theme: 'primary' }}
+        buttonConfig={{
+          isLoading: loading,
+          loadingText: "Submitting",
+          text: "Submit",
+          theme: "primary",
+        }}
       />
       {loading && <p>Submitting proposal...</p>}
       {message && <p>{message}</p>}
