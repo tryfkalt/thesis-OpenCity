@@ -277,6 +277,8 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
                   <p>Proposal not successful.</p>
                 ) : marker.status === "Succeeded" ? (
                   <p>Proposal successful, waiting to queue.</p>
+                ) : marker.status === "Executed" ? (
+                  <p>Proposal executed.</p>
                 ) : account === marker.proposer ? (
                   <p>You cannot vote on your own proposal.</p>
                 ) : (
@@ -311,6 +313,20 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
         title="Vote On Proposal"
         okText="Submit"
         onOk={handleVoteSubmit}
+        style={{
+          // display: "flex",
+          // flexDirection: "column",
+
+          width: "470px", // Set modal width
+          maxWidth: "90vw", // Ensure responsiveness
+          padding: "730px", // Internal spacing
+          borderRadius: "12px", // Rounded corners
+          margin: "auto", // Center modal
+          // backgroundColor: "#fff", // Background color
+          boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+          fontFamily: "Montserrat, sans-serif",
+          zIndex: "1000",
+        }}
       >
         {selectedProposal && (
           <>

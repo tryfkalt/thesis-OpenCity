@@ -23,7 +23,6 @@ const ProposalsPage = () => {
       try {
         const metadataResponse = await axios.get("http://localhost:5000/proposals");
         const metadata = metadataResponse.data;
-
         const proposalDetails = await Promise.all(
           metadata.map(async (proposal) => {
             const ipfsResponse = await axios.get(

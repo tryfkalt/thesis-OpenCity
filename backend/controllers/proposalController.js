@@ -3,6 +3,7 @@ const path = require("path");
 const { network, ethers } = require("hardhat");
 const { pinJSONToIPFS } = require("../pinataClient");
 const axios = require("axios");
+const { developmentChains } = require("../helper-hardhat-config");
 
 const createProposal = async (req, res) => {
   console.log("Request body received:", req.body);
@@ -19,9 +20,9 @@ const createProposal = async (req, res) => {
       lng,
     },
     proposalId,
-    proposer
+    proposer,
   };
-  
+
   // Define the file path for saving proposals
   const proposalsDataPath = path.join(__dirname, "../data/proposalData.json");
 
@@ -84,7 +85,7 @@ const getProposalData = async (req, res) => {
   const chainId = network.config.chainId.toString();
 
   // Find the proposal entry by proposalId
-  const proposal = proposalsData[chainId].find((entry) => entry.proposalId === proposalId);
+  const proposal = proposalsData[chainId]?.find((entry) => entry.proposalId === proposalId);
 
   if (!proposal || !proposal.ipfsHash) {
     return res.status(404).json({ error: "Proposal not found or IPFS hash missing." });
@@ -115,5 +116,6 @@ const getProposals = async (req, res) => {
 
   return res.status(200).json(chainProposals);
 };
+
 
 module.exports = { createProposal, getProposalData, getProposals };

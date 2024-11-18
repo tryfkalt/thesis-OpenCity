@@ -1,4 +1,5 @@
-import React from 'react';
+import React from "react";
+import styles from "../../styles/VoteForm.module.css";
 
 const VoteDetails = ({ proposalDetails }) => {
   if (!proposalDetails) {
@@ -7,8 +8,11 @@ const VoteDetails = ({ proposalDetails }) => {
 
   return (
     <div>
-      <h3>{proposalDetails.title}</h3>
-      <p>{proposalDetails.description}</p>
+      <h3
+        className={styles.voteModalTitle}
+      >
+        {proposalDetails.title}
+      </h3>
     </div>
   );
 };

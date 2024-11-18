@@ -1,7 +1,6 @@
 /* ProposalsTable.module.css */
-.container {  
-  width: 100rem;
-  padding: 20px;
+.container { 
+  padding: 1rem 2rem;
   background-color: #fff;
   border-radius: 8px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);

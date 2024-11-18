@@ -34,7 +34,7 @@ export async function vote(proposalId: string, voteWay: number, reason: string) 
   console.log(`Voter ${voter} has ${voterPower.toString()} votes at block ${proposalSnapshot}.`);
 
   // Debug: Check the total token supply at the snapshot block
-  const tokenContract = await ethers.getContract("GovernanceToken"); // Assuming TryfToken is your governance token contract
+  const tokenContract = await ethers.getContract("GovernanceToken"); 
   const totalSupply = await tokenContract.getPastTotalSupply(proposalSnapshot);
   console.log(`Total token supply at block ${proposalSnapshot}: ${totalSupply.toString()}`);
 

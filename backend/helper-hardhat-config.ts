@@ -45,9 +45,12 @@ export const frontEndAbiFileGovernor = "../frontend/constants/abiGovernor.json"
 export const frontEndAbiFileHazardProposal = "../frontend/constants/abiHazardProposal.json"
 export const frontEndAbiFileGovernanceToken = "../frontend/constants/abiGovernanceToken.json"
 export const frontendContractsGovernanceToken = "../frontend/constants/contractAddressesGovernanceToken.json"
+export const frontendContractsTokenExchange = "../frontend/constants/contractAddressesTokenExchange.json"
+export const frontendAbiFileTokenExchange = "../frontend/constants/abiTokenExchange.json"
 
 // Governor Values
 export const QUORUM_PERCENTAGE = 4; // Need 4% of voters to pass
+export const PROPOSAL_THRESHOLD = 1; // 1% of total supply
 export const MIN_DELAY = 3600; // 1 hour - after a vote passes, you have 1 hour before you can enact
 export const VOTING_PERIOD = 10; // blocks
 export const VOTING_DELAY = 1; // 1 Block - How many blocks till a proposal vote becomes active
