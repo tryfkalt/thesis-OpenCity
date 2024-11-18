@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { useMoralis, useWeb3Contract } from "react-moralis";
+import { useQuery, gql } from "@apollo/client";
 import axios from "axios";
 import {
   abiGovernor,
@@ -14,6 +15,7 @@ import QueueProposal from "../../components/Queue-Execute/QueueProposal";
 import ExecuteProposal from "../../components/Queue-Execute/ExecuteProposal";
 import { Button } from "web3uikit";
 import styles from "../../styles/Proposal.module.css";
+import { GET_PROPOSAL_BY_ID } from "../../constants/subgraphQueries";
 
 const ProposalDetails = () => {
   const { query } = useRouter();
@@ -31,58 +33,96 @@ const ProposalDetails = () => {
   const [votes, setVotes] = useState({ for: 0, against: 0, abstain: 0 });
   const [majoritySupport, setMajoritySupport] = useState("");
   const [participationRate, setParticipationRate] = useState(0);
-
+  console.log("proposalId", proposalId);
   const { runContractFunction } = useWeb3Contract();
 
+  const {
+    loading,
+    error,
+    data: proposalFromGraph,
+  } = useQuery(GET_PROPOSAL_BY_ID, {
+    variables: { proposalId: proposalId },
+  });
+
+  // console.log(proposalFromGraph);
   useEffect(() => {
-    if (isWeb3Enabled && proposalId) {
-      fetchProposalDetails(proposalId);
-    }
-  }, [isWeb3Enabled, proposalId]);
+    if (isWeb3Enabled && proposalId && proposalFromGraph) {
+      const fetchProposalDetails = async () => {
+        try {
+          console.log("ProposalsGraph:", proposalFromGraph);
 
-  const fetchProposalDetails = async (id) => {
-    try {
-      const response = await axios.get(`http://localhost:5000/proposals/${id}`);
-      setProposal(response.data);
-      setSelectedCoords(response.data.coordinates);
+          // Extract IPFS hash from description
+          const extractIpfsHash = (description) => {
+            const parts = description.split("#");
+            return parts.length > 1 ? parts[1] : null;
+          };
+          const ipfsHash = extractIpfsHash(proposalFromGraph.proposalCreateds[0]?.description); // Access the first proposal
+          if (!ipfsHash) {
+            console.error("No IPFS hash found in the proposal description.");
+            return;
+          }
 
-      const governorAddress = contractAddressesGovernor[chainId]?.[0];
-      const stateOptions = {
-        abi: abiGovernor,
-        contractAddress: governorAddress,
-        functionName: "state",
-        params: { proposalId: id },
+          // Fetch proposal data from IPFS
+          const ipfsResponse = await axios.get(`https://gateway.pinata.cloud/ipfs/${ipfsHash}`);
+
+          setProposal(ipfsResponse.data);
+          setSelectedCoords(ipfsResponse.data.coordinates);
+          console.log("proposal:", proposal);
+          // Fetch proposal state
+          const governorAddress = contractAddressesGovernor[chainId]?.[0];
+          if (!governorAddress) {
+            console.error("Governor address not found for the current chain.");
+            return;
+          }
+
+          const stateOptions = {
+            abi: abiGovernor,
+            contractAddress: governorAddress,
+            functionName: "state",
+            params: { proposalId },
+          };
+          const proposalState = await runContractFunction({ params: stateOptions });
+          const proposalStatus = getStatusText(proposalState);
+          setStatus(proposalStatus);
+
+          // If not pending, fetch additional details
+          if (proposalStatus !== "Pending") {
+            const snapshotOptions = {
+              abi: abiGovernor,
+              contractAddress: governorAddress,
+              functionName: "proposalSnapshot",
+              params: { proposalId },
+            };
+            const proposalSnapshot = await runContractFunction({ params: snapshotOptions });
+
+            const quorumOptions = {
+              abi: abiGovernor,
+              contractAddress: governorAddress,
+              functionName: "quorum",
+              params: { blockNumber: proposalSnapshot },
+            };
+            const proposalQuorum = await runContractFunction({ params: quorumOptions });
+            setQuorum(proposalQuorum.toString());
+          }
+
+          // Check queue and execute eligibility
+          setCanQueue(
+            account === proposalFromGraph.proposalCreateds[0]?.proposer && proposalState === 4
+          ); // Succeeded
+          setCanExecute(
+            account === proposalFromGraph.proposalCreateds[0]?.proposer && proposalState === 5
+          ); // Queued
+
+          // Fetch votes
+          fetchVotes(proposalId);
+        } catch (error) {
+          console.error("Error fetching proposal details:", error);
+        }
       };
-      const snapshotOptions = {
-        abi: abiGovernor,
-        contractAddress: governorAddress,
-        functionName: "proposalSnapshot",
-        params: { proposalId: id },
-      };
-      const proposalState = await runContractFunction({ params: stateOptions });
-      setStatus(getStatusText(proposalState));
 
-      if (status !== "Pending") {
-        const proposalSnapshot = await runContractFunction({ params: snapshotOptions });
-        const quorumOptions = {
-          abi: abiGovernor,
-          contractAddress: governorAddress,
-          functionName: "quorum",
-          params: { blockNumber: proposalSnapshot },
-        };
-        const proposalQuorum = await runContractFunction({ params: quorumOptions });
-
-        setQuorum(proposalQuorum.toString()); // Save quorum to state
-      }
-
-      // Set queue and execute eligibility based on proposal state and proposer
-      setCanQueue(account === response.data.proposer && proposalState === 4); // Succeeded
-      setCanExecute(account === response.data.proposer && proposalState === 5); // Queued
-      fetchVotes(id);
-    } catch (error) {
-      console.error("Error fetching proposal details:", error);
+      fetchProposalDetails();
     }
-  };
+  }, [isWeb3Enabled, proposalId, proposalFromGraph, chainId]);
 
   const fetchVotes = async (id) => {
     try {
@@ -243,12 +283,14 @@ const ProposalDetails = () => {
           )}
 
           <div className={styles.mapContainer}>
-            <Map
-              // markers={[proposal]}
-              onMapClick={setSelectedCoords}
-              proposalStatus={status}
-              idCoords={{ lat: proposal.coordinates.lat, lng: proposal.coordinates.lng }}
-            />
+            {proposal !== null && proposal.coordinates && (
+              <Map
+                // markers={[proposal]}
+                onMapClick={setSelectedCoords}
+                proposalStatus={status}
+                idCoords={{ lat: proposal.coordinates.lat, lng: proposal.coordinates.lng }}
+              />
+            )}
           </div>
         </>
       ) : (

@@ -5,7 +5,6 @@ import { moveBlocks } from "../utils/move-blocks";
 import * as fs from "fs";
 
 async function propose(args: any, functionToCall: string, proposalDescription: string) {
-
     const governor = await ethers.getContract("GovernorContract");
     const box = await ethers.getContract("HazardProposal");
     // console.log(box);
@@ -27,8 +26,8 @@ async function propose(args: any, functionToCall: string, proposalDescription: s
     const proposalSnapShot = await governor.proposalSnapshot(proposalId);
     // the proposal snapshot is the block number at which the proposal was created
     const proposalDeadline = await governor.proposalDeadline(proposalId);
-    // the proposal deadline is the block number at which the proposal will expire
-    const quorumProposal = await governor.quorum(proposalSnapShot)
+    // // the proposal deadline is the block number at which the proposal will expire
+    // const quorumProposal = await governor.quorum(proposalSnapShot)
 
     // save the proposalId
     storeProposalId(proposalId);
@@ -40,7 +39,7 @@ async function propose(args: any, functionToCall: string, proposalDescription: s
     // The block number the proposal voting expires
     console.log(`Current Proposal Deadline: ${proposalDeadline}`)
     // The quorum percentage required for the proposal to pass
-    console.log(`Current Proposal Quorum: ${quorumProposal}`)
+    // console.log(`Current Proposal Quorum: ${quorumProposal}`)
 
     // return {
     //     proposalId: proposalId.toString(),

@@ -70,24 +70,39 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
     }
   }
   async function createProposal(data) {
-    if (!canPropose) {
-      dispatch({
-        type: "error",
-        message: "Proposal threshold not met. Voting power must be greater than threshold.",
-        title: "Transaction Notification",
-        position: "topR",
-      });
-      return;
-    }
     try {
+      if (!canPropose) {
+        dispatch({
+          type: "error",
+          message: "Proposal threshold not met. Voting power must be greater than threshold.",
+          title: "Transaction Notification",
+          position: "topR",
+        });
+        return;
+      }
       setLoading(true);
       setMessage("");
       console.log("Creating proposal...");
 
       const title = data.data[0].inputResult;
       const description = data.data[1].inputResult;
-      const lat = ethers.BigNumber.from(parseFloat(coordinates.lat).toFixed(0));
-      const lng = ethers.BigNumber.from(parseFloat(coordinates.lng).toFixed(0));
+      const lat = ethers.BigNumber.from((coordinates.lat).toFixed(0));
+      const lng = ethers.BigNumber.from((coordinates.lng).toFixed(0));
+      
+
+      const proposalData = { title, description, coordinates: { lat: coordinates.lat, lng: coordinates.lng } };
+      console.log("CreatedProposalData",proposalData);
+      // Pin data to IPFS to get the hash
+      const pinataResponse = await pinToIPFS(proposalData);
+      
+      const ipfsHash = pinataResponse?.data?.IpfsHash;
+
+      if (!ipfsHash) {
+        throw new Error("Failed to pin data to IPFS");
+      }
+
+      // Use the IPFS hash in the proposal description
+      const fullDescription = `${description}#${ipfsHash}`;
 
       const functionToCall = "storeHazard";
       const proposalInterface = new ethers.utils.Interface(abiHazardProposal);
@@ -102,15 +117,17 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
           targets: [hazardAddress],
           values: [0],
           calldatas: [encodedFunctionCall],
-          description,
+          description: fullDescription,
         },
       };
+
       await runContractFunction({
         params: createProposalOptions,
-        onSuccess: (tx) => handleSuccess(tx, { title, description, coordinates }),
+        onSuccess: (tx) => handleSuccess(tx, { ...proposalData, ipfsHash }),
         onError: (error) => handleError(error),
       });
     } catch (error) {
+      console.error("Error creating proposal:", error);
       setMessage("Error creating proposal: " + error.message);
     } finally {
       setLoading(false);
@@ -120,21 +137,20 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
   const handleSuccess = async (tx, proposalData) => {
     try {
       const proposalReceipt = await tx.wait(1);
-      console.log("Hello");
       const proposalId = proposalReceipt.events[0].args.proposalId.toString();
       const proposer = account;
       proposalData = { ...proposalData, proposalId, proposer };
+      console.log("Proposal data:", proposalData);
+      // const pinataResponse = await pinToIPFS(proposalData);
+      // const ipfsHash = pinataResponse?.data?.IpfsHash;
 
-      const pinataResponse = await pinToIPFS(proposalData);
-      const ipfsHash = pinataResponse?.data?.IpfsHash;
-
-      if (!ipfsHash) throw new Error("Failed to pin data to IPFS");
+      // if (!ipfsHash) throw new Error("Failed to pin data to IPFS");
 
       // Send proposal data (including IPFS hash) to backend
-      const response = await axios.post("http://localhost:5000/proposals", {
-        ...proposalData,
-        ipfsHash,
-      });
+      // const response = await axios.post("http://localhost:5000/proposals", {
+      //   ...proposalData,
+      //   ipfsHash,
+      // });
 
       await fetchProposalDetails(proposalId);
       setMessage("Proposal submitted successfully on the blockchain and saved to backend!");
@@ -234,6 +250,7 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
       console.log("Web3 is not enabled.");
     }
   }
+
   useEffect(() => {
     if (isWeb3Enabled && account && governorAddress) {
       checkProposalEligibility();
