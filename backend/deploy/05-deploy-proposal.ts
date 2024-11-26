@@ -11,7 +11,7 @@ const deployProposal: DeployFunction = async function (hre: HardhatRuntimeEnviro
   const { deployer } = await getNamedAccounts()
   log("----------------------------------------------------")
   log("Deploying Box and waiting for confirmations...")
-  const proposal = await deploy("HazardProposal", {
+  const proposal = await deploy("ProposalContract", {
     from: deployer,
     args: [],
     log: true,
@@ -20,9 +20,9 @@ const deployProposal: DeployFunction = async function (hre: HardhatRuntimeEnviro
   })
   log(`Proposal at ${proposal.address}`)
   if (!developmentChains.includes(network.name) && process.env.ETHERSCAN_API_KEY) {
-    await verify(proposal.address, [], "contracts/HazardProposal.sol:HazardProposal")
+    await verify(proposal.address, [], "contracts/ProposalContract.sol:ProposalContract")
   }
-  const proposalContract = await ethers.getContractAt("HazardProposal", proposal.address)
+  const proposalContract = await ethers.getContractAt("ProposalContract", proposal.address)
   const timeLock = await ethers.getContract("TimeLock")
   const transferTx = await proposalContract.transferOwnership(timeLock.address)
   await transferTx.wait(1)

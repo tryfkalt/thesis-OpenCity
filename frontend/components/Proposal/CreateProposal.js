@@ -3,8 +3,8 @@ import { useMoralis, useWeb3Contract } from "react-moralis";
 import { ethers } from "ethers";
 import styles from "../../styles/ProposalForm.module.css";
 import {
-  abiHazardProposal,
-  contractAddressesHazard,
+  abiProposalContract,
+  contractAddressesProposalContract,
   abiGovernor,
   contractAddressesGovernor,
   abiGovernanceToken,
@@ -37,8 +37,8 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
     chainId in contractAddressesGovernanceToken
       ? contractAddressesGovernanceToken[chainId][0]
       : null;
-  const hazardAddress =
-    chainId in contractAddressesHazard ? contractAddressesHazard[chainId][0] : null;
+  const proposalContractAddress =
+    chainId in contractAddressesProposalContract ? contractAddressesProposalContract[chainId][0] : null;
 
   const dispatch = useNotification();
   const { runContractFunction } = useWeb3Contract();
@@ -104,8 +104,8 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
       // Use the IPFS hash in the proposal description
       const fullDescription = `${description}#${ipfsHash}`;
 
-      const functionToCall = "storeHazard";
-      const proposalInterface = new ethers.utils.Interface(abiHazardProposal);
+      const functionToCall = "storeProposal";
+      const proposalInterface = new ethers.utils.Interface(abiProposalContract);
       const args = [title, description, lat, lng];
       const encodedFunctionCall = proposalInterface.encodeFunctionData(functionToCall, args);
 
@@ -114,7 +114,7 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
         contractAddress: governorAddress,
         functionName: "propose",
         params: {
-          targets: [hazardAddress],
+          targets: [proposalContractAddress],
           values: [0],
           calldatas: [encodedFunctionCall],
           description: fullDescription,

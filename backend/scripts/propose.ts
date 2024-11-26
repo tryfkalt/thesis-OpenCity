@@ -6,7 +6,7 @@ import * as fs from "fs";
 
 async function propose(args: any, functionToCall: string, proposalDescription: string) {
     const governor = await ethers.getContract("GovernorContract");
-    const box = await ethers.getContract("HazardProposal");
+    const box = await ethers.getContract("ProposalContract");
     // console.log(box);
     // this is the calldata on the propose function
     const encodedFunctionCall = box.interface.encodeFunctionData(functionToCall, args);

@@ -13,7 +13,7 @@ import { moveTime } from "../utils/move-time"
 export async function queueAndExecute() {
     const args = STORE_PARAMS
     const functionToCall = FUNC
-    const box = await ethers.getContract("HazardProposal")
+    const box = await ethers.getContract("ProposalContract")
     const encodedFunctionCall = box.interface.encodeFunctionData(functionToCall, args)
     const descriptionHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(PROPOSAL_DESCRIPTION))
     // could also use ethers.utils.id(PROPOSAL_DESCRIPTION)
@@ -37,7 +37,7 @@ export async function queueAndExecute() {
         descriptionHash
     )
     await executeTx.wait(1)
-    console.log(`Hazards: ${await box.getAllHazards()}`)
+    console.log(`Proposals: ${await box.getAllProposals()}`)
 }
 
 queueAndExecute()

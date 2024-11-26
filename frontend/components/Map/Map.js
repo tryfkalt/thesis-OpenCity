@@ -318,7 +318,6 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
               </Popup>
             )}
           </Marker>
-
           {mapMarkers.map((marker, idx) => (
             <Marker key={idx} position={marker.coordinates} icon={getMarkerIcon(marker.status)}>
               <Popup>

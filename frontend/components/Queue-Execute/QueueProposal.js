@@ -5,9 +5,9 @@ import axios from "axios";
 import { useMoralis, useWeb3Contract } from "react-moralis";
 import {
   abiGovernor,
-  abiHazardProposal,
+  abiProposalContract,
   contractAddressesGovernor,
-  contractAddressesHazard,
+  contractAddressesProposalContract,
 } from "../../constants";
 import { useNotification } from "web3uikit";
 import styles from "../../styles/Queue-Execute.module.css";
@@ -22,7 +22,7 @@ const QueueProposal = ({ proposalDetails }) => {
   const [message, setMessage] = useState("");
 
   const governorAddress = contractAddressesGovernor[chainId][0];
-  const hazardAddress = contractAddressesHazard[chainId][0];
+  const proposalContractAddress = contractAddressesProposalContract[chainId][0];
 
   const dispatch = useNotification();
   const { runContractFunction } = useWeb3Contract();
@@ -32,8 +32,8 @@ const QueueProposal = ({ proposalDetails }) => {
       setLoading(true);
       setMessage("Queueing proposal...");
 
-      const functionToCall = "storeHazard";
-      const proposalInterface = new ethers.utils.Interface(abiHazardProposal);
+      const functionToCall = "storeProposal";
+      const proposalInterface = new ethers.utils.Interface(abiProposalContract);
       const args = [
         proposalDetails.title,
         proposalDetails.description,
@@ -50,7 +50,7 @@ const QueueProposal = ({ proposalDetails }) => {
         contractAddress: governorAddress,
         functionName: "queue",
         params: {
-          targets: [hazardAddress],
+          targets: [proposalContractAddress],
           values: [0], // No ETH sent
           calldatas: [encodedFunctionCall],
           descriptionHash,

@@ -4,9 +4,9 @@ import { ethers } from "ethers";
 import { useMoralis, useWeb3Contract } from "react-moralis";
 import {
   abiGovernor,
-  abiHazardProposal,
+  abiProposalContract,
   contractAddressesGovernor,
-  contractAddressesHazard,
+  contractAddressesProposalContract,
 } from "../../constants";
 import { useNotification } from "web3uikit";
 import styles from "../../styles/Queue-Execute.module.css";
@@ -19,7 +19,7 @@ const ExecuteProposal = ({ proposalDetails }) => {
   const [message, setMessage] = useState("");
 
   const governorAddress = contractAddressesGovernor[chainId][0];
-  const hazardAddress = contractAddressesHazard[chainId][0];
+  const proposalContractAddress = contractAddressesProposalContract[chainId][0];
 
   const dispatch = useNotification();
   const { runContractFunction } = useWeb3Contract();
@@ -29,8 +29,8 @@ const ExecuteProposal = ({ proposalDetails }) => {
       setLoading(true);
       setMessage("Executing proposal...");
 
-      const functionToCall = "storeHazard";
-      const proposalInterface = new ethers.utils.Interface(abiHazardProposal);
+      const functionToCall = "storeProposal";
+      const proposalInterface = new ethers.utils.Interface(abiProposalContract);
       const args = [
         proposalDetails.title,
         proposalDetails.description,
@@ -47,7 +47,7 @@ const ExecuteProposal = ({ proposalDetails }) => {
         contractAddress: governorAddress,
         functionName: "execute",
         params: {
-          targets: [hazardAddress],
+          targets: [proposalContractAddress],
           values: [0], // No ETH sent
           calldatas: [encodedFunctionCall],
           descriptionHash,
@@ -106,13 +106,13 @@ const ExecuteProposal = ({ proposalDetails }) => {
       };
       const quorumValue = await runContractFunction({ params: quorumOptions });
 
-      const hazardOptions = {
-        abi: abiHazardProposal,
-        contractAddress: hazardAddress,
-        functionName: "getAllHazards",
+      const proposalOptions = {
+        abi: abiProposalContract,
+        contractAddress: proposalContractAddress,
+        functionName: "getAllProposals",
       };
-      const hazards = await runContractFunction({ params: hazardOptions });
-      console.log("Hazards:", hazards);
+      const proposals = await runContractFunction({ params: proposalOptions });
+      console.log("Proposals:", proposals);
     } catch (error) {
       console.error("Error handling execute success:", error);
       setMessage("Error handling execute success: " + error.message);

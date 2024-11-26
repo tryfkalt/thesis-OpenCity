@@ -1,8 +1,8 @@
 const {
   frontEndContractsGovernor,
-  frontEndAbiFileHazardProposal,
+  frontEndAbiFileProposalContract,
   frontEndAbiFileGovernor,
-  frontEndContractsHazard,
+  frontEndContractsProposalContract,
   frontEndAbiFileGovernanceToken,
   frontendContractsGovernanceToken,
   // frontendAbiFileTokenExchange,
@@ -27,11 +27,11 @@ async function updateAbi() {
     frontEndAbiFileGovernor,
     governor.interface.format(ethers.utils.FormatTypes.json)
   );
-  // Update ABI for HazardProposal contract
-  const hazardProposal = await ethers.getContract("HazardProposal");
+  // Update ABI for ProposalContract
+  const proposalContract = await ethers.getContract("ProposalContract");
   fs.writeFileSync(
-    frontEndAbiFileHazardProposal,
-    hazardProposal.interface.format(ethers.utils.FormatTypes.json)
+    frontEndAbiFileProposalContract,
+    proposalContract.interface.format(ethers.utils.FormatTypes.json)
   );
 
   // Update ABI for GovernanceToken contract
@@ -53,13 +53,13 @@ async function updateAbi() {
 
 async function updateContractAddresses() {
   const governor = await ethers.getContract("GovernorContract");
-  const hazardProposal = await ethers.getContract("HazardProposal");
+  const proposalContract = await ethers.getContract("ProposalContract");
   const governanceToken = await ethers.getContract("GovernanceToken");
   // const tokenExchange = await ethers.getContract("TokenExchange");
 
   // Load the existing contract addresses JSON files
   const governorAddresses = JSON.parse(fs.readFileSync(frontEndContractsGovernor, "utf8"));
-  const hazardAddresses = JSON.parse(fs.readFileSync(frontEndContractsHazard, "utf8"));
+  const proposalContractAddresses = JSON.parse(fs.readFileSync(frontEndContractsProposalContract, "utf8"));
   const governanceTokenAddresses = JSON.parse(
     fs.readFileSync(frontendContractsGovernanceToken, "utf8")
   );
@@ -77,13 +77,13 @@ async function updateContractAddresses() {
     governorAddresses[chainId] = [governor.address];
   }
 
-  // Update the address for the HazardProposal contract
-  if (chainId in hazardAddresses) {
-    if (!hazardAddresses[chainId].includes(hazardProposal.address)) {
-      hazardAddresses[chainId] = hazardProposal.address;
+  // Update the address for the ProposalContract contract
+  if (chainId in proposalContractAddresses) {
+    if (!proposalContractAddresses[chainId].includes(proposalContract.address)) {
+      proposalContractAddresses[chainId] = proposalContract.address;
     }
   } else {
-    hazardAddresses[chainId] = [hazardProposal.address];
+    proposalContractAddresses[chainId] = [proposalContract.address];
   }
 
   // Update the address for the GovernanceToken contract
@@ -106,7 +106,7 @@ async function updateContractAddresses() {
 
   // Write the updated addresses back to the files
   fs.writeFileSync(frontEndContractsGovernor, JSON.stringify(governorAddresses, null, 2));
-  fs.writeFileSync(frontEndContractsHazard, JSON.stringify(hazardAddresses, null, 2));
+  fs.writeFileSync(frontEndContractsProposalContract, JSON.stringify(proposalContractAddresses, null, 2));
   fs.writeFileSync(
     frontendContractsGovernanceToken,
     JSON.stringify(governanceTokenAddresses, null, 2)
