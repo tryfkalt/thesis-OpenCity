@@ -182,7 +182,7 @@ export default function Header() {
                     <div className={styles.iconContainer}>
                       <a
                         className={styles.redirectButton}
-                        href={`https://etherscan.io/address/${governanceTokenAddress}`}
+                        href={`https://sepolia.etherscan.io/address/${governorAddress}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
@@ -213,7 +213,7 @@ export default function Header() {
                     <div className={styles.iconContainer}>
                       <a
                         className={styles.redirectButton}
-                        href={`https://etherscan.io/address/${governanceTokenAddress}`}
+                        href={`https://sepolia.etherscan.io/address/${governanceTokenAddress}`}
                         target="_blank"
                         rel="noopener noreferrer"
                       >

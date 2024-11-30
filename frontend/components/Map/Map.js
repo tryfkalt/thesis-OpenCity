@@ -12,8 +12,8 @@ import VoteDetails from "../Vote/VoteDetails";
 import SearchBar from "./SearchBar";
 import VoteForm from "../Vote/VoteForm";
 import { useRouter } from "next/router";
-import { useQuery, gql } from "@apollo/client";
-import { GET_PROPOSALS } from "../../constants/subgraphQueries";
+import { useQuery, useLazyQuery } from "@apollo/client";
+import { GET_PROPOSALS, GET_PROPOSAL_BY_ID } from "../../constants/subgraphQueries";
 
 const pendingMarkerIcon = new L.Icon({
   iconUrl: "/Pending.png",
@@ -50,135 +50,136 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
   const router = useRouter();
   const { isWeb3Enabled, chainId: chainIdHex, account, enableWeb3 } = useMoralis();
   const chainId = parseInt(chainIdHex, 16);
+  const { runContractFunction } = useWeb3Contract();
+  const voteProposalRef = useRef(null);
+
+  // State Variables
   const [mapMarkers, setMapMarkers] = useState([]);
   const [defaultMarkerPosition, setDefaultMarkerPosition] = useState(
     createCoords || { lat: 51.505, lng: -0.09 }
   );
   const [defaultMarkerPopupContent, setDefaultMarkerPopupContent] =
     useState("New Proposal Location");
-  console.log("IDCOORDS", idCoords);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
-  const voteProposalRef = useRef(null);
 
+  // Contract Address
   const governorAddress =
     chainId in contractAddressesGovernor ? contractAddressesGovernor[chainId][0] : null;
 
-  const { runContractFunction } = useWeb3Contract();
-
+  // GraphQL Queries
   const { loading, error, data: proposalsFromGraph } = useQuery(GET_PROPOSALS);
+  const [getProposalFromGraph, { data: proposalFromGraph }] = useLazyQuery(GET_PROPOSAL_BY_ID);
 
+  // Hooks
   useEffect(() => {
     if (createCoords) {
       setDefaultMarkerPosition(createCoords);
     }
   }, [createCoords]);
 
-  useEffect(() => {
-    if (isWeb3Enabled && governorAddress) {
-      fetchProposalsFromGraph();
-    }
-  }, [isWeb3Enabled, governorAddress]);
+  if (chainId == 31337) {
+    useEffect(() => {
+      const fetchProposalsMetadata = async () => {
+        try {
+          const metadataResponse = await axios.get("http://localhost:5000/proposals");
+          const metadata = metadataResponse.data;
 
-  const fetchProposalsFromGraph = async () => {
-    try {
-      if (!proposalsFromGraph) return; // Wait for data to be available
-      console.log("ProposalsGraph:", proposalsFromGraph);
-      const extractIpfsHash = (description) => {
-        const parts = description.split("#");
-        return parts.length > 1 ? parts[1] : null;
+          const proposalDetails = await Promise.all(
+            metadata.map(async (proposal) => {
+              const ipfsResponse = await axios.get(
+                `https://gateway.pinata.cloud/ipfs/${proposal.ipfsHash}`
+              );
+              const stateOptions = {
+                abi: abiGovernor,
+                contractAddress: governorAddress,
+                functionName: "state",
+                params: { proposalId: proposal.proposalId },
+              };
+
+              let proposalState;
+              await runContractFunction({
+                params: stateOptions,
+                onSuccess: (state) => {
+                  proposalState = state;
+                },
+                onError: (error) => console.error("Error fetching proposal state:", error),
+              });
+
+              const status = getStatusText(proposalState);
+              return { ...proposal, ...ipfsResponse.data, status };
+            })
+          );
+
+          setMapMarkers(proposalDetails);
+        } catch (error) {
+          console.error("Error fetching proposals:", error);
+        }
       };
+      if (isWeb3Enabled && governorAddress) {
+        fetchProposalsMetadata();
+      }
+    }, [isWeb3Enabled, governorAddress]);
+  } else {
+    useEffect(() => {
+      const fetchProposalsFromGraph = async () => {
+        try {
+          if (!proposalsFromGraph) return; // Wait for data to be available
+          const extractIpfsHash = (description) => {
+            const parts = description.split("#");
+            return parts.length > 1 ? parts[1] : null;
+          };
 
-      const proposalDetails = await Promise.all(
-        proposalsFromGraph.proposalCreateds.map(async (proposal) => {
-          const ipfsHash = extractIpfsHash(proposal.description);
-          console.log("IPFS Hash:", ipfsHash);
-          if (!ipfsHash) {
-            console.warn(`No IPFS hash found in description: ${proposal.description}`);
-            return null;
-          }
+          const proposalDetails = await Promise.all(
+            proposalsFromGraph.proposalCreateds.map(async (proposal) => {
+              const ipfsHash = extractIpfsHash(proposal.description);
+              if (!ipfsHash) {
+                console.warn(`No IPFS hash found in description: ${proposal.description}`);
+                return null;
+              }
 
-          try {
-            const ipfsResponse = await axios.get(`https://gateway.pinata.cloud/ipfs/${ipfsHash}`);
-            console.log("IPFS Response:", ipfsResponse.data);
-            const stateOptions = {
-              abi: abiGovernor,
-              contractAddress: governorAddress,
-              functionName: "state",
-              params: { proposalId: proposal.proposalId },
-            };
+              try {
+                const ipfsResponse = await axios.get(
+                  `https://gateway.pinata.cloud/ipfs/${ipfsHash}`
+                );
+                const stateOptions = {
+                  abi: abiGovernor,
+                  contractAddress: governorAddress,
+                  functionName: "state",
+                  params: { proposalId: proposal.proposalId },
+                };
 
-            let proposalState;
-            await runContractFunction({
-              params: stateOptions,
-              onSuccess: (state) => (proposalState = state),
-              onError: (error) => console.error("Error fetching proposal state:", error),
-            });
+                let proposalState;
+                await runContractFunction({
+                  params: stateOptions,
+                  onSuccess: (state) => (proposalState = state),
+                  onError: (error) => console.error("Error fetching proposal state:", error),
+                });
 
-            const status = getStatusText(proposalState);
+                const status = getStatusText(proposalState);
 
-            return {
-              ...proposal,
-              ...ipfsResponse.data,
-              status,
-            };
-          } catch (error) {
-            console.error(`Error processing proposal ${proposal.proposalId}:`, error);
-            return null; // Handle individual proposal fetch failure gracefully
-          }
-        })
-      );
-      setMapMarkers(proposalDetails);
-    } catch (error) {
-      console.error("Error processing proposals from The Graph:", error);
-    }
-  };
-  // const fetchProposalsMetadata = async () => {
-  //   try {
-  //     const metadataResponse = await axios.get("http://localhost:5000/proposals");
-  //     const metadata = metadataResponse.data;
-
-  //     const proposalDetails = await Promise.all(
-  //       metadata.map(async (proposal) => {
-  //         const ipfsResponse = await axios.get(
-  //           `https://gateway.pinata.cloud/ipfs/${proposal.ipfsHash}`
-  //         );
-  //         const stateOptions = {
-  //           abi: abiGovernor,
-  //           contractAddress: governorAddress,
-  //           functionName: "state",
-  //           params: { proposalId: proposal.proposalId },
-  //         };
-
-  //         let proposalState;
-  //         await runContractFunction({
-  //           params: stateOptions,
-  //           onSuccess: (state) => {
-  //             proposalState = state;
-  //           },
-  //           onError: (error) => console.error("Error fetching proposal state:", error),
-  //         });
-
-  //         const status = getStatusText(proposalState);
-  //         return { ...proposal, ...ipfsResponse.data, status };
-  //       })
-  //     );
-
-  //     setMapMarkers(proposalDetails);
-  //   } catch (error) {
-  //     console.error("Error fetching proposals:", error);
-  //   }
-  // };
-
-  const fetchProposalDetails = async (proposalId) => {
-    try {
-      const response = await axios.get(`http://localhost:5000/proposals/${proposalId}`);
-      setSelectedProposal(response.data); // Store the fetched proposal details in selectedProposal
-    } catch (error) {
-      console.error("Error fetching proposal details:", error);
-    }
-  };
-
+                return {
+                  ...proposal,
+                  ...ipfsResponse.data,
+                  status,
+                };
+              } catch (error) {
+                console.error(`Error processing proposal ${proposal.proposalId}:`, error);
+                return null; // Handle individual proposal fetch failure gracefully
+              }
+            })
+          );
+          setMapMarkers(proposalDetails);
+        } catch (error) {
+          console.error("Error processing proposals from The Graph:", error);
+        }
+      };
+      if (isWeb3Enabled && governorAddress) {
+        fetchProposalsFromGraph();
+      }
+    }, [isWeb3Enabled, governorAddress, proposalsFromGraph]);
+  }
+  // Helper Functions
   const getStatusText = (state) => {
     switch (state) {
       case 0:
@@ -219,6 +220,26 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
     }
   };
 
+  const fetchProposalDetails = async (proposalId) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/proposals/${proposalId}`);
+      setSelectedProposal(response.data); // Store the fetched proposal details in selectedProposal
+    } catch (error) {
+      console.error("Error fetching proposal details:", error);
+    }
+  };
+
+  const fetchProposalDetailsFromGraph = async (proposal) => {
+    try {
+      const ipfsHash = proposal.description.split("#")[1];
+      const ipfsResponse = await axios.get(`https://gateway.pinata.cloud/ipfs/${ipfsHash}`);
+      setSelectedProposal({ ...proposal, ...ipfsResponse.data });
+    } catch (error) {
+      console.error("Error fetching proposal details from The Graph:", error);
+    }
+  };
+
+  // Event Handlers
   const handleProposalCreate = () => {
     router.push({
       pathname: "/proposal/create",
@@ -228,17 +249,30 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
       },
     });
   };
+
   const handleVoteClick = async (proposal) => {
-    // if (!isWeb3Enabled) {
-    //   await enableWeb3();
-    // }
+    if (!isWeb3Enabled) {
+      await enableWeb3();
+    }
     if (account === proposal.proposer) {
       alert("You cannot vote on your own proposal.");
       return;
     }
-    await fetchProposalDetails(proposal.proposalId); // Fetch details for the clicked proposal
+    if (chainId == 31337) {
+      await fetchProposalDetails(proposal.proposalId);
+    } else {
+      getProposalFromGraph({ variables: { proposalId: proposal.proposalId } });
+    }
     setIsModalOpen(true);
   };
+
+  useEffect(() => {
+    if (proposalFromGraph && proposalFromGraph.proposalCreateds.length > 0) {
+      const fetchedProposal = proposalFromGraph.proposalCreateds[0]; // Assuming there's always at least one result
+      fetchProposalDetailsFromGraph(fetchedProposal);
+      setIsModalOpen(true);
+    }
+  }, [proposalFromGraph]);
 
   const handleSearchResult = ({ lat, lng, place_name }) => {
     setDefaultMarkerPosition({ lat, lng });

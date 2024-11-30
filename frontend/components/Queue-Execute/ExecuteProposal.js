@@ -39,7 +39,7 @@ const ExecuteProposal = ({ proposalDetails }) => {
       ];
       const encodedFunctionCall = proposalInterface.encodeFunctionData(functionToCall, args);
       const descriptionHash = ethers.utils.keccak256(
-        ethers.utils.toUtf8Bytes(proposalDetails.description)
+        ethers.utils.toUtf8Bytes(`${proposalDetails.description}#${proposalDetails.ipfsHash}`)
       );
 
       const executeOptions = {
@@ -119,8 +119,14 @@ const ExecuteProposal = ({ proposalDetails }) => {
     }
   };
   const handleExecuteError = (error) => {
-    console.error("Error executing proposal:", error);
-    setMessage("Error executing proposal: " + error.message);
+    console.error("Error executing proposal:", error.status);
+    setMessage("Error executing proposal");
+    dispatch({
+      type: "error",
+      message: "Error executing proposal",
+      title: "Execute Proposal",
+      position: "topR",
+    });
   };
   return (
     <div className={styles.container}>

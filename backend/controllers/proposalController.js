@@ -10,7 +10,7 @@ const createProposal = async (req, res) => {
   const { title, description, coordinates, proposalId, proposer } = req.body;
   const lat = parseFloat(coordinates.lat); // Use parseFloat to handle decimals
   const lng = parseFloat(coordinates.lng);
-
+  const ipfsHash = req.body.ipfsHash;
   // Format the proposal data
   const proposalData = {
     title,
@@ -21,6 +21,7 @@ const createProposal = async (req, res) => {
     },
     proposalId,
     proposer,
+    ipfsHash,
   };
 
   // Define the file path for saving proposals
@@ -116,6 +117,5 @@ const getProposals = async (req, res) => {
 
   return res.status(200).json(chainProposals);
 };
-
 
 module.exports = { createProposal, getProposalData, getProposals };

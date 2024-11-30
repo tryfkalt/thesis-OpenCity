@@ -5,7 +5,6 @@ import { Modal, Input, Button, Notification, Blockie } from "web3uikit";
 import {
   abiGovernanceToken,
   contractAddressesGovernanceToken,
-  abiTokenExchange,
   contractAddressesTokenExchange,
 } from "../../constants";
 import styles from "../../styles/Delegate.module.css";
@@ -34,8 +33,6 @@ const DelegateComponent = () => {
     chainId in contractAddressesGovernanceToken
       ? contractAddressesGovernanceToken[chainId][0]
       : null;
-  const tokenExchangeAddress =
-    chainId in contractAddressesTokenExchange ? contractAddressesTokenExchange[chainId][0] : null;
 
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
@@ -70,7 +67,7 @@ const DelegateComponent = () => {
     setLoading(true);
 
     const addressToDelegate = delegateToSelf ? account : customAddress;
-    console.log("Address to delegate:", addressToDelegate);
+
     const delegateOptions = {
       abi: abiGovernanceToken,
       contractAddress: governanceTokenAddress,
@@ -154,7 +151,6 @@ const DelegateComponent = () => {
       };
       const balance = await runContractFunction({ params: tokenBalanceOptions });
       setTokenBalance(balance.toString());
-      console.log("Token balance:", balance.toString());
       // console.log("Delegated Balance", delegatedBalance);
     } catch (error) {
       console.error("Error fetching token balance:", error);

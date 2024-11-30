@@ -8,7 +8,6 @@ import ProposalsTable from "../components/Proposal/ProposalsTable";
 import DelegateComponent from "../components/Delegate";
 import { abiGovernanceToken, contractAddressesGovernanceToken } from "../constants";
 const supportedChains = ["31337", "11155111"];
-import {Radios} from "web3uikit"
 
 export default function Home() {
   const { isWeb3Enabled, chainId: chainIdHex, account } = useMoralis();

@@ -7,4 +7,4 @@ export async function moveTime(amount: number) {
   console.log(`Moved forward in time ${amount} seconds`)
 }
 
-moveTime(3601);
+moveTime(361);

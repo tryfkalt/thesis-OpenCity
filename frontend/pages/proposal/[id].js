@@ -33,7 +33,6 @@ const ProposalDetails = () => {
   const [votes, setVotes] = useState({ for: 0, against: 0, abstain: 0 });
   const [majoritySupport, setMajoritySupport] = useState("");
   const [participationRate, setParticipationRate] = useState(0);
-  console.log("proposalId", proposalId);
   const { runContractFunction } = useWeb3Contract();
 
   const {
@@ -45,8 +44,58 @@ const ProposalDetails = () => {
   });
 
   // console.log(proposalFromGraph);
-  useEffect(() => {
-    if (isWeb3Enabled && proposalId && proposalFromGraph) {
+  if (chainId === 31337) {
+    useEffect(() => {
+      const fetchProposalDetails = async (id) => {
+        try {
+          const response = await axios.get(`http://localhost:5000/proposals/${id}`);
+          console.log("RESPONSE", response.data);
+          setProposal(response.data);
+          setSelectedCoords(response.data.coordinates);
+
+          const governorAddress = contractAddressesGovernor[chainId]?.[0];
+          const stateOptions = {
+            abi: abiGovernor,
+            contractAddress: governorAddress,
+            functionName: "state",
+            params: { proposalId: id },
+          };
+          const snapshotOptions = {
+            abi: abiGovernor,
+            contractAddress: governorAddress,
+            functionName: "proposalSnapshot",
+            params: { proposalId: id },
+          };
+          const proposalState = await runContractFunction({ params: stateOptions });
+          setStatus(getStatusText(proposalState));
+
+          if (status !== "Pending") {
+            const proposalSnapshot = await runContractFunction({ params: snapshotOptions });
+            const quorumOptions = {
+              abi: abiGovernor,
+              contractAddress: governorAddress,
+              functionName: "quorum",
+              params: { blockNumber: proposalSnapshot },
+            };
+            const proposalQuorum = await runContractFunction({ params: quorumOptions });
+
+            setQuorum(proposalQuorum.toString()); // Save quorum to state
+          }
+
+          // Set queue and execute eligibility based on proposal state and proposer
+          setCanQueue(account === response.data.proposer && proposalState === 4); // Succeeded
+          setCanExecute(account === response.data.proposer && proposalState === 5); // Queued
+          fetchVotes(id);
+        } catch (error) {
+          console.error("Error fetching proposal details:", error);
+        }
+      };
+      if (isWeb3Enabled && proposalId) {
+        fetchProposalDetails(proposalId);
+      }
+    }, [isWeb3Enabled, proposalId]);
+  } else {
+    useEffect(() => {
       const fetchProposalDetails = async () => {
         try {
           console.log("ProposalsGraph:", proposalFromGraph);
@@ -64,10 +113,9 @@ const ProposalDetails = () => {
 
           // Fetch proposal data from IPFS
           const ipfsResponse = await axios.get(`https://gateway.pinata.cloud/ipfs/${ipfsHash}`);
-
-          setProposal(ipfsResponse.data);
+          console.log("IPFS DATA", { ...ipfsResponse.data, ipfsHash });
+          setProposal({ ...ipfsResponse.data, ipfsHash });
           setSelectedCoords(ipfsResponse.data.coordinates);
-          console.log("proposal:", proposal);
           // Fetch proposal state
           const governorAddress = contractAddressesGovernor[chainId]?.[0];
           if (!governorAddress) {
@@ -120,9 +168,11 @@ const ProposalDetails = () => {
         }
       };
 
-      fetchProposalDetails();
-    }
-  }, [isWeb3Enabled, proposalId, proposalFromGraph, chainId]);
+      if (isWeb3Enabled && proposalId && proposalFromGraph) {
+        fetchProposalDetails();
+      }
+    }, [isWeb3Enabled, proposalId, proposalFromGraph, chainId]);
+  }
 
   const fetchVotes = async (id) => {
     try {
@@ -163,6 +213,7 @@ const ProposalDetails = () => {
     }
   };
 
+  // Helper functions
   const getStatusText = (state) => {
     switch (state) {
       case 0:

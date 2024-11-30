@@ -31,7 +31,6 @@ const QueueProposal = ({ proposalDetails }) => {
     try {
       setLoading(true);
       setMessage("Queueing proposal...");
-
       const functionToCall = "storeProposal";
       const proposalInterface = new ethers.utils.Interface(abiProposalContract);
       const args = [
@@ -41,10 +40,10 @@ const QueueProposal = ({ proposalDetails }) => {
         ethers.BigNumber.from(parseFloat(proposalDetails.coordinates.lng).toFixed(0)),
       ];
       const encodedFunctionCall = proposalInterface.encodeFunctionData(functionToCall, args);
-      const descriptionHash = ethers.utils.keccak256(
-        ethers.utils.toUtf8Bytes(proposalDetails.description)
-      );
 
+      const descriptionHash = ethers.utils.keccak256(
+        ethers.utils.toUtf8Bytes(`${proposalDetails.description}#${proposalDetails.ipfsHash}`)
+      );
       const queueOptions = {
         abi: abiGovernor,
         contractAddress: governorAddress,
@@ -55,8 +54,8 @@ const QueueProposal = ({ proposalDetails }) => {
           calldatas: [encodedFunctionCall],
           descriptionHash,
         },
+        gasLimit: ethers.utils.hexlify(500000),
       };
-
       await runContractFunction({
         params: queueOptions,
         onSuccess: (tx) => handleQueueSuccess(tx, proposalDetails),
@@ -64,17 +63,16 @@ const QueueProposal = ({ proposalDetails }) => {
       });
     } catch (error) {
       console.log("Error queueing proposal:", error);
-      setMessage("Error queueing proposal: " + error.message);
+      setMessage("Error queueing proposal: ");
     } finally {
       setLoading(false);
     }
   }
   const handleQueueSuccess = async (tx, proposalData) => {
     try {
-      console.log("proposalData is :", proposalData);
       const queueReceipt = await tx.wait(1);
       setMessage("Proposal queued successfully!");
-      
+
       // Pin proposal data to IPFS using Pinata
       const pinataResponse = await pinToIPFS(proposalData);
       const ipfsHash = pinataResponse?.data?.IpfsHash;
@@ -98,7 +96,7 @@ const QueueProposal = ({ proposalDetails }) => {
       console.log("Proposal queued successfully!");
     } catch (error) {
       console.error("Error handling queue success:", error);
-      setMessage("Error handling queue success: " + error.message);
+      setMessage("Error handling queue success: ");
     }
   };
 

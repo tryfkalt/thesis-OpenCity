@@ -38,7 +38,9 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
       ? contractAddressesGovernanceToken[chainId][0]
       : null;
   const proposalContractAddress =
-    chainId in contractAddressesProposalContract ? contractAddressesProposalContract[chainId][0] : null;
+    chainId in contractAddressesProposalContract
+      ? contractAddressesProposalContract[chainId][0]
+      : null;
 
   const dispatch = useNotification();
   const { runContractFunction } = useWeb3Contract();
@@ -86,15 +88,17 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
 
       const title = data.data[0].inputResult;
       const description = data.data[1].inputResult;
-      const lat = ethers.BigNumber.from((coordinates.lat).toFixed(0));
-      const lng = ethers.BigNumber.from((coordinates.lng).toFixed(0));
-      
+      const lat = ethers.BigNumber.from(parseFloat(coordinates.lat).toFixed(0));
+      const lng = ethers.BigNumber.from(parseFloat(coordinates.lng).toFixed(0));
 
-      const proposalData = { title, description, coordinates: { lat: coordinates.lat, lng: coordinates.lng } };
-      console.log("CreatedProposalData",proposalData);
+      const proposalData = {
+        title,
+        description,
+        coordinates: { lat: coordinates.lat, lng: coordinates.lng },
+      };
       // Pin data to IPFS to get the hash
       const pinataResponse = await pinToIPFS(proposalData);
-      
+
       const ipfsHash = pinataResponse?.data?.IpfsHash;
 
       if (!ipfsHash) {
@@ -147,10 +151,11 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
       // if (!ipfsHash) throw new Error("Failed to pin data to IPFS");
 
       // Send proposal data (including IPFS hash) to backend
-      // const response = await axios.post("http://localhost:5000/proposals", {
-      //   ...proposalData,
-      //   ipfsHash,
-      // });
+      if (chainId === 31337) {
+        const response = await axios.post("http://localhost:5000/proposals", {
+          ...proposalData,
+        });
+      }
 
       await fetchProposalDetails(proposalId);
       setMessage("Proposal submitted successfully on the blockchain and saved to backend!");

@@ -1,42 +1,13 @@
 [
   {
-    "title": "test",
-    "description": "test",
+    "title": "test1",
+    "description": "pkokk",
     "coordinates": {
-      "lat": 51.505,
-      "lng": -0.09
+      "lat": 51.52658144893172,
+      "lng": -0.1110665203367467
     },
-    "proposalId": "57903735395139325306742784150058903368800032024619965068377228236563612264201",
-    "proposer": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
-  },
-  {
-    "title": "testt3",
-    "description": "test",
-    "coordinates": {
-      "lat": 51.519425328081894,
-      "lng": -0.06292857587775647
-    },
-    "proposalId": "87791517012420720724102348260704785205892791355517407755585057446603090919878",
-    "proposer": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
-  },
-  {
-    "title": "test2",
-    "description": "test2",
-    "coordinates": {
-      "lat": 51.505,
-      "lng": -0.09
-    },
-    "proposalId": "57903735395139325306742784150058903368800032024619965068377228236563612264201",
-    "proposer": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8"
-  },
-  {
-    "title": "test6",
-    "description": "test",
-    "coordinates": {
-      "lat": 51.52562024435111,
-      "lng": -0.13923565244492897
-    },
-    "proposalId": "80133210277760675249261073227820294174527453753361333003766758558564694897886",
-    "proposer": "0x421368fb2ce43b9210ab46b92d5ed64d6ded2b40"
+    "proposalId": "43935076438957973978733191315724323282481748610423312146118418857974482477773",
+    "proposer": "0x70997970c51812dc3a010c7d01b50e0d17dc79c8",
+    "ipfsHash": "QmcncZxqtpuPiBj5VP6pYbemmtQYXUubAA1hgWeiC7bXfQ"
   }
 ]

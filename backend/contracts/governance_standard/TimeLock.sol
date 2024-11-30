@@ -11,6 +11,5 @@ contract TimeLock is TimelockController {
     address[] memory executors, // Addresses allowed to execute operations
     address admin // Address of the admin (deployer)
   ) TimelockController(minDelay, proposers, executors) {
-    
   }
 }

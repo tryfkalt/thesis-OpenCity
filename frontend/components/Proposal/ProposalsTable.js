@@ -23,28 +23,19 @@ const ProposalsTable = () => {
 
   const { loading, error, data: proposalsFromGraph } = useQuery(GET_PROPOSALS);
 
-  useEffect(() => {
-    const fetchProposalsFromGraph = async () => {
-      try {
-        if (!proposalsFromGraph) return; // Wait for data to be available
-        console.log("ProposalsGraph:", proposalsFromGraph);
-        const extractIpfsHash = (description) => {
-          const parts = description.split("#");
-          return parts.length > 1 ? parts[1] : null;
-        };
-
-        const proposalDetails = await Promise.all(
-          proposalsFromGraph.proposalCreateds.map(async (proposal) => {
-            const ipfsHash = extractIpfsHash(proposal.description);
-            console.log("IPFS Hash:", ipfsHash);
-            if (!ipfsHash) {
-              console.warn(`No IPFS hash found in description: ${proposal.description}`);
-              return null;
-            }
-
-            try {
-              const ipfsResponse = await axios.get(`https://gateway.pinata.cloud/ipfs/${ipfsHash}`);
-              console.log("IPFS Response:", ipfsResponse.data);
+  if (chainId === 31337) {
+    useEffect(() => {
+      const fetchProposalsMetadata = async () => {
+        try {
+          const metadataResponse = await axios.get("http://localhost:5000/proposals");
+          const metadata = metadataResponse.data;
+          console.log(1, metadata);
+          if (!proposalsFromGraph) return; // Wait for data to be available
+          const proposalDetails = await Promise.all(
+            metadata.map(async (proposal) => {
+              const ipfsResponse = await axios.get(
+                `https://gateway.pinata.cloud/ipfs/${proposal.ipfsHash}`
+              );
               const stateOptions = {
                 abi: abiGovernor,
                 contractAddress: governorAddress,
@@ -55,79 +46,91 @@ const ProposalsTable = () => {
               let proposalState;
               await runContractFunction({
                 params: stateOptions,
-                onSuccess: (state) => (proposalState = state),
+                onSuccess: (state) => {
+                  proposalState = state;
+                  // console.log("Fetched proposal state:", state); // Ensure state logs correctly
+                },
                 onError: (error) => console.error("Error fetching proposal state:", error),
               });
 
-              const status = getStatusText(proposalState);
+              const status = getStatusText(proposalState); // Call getStatusText once state is confirmed
 
-              return {
-                ...proposal,
-                ...ipfsResponse.data,
-                status,
-              };
-            } catch (error) {
-              console.error(`Error processing proposal ${proposal.proposalId}:`, error);
-              return null; // Handle individual proposal fetch failure gracefully
-            }
-          })
-        );
-        setProposals(proposalDetails);
-      } catch (error) {
-        console.error("Error processing proposals from The Graph:", error);
+              return { ...proposal, ...ipfsResponse.data, status };
+            })
+          );
+          setProposals(proposalDetails);
+        } catch (error) {
+          console.error("Error fetching proposals:", error);
+        }
+      };
+
+      if (isWeb3Enabled && governorAddress) {
+        fetchProposalsMetadata();
       }
-    };
+    }, [isWeb3Enabled, governorAddress]);
+  } else {
+    useEffect(() => {
+      const fetchProposalsFromGraph = async () => {
+        try {
+          if (!proposalsFromGraph) return; // Wait for data to be available
 
-    if (isWeb3Enabled && governorAddress && proposalsFromGraph) {
-      fetchProposalsFromGraph();
-    }
-  }, [isWeb3Enabled, governorAddress, proposalsFromGraph]);
+          const extractIpfsHash = (description) => {
+            const parts = description.split("#");
+            return parts.length > 1 ? parts[1] : null;
+          };
 
-  // useEffect(() => {
-  //   const fetchProposalsMetadata = async () => {
-  //     try {
-  //       const metadataResponse = await axios.get("http://localhost:5000/proposals");
-  //       const metadata = metadataResponse.data;
-  //       console.log(1, metadata);
-  //       if (!proposalsFromGraph) return; // Wait for data to be available
-  //       console.log("ProposalsGraph", proposalsFromGraph);
-  //       const proposalDetails = await Promise.all(
-  //         metadata.map(async (proposal) => {
-  //           const ipfsResponse = await axios.get(
-  //             `https://gateway.pinata.cloud/ipfs/${proposal.ipfsHash}`
-  //           );
-  //           const stateOptions = {
-  //             abi: abiGovernor,
-  //             contractAddress: governorAddress,
-  //             functionName: "state",
-  //             params: { proposalId: proposal.proposalId },
-  //           };
+          const proposalDetails = await Promise.all(
+            proposalsFromGraph.proposalCreateds.map(async (proposal) => {
+              const ipfsHash = extractIpfsHash(proposal.description);
 
-  //           let proposalState;
-  //           await runContractFunction({
-  //             params: stateOptions,
-  //             onSuccess: (state) => {
-  //               proposalState = state;
-  //               // console.log("Fetched proposal state:", state); // Ensure state logs correctly
-  //             },
-  //             onError: (error) => console.error("Error fetching proposal state:", error),
-  //           });
+              if (!ipfsHash) {
+                console.warn(`No IPFS hash found in description: ${proposal.description}`);
+                return null;
+              }
 
-  //           const status = getStatusText(proposalState); // Call getStatusText once state is confirmed
+              try {
+                const ipfsResponse = await axios.get(
+                  `https://gateway.pinata.cloud/ipfs/${ipfsHash}`
+                );
 
-  //           return { ...proposal, ...ipfsResponse.data, status };
-  //         })
-  //       );
-  //       setProposals(proposalDetails);
-  //     } catch (error) {
-  //       console.error("Error fetching proposals:", error);
-  //     }
-  //   };
+                const stateOptions = {
+                  abi: abiGovernor,
+                  contractAddress: governorAddress,
+                  functionName: "state",
+                  params: { proposalId: proposal.proposalId },
+                };
 
-  //   if (isWeb3Enabled && governorAddress) {
-  //     fetchProposalsMetadata();
-  //   }
-  // }, [isWeb3Enabled, governorAddress]);
+                let proposalState;
+                await runContractFunction({
+                  params: stateOptions,
+                  onSuccess: (state) => (proposalState = state),
+                  onError: (error) => console.error("Error fetching proposal state:", error),
+                });
+
+                const status = getStatusText(proposalState);
+
+                return {
+                  ...proposal,
+                  ...ipfsResponse.data,
+                  status,
+                };
+              } catch (error) {
+                console.error(`Error processing proposal ${proposal.proposalId}:`, error);
+                return null; // Handle individual proposal fetch failure gracefully
+              }
+            })
+          );
+          setProposals(proposalDetails);
+        } catch (error) {
+          console.error("Error processing proposals from The Graph:", error);
+        }
+      };
+
+      if (isWeb3Enabled && governorAddress && proposalsFromGraph) {
+        fetchProposalsFromGraph();
+      }
+    }, [isWeb3Enabled, governorAddress, proposalsFromGraph]);
+  }
 
   const getStatusText = (state) => {
     switch (state) {
