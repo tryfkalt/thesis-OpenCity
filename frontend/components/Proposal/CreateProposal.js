@@ -88,8 +88,10 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
 
       const title = data.data[0].inputResult;
       const description = data.data[1].inputResult;
-      const lat = ethers.BigNumber.from(parseFloat(coordinates.lat).toFixed(0));
-      const lng = ethers.BigNumber.from(parseFloat(coordinates.lng).toFixed(0));
+
+      const SCALING_FACTOR = 1e6;
+      const lat = ethers.BigNumber.from((coordinates.lat * SCALING_FACTOR).toFixed(0));
+      const lng = ethers.BigNumber.from((coordinates.lng * SCALING_FACTOR).toFixed(0));
 
       const proposalData = {
         title,
@@ -107,10 +109,9 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
 
       // Use the IPFS hash in the proposal description
       const fullDescription = `${description}#${ipfsHash}`;
-
       const functionToCall = "storeProposal";
       const proposalInterface = new ethers.utils.Interface(abiProposalContract);
-      const args = [title, description, lat, lng];
+      const args = [title, description, lat, lng, account, ipfsHash];
       const encodedFunctionCall = proposalInterface.encodeFunctionData(functionToCall, args);
 
       const createProposalOptions = {
@@ -144,7 +145,6 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
       const proposalId = proposalReceipt.events[0].args.proposalId.toString();
       const proposer = account;
       proposalData = { ...proposalData, proposalId, proposer };
-      console.log("Proposal data:", proposalData);
       // const pinataResponse = await pinToIPFS(proposalData);
       // const ipfsHash = pinataResponse?.data?.IpfsHash;
 
@@ -206,20 +206,9 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
       const proposalSnapshot = await runContractFunction({ params: snapshotOptions });
       const proposalDeadline = await runContractFunction({ params: deadlineOptions });
 
-      // Fetch the quorum at the snapshot block number
-      const quorumOptions = {
-        abi: abiGovernor,
-        contractAddress: governorAddress,
-        functionName: "quorum",
-        params: { blockNumber: proposalSnapshot },
-      };
-
-      const quorumValue = await runContractFunction({ params: quorumOptions });
-
       console.log("Proposal State:", proposalState);
       console.log("Proposal Snapshot (Block Number):", proposalSnapshot.toString());
       console.log("Proposal Deadline (Block Number):", proposalDeadline.toString());
-      console.log("Quorum required:", quorumValue);
     } catch (error) {
       console.error("Error fetching proposal details:", error);
     }
@@ -233,7 +222,6 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
           Authorization: `Bearer ${PINATA_JWT}`,
         },
       });
-      console.log("IPFS response:", response);
       return response;
     } catch (error) {
       console.error("Error pinning data to IPFS:", error);

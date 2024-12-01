@@ -5,8 +5,8 @@ const {
   frontEndContractsProposalContract,
   frontEndAbiFileGovernanceToken,
   frontendContractsGovernanceToken,
-  // frontendAbiFileTokenExchange,
-  // frontendContractsTokenExchange,
+  frontendAbiFileTimelock,
+  frontendContractsTimelock,
 } = require("../helper-hardhat-config");
 const fs = require("fs");
 const { network, ethers } = require("hardhat");
@@ -41,12 +41,12 @@ async function updateAbi() {
     governanceToken.interface.format(ethers.utils.FormatTypes.json)
   );
 
-  // // Update ABI for TokenExchange contract
-  // const tokenExchange = await ethers.getContract("TokenExchange");
-  // fs.writeFileSync(
-  //   frontendAbiFileTokenExchange,
-  //   tokenExchange.interface.format(ethers.utils.FormatTypes.json)
-  // );
+  // Update ABI for Timelock contract
+  const timelock = await ethers.getContract("TimeLock");
+  fs.writeFileSync(
+    frontendAbiFileTimelock,
+    timelock.interface.format(ethers.utils.FormatTypes.json)
+  );
 
   console.log("ABIs updated in front end.");
 }
@@ -55,17 +55,17 @@ async function updateContractAddresses() {
   const governor = await ethers.getContract("GovernorContract");
   const proposalContract = await ethers.getContract("ProposalContract");
   const governanceToken = await ethers.getContract("GovernanceToken");
-  // const tokenExchange = await ethers.getContract("TokenExchange");
+  const timelock = await ethers.getContract("TimeLock");
 
   // Load the existing contract addresses JSON files
   const governorAddresses = JSON.parse(fs.readFileSync(frontEndContractsGovernor, "utf8"));
-  const proposalContractAddresses = JSON.parse(fs.readFileSync(frontEndContractsProposalContract, "utf8"));
+  const proposalContractAddresses = JSON.parse(
+    fs.readFileSync(frontEndContractsProposalContract, "utf8")
+  );
   const governanceTokenAddresses = JSON.parse(
     fs.readFileSync(frontendContractsGovernanceToken, "utf8")
   );
-  // const tokenExchangeAddresses = JSON.parse(
-  //   fs.readFileSync(frontendContractsTokenExchange, "utf8")
-  // );
+  const timelockAddresses = JSON.parse(fs.readFileSync(frontendContractsTimelock, "utf8"));
   const chainId = network.config.chainId.toString();
 
   // Update the address for the Governor contract
@@ -95,23 +95,26 @@ async function updateContractAddresses() {
     governanceTokenAddresses[chainId] = [governanceToken.address];
   }
 
-  // // Update the address for the TokenExchange contract
-  // if (chainId in tokenExchangeAddresses) {
-  //   if (!tokenExchangeAddresses[chainId].includes(tokenExchange.address)) {
-  //     tokenExchangeAddresses[chainId] = tokenExchange.address;
-  //   }
-  // } else {
-  //   tokenExchangeAddresses[chainId] = [tokenExchange.address];
-  // }
+  // Update the address for the Timelock contract
+  if (chainId in timelockAddresses) {
+    if (!timelockAddresses[chainId].includes(timelock.address)) {
+      timelockAddresses[chainId] = timelock.address;
+    }
+  } else {
+    timelockAddresses[chainId] = [timelock.address];
+  }
 
   // Write the updated addresses back to the files
   fs.writeFileSync(frontEndContractsGovernor, JSON.stringify(governorAddresses, null, 2));
-  fs.writeFileSync(frontEndContractsProposalContract, JSON.stringify(proposalContractAddresses, null, 2));
+  fs.writeFileSync(
+    frontEndContractsProposalContract,
+    JSON.stringify(proposalContractAddresses, null, 2)
+  );
   fs.writeFileSync(
     frontendContractsGovernanceToken,
     JSON.stringify(governanceTokenAddresses, null, 2)
   );
-  // fs.writeFileSync(frontendContractsTokenExchange, JSON.stringify(tokenExchangeAddresses, null, 2));
+  fs.writeFileSync(frontendContractsTimelock, JSON.stringify(timelockAddresses, null, 2));
   console.log("Contract addresses updated in front end.");
 }
 

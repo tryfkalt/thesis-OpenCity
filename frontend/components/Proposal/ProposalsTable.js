@@ -13,7 +13,6 @@ const ProposalsTable = () => {
   const router = useRouter();
   const { isWeb3Enabled, chainId: chainIdHex, account } = useMoralis();
   const chainId = parseInt(chainIdHex, 16); // Convert hex chainId to integer
-
   const [proposals, setProposals] = useState([]);
 
   const governorAddress =
@@ -29,8 +28,7 @@ const ProposalsTable = () => {
         try {
           const metadataResponse = await axios.get("http://localhost:5000/proposals");
           const metadata = metadataResponse.data;
-          console.log(1, metadata);
-          if (!proposalsFromGraph) return; // Wait for data to be available
+
           const proposalDetails = await Promise.all(
             metadata.map(async (proposal) => {
               const ipfsResponse = await axios.get(
@@ -48,7 +46,6 @@ const ProposalsTable = () => {
                 params: stateOptions,
                 onSuccess: (state) => {
                   proposalState = state;
-                  // console.log("Fetched proposal state:", state); // Ensure state logs correctly
                 },
                 onError: (error) => console.error("Error fetching proposal state:", error),
               });
@@ -72,18 +69,20 @@ const ProposalsTable = () => {
     useEffect(() => {
       const fetchProposalsFromGraph = async () => {
         try {
+          console.log("Proposals from Graph", proposalsFromGraph);
           if (!proposalsFromGraph) return; // Wait for data to be available
 
           const extractIpfsHash = (description) => {
             const parts = description.split("#");
             return parts.length > 1 ? parts[1] : null;
           };
-
+          console.log("Proposalss", proposalsFromGraph);
           const proposalDetails = await Promise.all(
             proposalsFromGraph.proposalCreateds.map(async (proposal) => {
-              const ipfsHash = extractIpfsHash(proposal.description);
-
-              if (!ipfsHash) {
+              console.log("Proposal taken", proposal);
+              const ipfsHash = proposal?.ipfsHash || extractIpfsHash(proposal.description);
+              console.log("IPFS Hash", ipfsHash);
+            if (!ipfsHash) {
                 console.warn(`No IPFS hash found in description: ${proposal.description}`);
                 return null;
               }
@@ -120,6 +119,7 @@ const ProposalsTable = () => {
               }
             })
           );
+          console.log("Proposal Details", proposalDetails);
           setProposals(proposalDetails);
         } catch (error) {
           console.error("Error processing proposals from The Graph:", error);
@@ -195,7 +195,6 @@ const ProposalsTable = () => {
   });
 
   const handleRowClick = (proposalId) => {
-    console.log("Row clicked:", proposalId);
     router.push(`/proposal/${proposalId}`);
   };
 

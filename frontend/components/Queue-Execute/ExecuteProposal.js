@@ -1,7 +1,7 @@
-// components/ExecuteProposal.js
 import { useState } from "react";
 import { ethers } from "ethers";
 import { useMoralis, useWeb3Contract } from "react-moralis";
+import axios from "axios";
 import {
   abiGovernor,
   abiProposalContract,
@@ -11,10 +11,9 @@ import {
 import { useNotification } from "web3uikit";
 import styles from "../../styles/Queue-Execute.module.css";
 
-const ExecuteProposal = ({ proposalDetails }) => {
-  const { chainId: chainIdHex } = useMoralis();
+const ExecuteProposal = ({ proposalDetails, onExecuted }) => {
+  const { chainId: chainIdHex, account } = useMoralis();
   const chainId = parseInt(chainIdHex, 16); // Convert chainId to integer
-
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -28,14 +27,17 @@ const ExecuteProposal = ({ proposalDetails }) => {
     try {
       setLoading(true);
       setMessage("Executing proposal...");
-
+      console.log("Executing proposal:", proposalDetails);
+      const SCALING_FACTOR = 1e6; // Scale factor for fixed-point representation
       const functionToCall = "storeProposal";
       const proposalInterface = new ethers.utils.Interface(abiProposalContract);
       const args = [
         proposalDetails.title,
         proposalDetails.description,
-        ethers.BigNumber.from(parseFloat(proposalDetails.coordinates.lat).toFixed(0)),
-        ethers.BigNumber.from(parseFloat(proposalDetails.coordinates.lng).toFixed(0)),
+        ethers.BigNumber.from((proposalDetails.coordinates.lat * SCALING_FACTOR).toFixed(0)), // Scale latitude
+        ethers.BigNumber.from((proposalDetails.coordinates.lng * SCALING_FACTOR).toFixed(0)), // Scale longitude
+        account,
+        proposalDetails.ipfsHash,
       ];
       const encodedFunctionCall = proposalInterface.encodeFunctionData(functionToCall, args);
       const descriptionHash = ethers.utils.keccak256(
@@ -65,6 +67,7 @@ const ExecuteProposal = ({ proposalDetails }) => {
       setLoading(false);
     }
   };
+
   const handleExecuteSuccess = async (tx) => {
     try {
       await tx.wait(1);
@@ -77,49 +80,33 @@ const ExecuteProposal = ({ proposalDetails }) => {
         position: "topR",
       });
 
-      console.log("Proposal executed successfully!");
-      const stateOptions = {
-        abi: abiGovernor,
-        contractAddress: governorAddress,
-        functionName: "state",
-        params: { proposalId: proposalDetails.proposalId },
-      };
-      // Fetch proposal details after execution
-      const proposalState = await runContractFunction({ params: stateOptions });
-      console.log("Proposal state:", proposalState);
-
-      const proposalSnapshotOptions = {
-        abi: abiGovernor,
-        contractAddress: governorAddress,
-        functionName: "proposalSnapshot",
-        params: { proposalId: proposalDetails.proposalId },
-      };
-      const proposalSnapshotBlock = await runContractFunction({ params: proposalSnapshotOptions });
-      console.log("Proposal snapshot block:", proposalSnapshotBlock);
-
-      // Fetch the quorum at the snapshot block number
-      const quorumOptions = {
-        abi: abiGovernor,
-        contractAddress: governorAddress,
-        functionName: "quorum",
-        params: { blockNumber: proposalSnapshotBlock },
-      };
-      const quorumValue = await runContractFunction({ params: quorumOptions });
-
+      const response = await axios.post(`http://localhost:5000/proposals/${proposalDetails.proposalId}/txhash`, {
+        txHash: tx.hash
+      });
+      
+      // Retrieve the updated proposal details
       const proposalOptions = {
         abi: abiProposalContract,
         contractAddress: proposalContractAddress,
-        functionName: "getAllProposals",
+        functionName: "getProposal",
+        params: { proposalId: proposalDetails.proposalId },
       };
-      const proposals = await runContractFunction({ params: proposalOptions });
-      console.log("Proposals:", proposals);
+
+      const proposal = await runContractFunction({ params: proposalOptions });
+      console.log("Updated proposal details:", proposal);
+
+      // Notify parent about execution success and provide the transaction hash
+      if (onExecuted) {
+        onExecuted(tx.hash, proposal);
+      }
     } catch (error) {
       console.error("Error handling execute success:", error);
       setMessage("Error handling execute success: " + error.message);
     }
   };
+
   const handleExecuteError = (error) => {
-    console.error("Error executing proposal:", error.status);
+    console.error("Error executing proposal:", error);
     setMessage("Error executing proposal");
     dispatch({
       type: "error",
@@ -128,6 +115,7 @@ const ExecuteProposal = ({ proposalDetails }) => {
       position: "topR",
     });
   };
+
   return (
     <div className={styles.container}>
       <button onClick={executeProposal} className={styles.executeButton} disabled={loading}>

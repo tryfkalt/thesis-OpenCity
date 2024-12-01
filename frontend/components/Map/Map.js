@@ -132,7 +132,7 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
 
           const proposalDetails = await Promise.all(
             proposalsFromGraph.proposalCreateds.map(async (proposal) => {
-              const ipfsHash = extractIpfsHash(proposal.description);
+              const ipfsHash = proposal?.ipfsHash || extractIpfsHash(proposal.description);
               if (!ipfsHash) {
                 console.warn(`No IPFS hash found in description: ${proposal.description}`);
                 return null;
@@ -281,7 +281,6 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
 
   const handleVoteSubmit = async () => {
     if (voteProposalRef.current) {
-      console.log("Vote before submission:", voteProposalRef.current);
       await voteProposalRef.current(); // Calls voteProposal in VoteForm
     }
     setIsModalOpen(false);
@@ -353,25 +352,25 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
             )}
           </Marker>
           {mapMarkers.map((marker, idx) => (
-            <Marker key={idx} position={marker.coordinates} icon={getMarkerIcon(marker.status)}>
+            <Marker key={idx} position={marker?.coordinates} icon={getMarkerIcon(marker?.status)}>
               <Popup>
-                <strong>Proposal:</strong> {marker.title}
+                <strong>Proposal:</strong> {marker?.title}
                 <br />
-                <strong>Coordinates:</strong> {marker.coordinates.lat.toFixed(4)},{" "}
-                {marker.coordinates.lng.toFixed(4)}
+                <strong>Coordinates:</strong> {marker?.coordinates.lat.toFixed(4)},{" "}
+                {marker?.coordinates.lng.toFixed(4)}
                 <br />
                 <br />
-                {marker.status === "Pending" ? (
+                {marker?.status === "Pending" ? (
                   <p>Proposal vote hasn't started yet.</p>
-                ) : marker.status === "Queued" ? (
+                ) : marker?.status === "Queued" ? (
                   <p>Proposal is pending execution.</p>
-                ) : marker.status === "Defeated" ? (
+                ) : marker?.status === "Defeated" ? (
                   <p>Proposal not successful.</p>
-                ) : marker.status === "Succeeded" ? (
+                ) : marker?.status === "Succeeded" ? (
                   <p>Proposal successful, waiting to queue.</p>
-                ) : marker.status === "Executed" ? (
+                ) : marker?.status === "Executed" ? (
                   <p>Proposal executed.</p>
-                ) : account === marker.proposer ? (
+                ) : account === marker?.proposer ? (
                   <p>You cannot vote on your own proposal.</p>
                 ) : (
                   proposalStatus == "Active" && (
@@ -385,7 +384,7 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
                   )
                 )}
                 <a
-                  href={`/proposal/${marker.proposalId}`}
+                  href={`/proposal/${marker?.proposalId}`}
                   style={{ display: "block", textAlign: "center", marginTop: "10px" }}
                   // target="_blank"
                   // rel="noopener noreferrer"

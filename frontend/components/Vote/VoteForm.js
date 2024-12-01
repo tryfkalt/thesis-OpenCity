@@ -42,13 +42,11 @@ const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
   const handleVoteChange = (event) => {
     const selectedVote = parseInt(event.target.value, 10); // Ensure it's an integer
     setVote(selectedVote);
-    console.log("Selected vote:", selectedVote); // Should log 0, 1, or 2 directly
   };
 
   const handleReasonChange = (event) => setReason(event.target.value);
 
   const voteProposal = useCallback(async () => {
-    console.log("Vote when submitting", vote);
     if (!proposalId) {
       dispatch({
         type: "error",
@@ -88,7 +86,6 @@ const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
     }
 
     setIsVoting(true);
-    console.log("Before vote:", vote);
     const voteProposalOptions = {
       abi: abiGovernor,
       contractAddress: governorAddress,
@@ -115,7 +112,6 @@ const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
 
   const handleSuccess = async (tx) => {
     await tx.wait(1);
-    console.log("i came here! 1");
     const proposalVotesOptions = {
       abi: abiGovernor,
       contractAddress: governorAddress,
@@ -167,7 +163,6 @@ const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
       };
       const power = await runContractFunction({ params: voterPowerOptions });
       setVoterPower(power.toString());
-      console.log(`Voter ${account} has ${power.toString()} votes at block ${snapshotBlock}.`);
 
       const quorumOptions = {
         abi: abiGovernor,
@@ -222,7 +217,6 @@ const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
 
     try {
       const balance = await runContractFunction({ params: balanceOptions });
-      console.log("Token balance:", balance.toString());
     } catch (error) {
       console.error("Error fetching token balance: ", error);
     }
@@ -238,7 +232,6 @@ const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
 
     try {
       const delegatee = await runContractFunction({ params: delegateOptions });
-      console.log("Delegatee:", delegatee);
     } catch (error) {
       console.error("Error fetching delegatee: ", error);
     }
@@ -253,7 +246,6 @@ const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
       };
 
       const votes = await runContractFunction({ params: votingPowerOptions });
-      console.log("votes", votes.toString());
       setVotingPower(votes.toString());
     } catch (error) {
       console.error("Error fetching voting power: ", error);

@@ -4,7 +4,11 @@ import styles from "../styles/Header.module.css";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { useMoralis } from "react-moralis";
-import { contractAddressesGovernor, contractAddressesGovernanceToken } from "../constants";
+import {
+  contractAddressesGovernor,
+  contractAddressesGovernanceToken,
+  contractAddressesTimelock,
+} from "../constants";
 
 export default function Header() {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
@@ -23,6 +27,8 @@ export default function Header() {
     chainId in contractAddressesGovernanceToken
       ? contractAddressesGovernanceToken[chainId][0]
       : null;
+  const timelockAddress =
+    chainId in contractAddressesTimelock ? contractAddressesTimelock[chainId][0] : null;
 
   const toggleDropdown = () => {
     setIsDropdownOpen((prev) => !prev);
@@ -186,7 +192,11 @@ export default function Header() {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <img src="/etherscan.png" alt="Etherscan" className={styles.etherscanIcon} />
+                        <img
+                          src="/etherscan.png"
+                          alt="Etherscan"
+                          className={styles.etherscanIcon}
+                        />
                       </a>
                       <span className={styles.tooltipEther}>View on Etherscan</span>
                     </div>
@@ -217,7 +227,45 @@ export default function Header() {
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        <img src="/etherscan.png" alt="Etherscan" className={styles.etherscanIcon} />
+                        <img
+                          src="/etherscan.png"
+                          alt="Etherscan"
+                          className={styles.etherscanIcon}
+                        />
+                      </a>
+                      <span className={styles.tooltipEther}>View on Etherscan</span>
+                    </div>
+                  </div>
+                   {/* TimeLock Contract Row */}
+                   <div className={styles.contractRow}>
+                    <p>
+                      <strong>TimeLock Contract:</strong> {timelockAddress}
+                    </p>
+                    <div className={styles.iconContainer}>
+                      <img
+                        src={copiedIcon["token"] ? "/copied.png" : "/copy.png"}
+                        alt="Copy Token Address"
+                        className={`${styles.copyIcon} ${
+                          copiedIcon["token"] ? styles.animate : ""
+                        }`}
+                        onClick={() => handleCopy("token", governanceTokenAddress)}
+                      />
+                      <span className={styles.tooltipCopy}>
+                        {copiedIcon["token"] ? "Address Copied!" : "Copy to Clipboard"}
+                      </span>
+                    </div>
+                    <div className={styles.iconContainer}>
+                      <a
+                        className={styles.redirectButton}
+                        href={`https://sepolia.etherscan.io/address/${timelockAddress}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <img
+                          src="/etherscan.png"
+                          alt="Etherscan"
+                          className={styles.etherscanIcon}
+                        />
                       </a>
                       <span className={styles.tooltipEther}>View on Etherscan</span>
                     </div>

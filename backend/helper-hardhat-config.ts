@@ -45,8 +45,9 @@ export const frontEndAbiFileGovernor = "../frontend/constants/abiGovernor.json"
 export const frontEndAbiFileProposalContract = "../frontend/constants/abiProposalContract.json"
 export const frontEndAbiFileGovernanceToken = "../frontend/constants/abiGovernanceToken.json"
 export const frontendContractsGovernanceToken = "../frontend/constants/contractAddressesGovernanceToken.json"
-export const frontendContractsTokenExchange = "../frontend/constants/contractAddressesTokenExchange.json"
-export const frontendAbiFileTokenExchange = "../frontend/constants/abiTokenExchange.json"
+export const frontendContractsTimelock = "../frontend/constants/contractAddressesTimelock.json"
+export const frontendAbiFileTimelock = "../frontend/constants/abiTimelock.json"
+
 
 // Governor Values
 export const QUORUM_PERCENTAGE = 4; // Need 4% of voters to pass
@@ -81,5 +82,5 @@ export const STORE_PARAMS = latestProposal && latestProposal.coordinates
     ];
 
 
-export const FUNC = "storeHazard" as const;
-export const PROPOSAL_DESCRIPTION = "Proposal to store hazard information.";
+export const FUNC = "storeProposal" as const;
+export const PROPOSAL_DESCRIPTION = "Proposal to store proposal information.";

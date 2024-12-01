@@ -338,3 +338,37 @@
 .queueExecuteButton:hover {
   background-color: #c82333;
 }
+.etherscanContainer {
+  max-width: 600px;
+  display: flex;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.etherscanLink {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 30px;
+  text-decoration: none;
+  color: #ffffff;
+  background-color: #007bff; /* A nice blue color */
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: bold;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.etherscanLink:hover {
+  background-color: #0056b3; /* Darker blue for hover effect */
+  transform: translateY(-2px); /* Slight lift effect */
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+.etherscanLink:active {
+  background-color: #003f7f; /* Even darker blue for active state */
+  transform: translateY(0); /* Reset lift effect */
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+}

@@ -5,7 +5,6 @@ import { Modal, Input, Button, Notification, Blockie } from "web3uikit";
 import {
   abiGovernanceToken,
   contractAddressesGovernanceToken,
-  contractAddressesTokenExchange,
 } from "../../constants";
 import styles from "../../styles/Delegate.module.css";
 
@@ -137,7 +136,6 @@ const DelegateComponent = () => {
       params: {},
     };
     const deployerBalance = await runContractFunction({ params: deployerBalanceOptions });
-    console.log("Deployer balance:", deployerBalance.toString());
   };
 
   const fetchTokenBalance = async () => {
@@ -151,7 +149,6 @@ const DelegateComponent = () => {
       };
       const balance = await runContractFunction({ params: tokenBalanceOptions });
       setTokenBalance(balance.toString());
-      // console.log("Delegated Balance", delegatedBalance);
     } catch (error) {
       console.error("Error fetching token balance:", error);
     } finally {

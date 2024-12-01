@@ -15,7 +15,7 @@ import styles from "../../styles/Queue-Execute.module.css";
 const PINATA_JWT = process.env.NEXT_PUBLIC_PINATA_JWT;
 
 const QueueProposal = ({ proposalDetails }) => {
-  const { chainId: chainIdHex } = useMoralis();
+  const { chainId: chainIdHex, account } = useMoralis();
   const chainId = parseInt(chainIdHex, 16); // Convert chainId to integer
 
   const [loading, setLoading] = useState(false);
@@ -26,18 +26,27 @@ const QueueProposal = ({ proposalDetails }) => {
 
   const dispatch = useNotification();
   const { runContractFunction } = useWeb3Contract();
-
+  console.log("proposalDetails", proposalDetails);
   async function queueProposal() {
     try {
       setLoading(true);
       setMessage("Queueing proposal...");
+      const SCALING_FACTOR = 1e6;
+      const lat = ethers.BigNumber.from(
+        (proposalDetails.coordinates.lat * SCALING_FACTOR).toFixed(0)
+      );
+      const lng = ethers.BigNumber.from(
+        (proposalDetails.coordinates.lng * SCALING_FACTOR).toFixed(0)
+      );
       const functionToCall = "storeProposal";
       const proposalInterface = new ethers.utils.Interface(abiProposalContract);
       const args = [
         proposalDetails.title,
         proposalDetails.description,
-        ethers.BigNumber.from(parseFloat(proposalDetails.coordinates.lat).toFixed(0)),
-        ethers.BigNumber.from(parseFloat(proposalDetails.coordinates.lng).toFixed(0)),
+        ethers.BigNumber.from((proposalDetails.coordinates.lat * SCALING_FACTOR).toFixed(0)),
+        ethers.BigNumber.from((proposalDetails.coordinates.lng * SCALING_FACTOR).toFixed(0)),
+        account,
+        proposalDetails.ipfsHash,
       ];
       const encodedFunctionCall = proposalInterface.encodeFunctionData(functionToCall, args);
 

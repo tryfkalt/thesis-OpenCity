@@ -25,14 +25,14 @@ const ProposalDetails = () => {
 
   const [proposal, setProposal] = useState(null);
   const [status, setStatus] = useState("");
-  const [quorum, setQuorum] = useState(null); // New state for quorum
+  const [quorum, setQuorum] = useState(null);
   const [canQueue, setCanQueue] = useState(false);
   const [canExecute, setCanExecute] = useState(false);
   const [selectedCoords, setSelectedCoords] = useState({ lat: "", lng: "" });
-  const [showDefaultMarker, setShowDefaultMarker] = useState(false);
   const [votes, setVotes] = useState({ for: 0, against: 0, abstain: 0 });
   const [majoritySupport, setMajoritySupport] = useState("");
   const [participationRate, setParticipationRate] = useState(0);
+  const [execTxHash, setExecTxHash] = useState(null);
   const { runContractFunction } = useWeb3Contract();
 
   const {
@@ -50,7 +50,7 @@ const ProposalDetails = () => {
         try {
           const response = await axios.get(`http://localhost:5000/proposals/${id}`);
           console.log("RESPONSE", response.data);
-          setProposal(response.data);
+            setProposal({ ...response.data, proposalId: id });
           setSelectedCoords(response.data.coordinates);
 
           const governorAddress = contractAddressesGovernor[chainId]?.[0];
@@ -100,21 +100,23 @@ const ProposalDetails = () => {
         try {
           console.log("ProposalsGraph:", proposalFromGraph);
 
-          // Extract IPFS hash from description
+          // Ex?tract IPFS hash from description
           const extractIpfsHash = (description) => {
             const parts = description.split("#");
             return parts.length > 1 ? parts[1] : null;
           };
-          const ipfsHash = extractIpfsHash(proposalFromGraph.proposalCreateds[0]?.description); // Access the first proposal
+          const ipfsHash =
+            proposalFromGraph.proposalCreateds[0]?.ipfsHash ||
+            extractIpfsHash(proposalFromGraph.proposalCreateds[0]?.description); // Access the first proposal
           if (!ipfsHash) {
-            console.error("No IPFS hash found in the proposal description.");
+            console.error("No IPFS hash found");
             return;
           }
 
           // Fetch proposal data from IPFS
           const ipfsResponse = await axios.get(`https://gateway.pinata.cloud/ipfs/${ipfsHash}`);
           console.log("IPFS DATA", { ...ipfsResponse.data, ipfsHash });
-          setProposal({ ...ipfsResponse.data, ipfsHash });
+          setProposal({ ...ipfsResponse.data, ipfsHash, proposalId });
           setSelectedCoords(ipfsResponse.data.coordinates);
           // Fetch proposal state
           const governorAddress = contractAddressesGovernor[chainId]?.[0];
@@ -237,6 +239,26 @@ const ProposalDetails = () => {
     }
   };
 
+  useEffect(() => {
+    const fetchTxHash = async () => {
+      try {
+        const response = await axios.get(`http://localhost:5000/proposals/${proposalId}/txhash`);
+        if (response.data.txHash) {
+          setExecTxHash(response.data.txHash);
+        }
+      } catch (error) {
+        console.error("Error fetching transaction hash:", error);
+      }
+    };
+
+    fetchTxHash();
+  }, [proposalId]);
+
+  const handleExecution = (hash) => {
+    setExecTxHash(hash);
+    localStorage.setItem(`txHash-${proposalId}`, execTxHash);
+  };
+
   return (
     <div className={styles.container}>
       <Header />
@@ -315,11 +337,18 @@ const ProposalDetails = () => {
             <p className={styles.participationLabel}>Participation rate</p>
           </div>
 
-          {/* {status === "Active" && (
-            <div className={styles.voteButton}>
-              <Button text="Vote on proposal" theme="primary" onClick={() => {}} />
+          {status === "Executed" && (
+            <div className={styles.etherscanContainer}>
+              <a
+                href={`https://sepolia.etherscan.io/tx/${execTxHash}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={styles.etherscanLink}
+              >
+                View Execution on Etherscan
+              </a>
             </div>
-          )} */}
+          )}
 
           {canQueue && (
             <div className={styles.queueExecute}>
@@ -329,7 +358,7 @@ const ProposalDetails = () => {
 
           {canExecute && (
             <div className={styles.queueExecute}>
-              <ExecuteProposal proposalDetails={proposal} />
+              <ExecuteProposal proposalDetails={proposal} onExecuted={handleExecution} />
             </div>
           )}
 

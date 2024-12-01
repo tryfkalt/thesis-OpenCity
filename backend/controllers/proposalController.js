@@ -118,4 +118,45 @@ const getProposals = async (req, res) => {
   return res.status(200).json(chainProposals);
 };
 
-module.exports = { createProposal, getProposalData, getProposals };
+const storeExecHash = async (req, res) => {
+  const { proposalId } = req.params;
+  const { txHash } = req.body;
+  console.log("Received transaction hash for proposal", proposalId, ":", txHash);
+  if (!txHash) {
+    return res.status(400).json({ error: "Transaction hash is required" });
+  }
+
+  const execHashesFile = path.join(__dirname, "../data/execHash.json");
+  let execHashes = {};
+
+  if (fs.existsSync(execHashesFile)) {
+    execHashes = JSON.parse(fs.readFileSync(execHashesFile, "utf8"));
+  }
+
+  execHashes[proposalId] = txHash;
+
+  fs.writeFileSync(execHashesFile, JSON.stringify(execHashes, null, 2), "utf8");
+
+  res.status(200).json({ message: "Transaction hash stored successfully" });
+};
+
+const getExecHash = async (req, res) => {
+  const { proposalId } = req.params;
+  console.log("Fetching transaction hash for proposal:", proposalId);
+  const execHashesFile = path.join(__dirname, "../data/execHash.json");
+  let execHashes = {};
+  console.log("execHashesFile", execHashesFile);
+  if (fs.existsSync(execHashesFile)) {
+    execHashes = JSON.parse(fs.readFileSync(execHashesFile, "utf8"));
+  }
+
+  const txHash = execHashes[proposalId];
+  console.log("txHash", txHash);
+  if (!txHash) {
+    return res.status(404).json({ error: "Transaction hash not found for this proposal" });
+  }
+
+  return res.status(200).json({ txHash });
+};
+
+module.exports = { createProposal, getProposalData, getProposals, storeExecHash, getExecHash };

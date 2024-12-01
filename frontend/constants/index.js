@@ -1,19 +1,19 @@
 const contractAddressesGovernor = require("./contractAddressesGovernor");
 const contractAddressesProposalContract = require("./contractAddressesProposalContract");
 const contractAddressesGovernanceToken = require("./contractAddressesGovernanceToken");
-const contractAddressesTokenExchange = require("./contractAddressesTokenExchange");
+const contractAddressesTimelock = require("./contractAddressesTimelock");
 const abiGovernor = require("./abiGovernor");
 const abiProposalContract = require("./abiProposalContract");
 const abiGovernanceToken = require("./abiGovernanceToken");
-const abiTokenExchange = require("./abiTokenExchange");
+const abiTimelock = require("./abiTimelock");
 
 module.exports = {
   contractAddressesGovernor,
   contractAddressesProposalContract,
   contractAddressesGovernanceToken,
-  contractAddressesTokenExchange,
+  contractAddressesTimelock,
   abiGovernor,
   abiProposalContract,
   abiGovernanceToken,
-  abiTokenExchange,
+  abiTimelock,
 };
