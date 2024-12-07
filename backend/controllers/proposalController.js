@@ -6,7 +6,6 @@ const axios = require("axios");
 const { developmentChains } = require("../helper-hardhat-config");
 
 const createProposal = async (req, res) => {
-  console.log("Request body received:", req.body);
   const { title, description, coordinates, proposalId, proposer } = req.body;
   const lat = parseFloat(coordinates.lat); // Use parseFloat to handle decimals
   const lng = parseFloat(coordinates.lng);
@@ -118,10 +117,32 @@ const getProposals = async (req, res) => {
   return res.status(200).json(chainProposals);
 };
 
+const getProposalFromIPFS = async (req, res) => {
+  try {
+    const { ipfsHash } = req.query;
+    if (!ipfsHash) {
+      return res.status(400).json({ error: "IPFS hash is required" });
+    }
+    console.log("ipfsHash", ipfsHash);
+    const proposalsFile = path.join(__dirname, "../data/proposalData.json");
+    const proposals = JSON.parse(fs.readFileSync(proposalsFile, "utf8"));
+    console.log("proposals", proposals);
+    const proposal = proposals.find((entry) => entry.ipfsHash === ipfsHash);
+    if (!proposal) {
+      return res.status(404).json({ error: "Proposal not found" });
+    }
+
+    console.log("Sending:", proposal.proposalId);
+    return res.status(200).json(proposal.proposalId);
+  } catch (error) {
+    console.error("Error fetching data from IPFS:", error);
+    return res.status(500).json({ error: "Failed to fetch proposal data from IPFS." });
+  }
+};
+
 const storeExecHash = async (req, res) => {
   const { proposalId } = req.params;
   const { txHash } = req.body;
-  console.log("Received transaction hash for proposal", proposalId, ":", txHash);
   if (!txHash) {
     return res.status(400).json({ error: "Transaction hash is required" });
   }
@@ -142,16 +163,13 @@ const storeExecHash = async (req, res) => {
 
 const getExecHash = async (req, res) => {
   const { proposalId } = req.params;
-  console.log("Fetching transaction hash for proposal:", proposalId);
   const execHashesFile = path.join(__dirname, "../data/execHash.json");
   let execHashes = {};
-  console.log("execHashesFile", execHashesFile);
   if (fs.existsSync(execHashesFile)) {
     execHashes = JSON.parse(fs.readFileSync(execHashesFile, "utf8"));
   }
 
   const txHash = execHashes[proposalId];
-  console.log("txHash", txHash);
   if (!txHash) {
     return res.status(404).json({ error: "Transaction hash not found for this proposal" });
   }
@@ -159,4 +177,11 @@ const getExecHash = async (req, res) => {
   return res.status(200).json({ txHash });
 };
 
-module.exports = { createProposal, getProposalData, getProposals, storeExecHash, getExecHash };
+module.exports = {
+  createProposal,
+  getProposalData,
+  getProposals,
+  getProposalFromIPFS,
+  storeExecHash,
+  getExecHash,
+};

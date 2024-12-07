@@ -236,6 +236,7 @@ export default function Header() {
                       <span className={styles.tooltipEther}>View on Etherscan</span>
                     </div>
                   </div>
+                  
                    {/* TimeLock Contract Row */}
                    <div className={styles.contractRow}>
                     <p>
@@ -243,15 +244,15 @@ export default function Header() {
                     </p>
                     <div className={styles.iconContainer}>
                       <img
-                        src={copiedIcon["token"] ? "/copied.png" : "/copy.png"}
-                        alt="Copy Token Address"
+                        src={copiedIcon["timelock"] ? "/copied.png" : "/copy.png"}
+                        alt="Copy Timelock Address"
                         className={`${styles.copyIcon} ${
-                          copiedIcon["token"] ? styles.animate : ""
+                          copiedIcon["timelock"] ? styles.animate : ""
                         }`}
                         onClick={() => handleCopy("token", governanceTokenAddress)}
                       />
                       <span className={styles.tooltipCopy}>
-                        {copiedIcon["token"] ? "Address Copied!" : "Copy to Clipboard"}
+                        {copiedIcon["timelock"] ? "Address Copied!" : "Copy to Clipboard"}
                       </span>
                     </div>
                     <div className={styles.iconContainer}>

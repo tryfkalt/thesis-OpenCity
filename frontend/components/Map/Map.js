@@ -11,6 +11,7 @@ import { abiGovernor, contractAddressesGovernor } from "../../constants";
 import VoteDetails from "../Vote/VoteDetails";
 import SearchBar from "./SearchBar";
 import VoteForm from "../Vote/VoteForm";
+import Spinner from "../Spinner/Spinner";
 import { useRouter } from "next/router";
 import { useQuery, useLazyQuery } from "@apollo/client";
 import { GET_PROPOSALS, GET_PROPOSAL_BY_ID } from "../../constants/subgraphQueries";
@@ -62,13 +63,14 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
     useState("New Proposal Location");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedProposal, setSelectedProposal] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   // Contract Address
   const governorAddress =
     chainId in contractAddressesGovernor ? contractAddressesGovernor[chainId][0] : null;
 
   // GraphQL Queries
-  const { loading, error, data: proposalsFromGraph } = useQuery(GET_PROPOSALS);
+  const { error, data: proposalsFromGraph } = useQuery(GET_PROPOSALS);
   const [getProposalFromGraph, { data: proposalFromGraph }] = useLazyQuery(GET_PROPOSAL_BY_ID);
 
   // Hooks
@@ -281,7 +283,9 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
 
   const handleVoteSubmit = async () => {
     if (voteProposalRef.current) {
+      setLoading(true);
       await voteProposalRef.current(); // Calls voteProposal in VoteForm
+      setLoading(false);
     }
     setIsModalOpen(false);
   };
@@ -405,30 +409,34 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
         okText="Submit"
         onOk={handleVoteSubmit}
         style={{
-          // display: "flex",
-          // flexDirection: "column",
-
-          width: "470px", // Set modal width
-          maxWidth: "90vw", // Ensure responsiveness
-          padding: "730px", // Internal spacing
-          borderRadius: "12px", // Rounded corners
-          margin: "auto", // Center modal
-          // backgroundColor: "#fff", // Background color
+          width: "470px",
+          maxWidth: "90vw",
+          padding: "730px",
+          borderRadius: "12px",
+          margin: "auto",
           boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
           fontFamily: "Montserrat, sans-serif",
           zIndex: "1000",
         }}
       >
-        {selectedProposal && (
-          <>
-            <VoteDetails proposalDetails={selectedProposal} />
-            <VoteForm
-              proposalDetails={selectedProposal}
-              onVoteSubmit={(voteProposal) => {
-                voteProposalRef.current = voteProposal;
-              }}
-            />
-          </>
+        {loading ? ( // Show spinner during loading
+          <div className="spinnerContainer">
+            <Spinner />
+            <p>Submitting your vote, please wait...</p>
+          </div>
+        ) : (
+          selectedProposal && (
+            <>
+              <VoteDetails proposalDetails={selectedProposal} />
+              <VoteForm
+                proposalDetails={selectedProposal}
+                onVoteSubmit={(voteProposal) => {
+                  voteProposalRef.current = voteProposal;
+                }}
+                setLoading={setLoading} // Pass setLoading to VoteForm
+              />
+            </>
+          )
         )}
       </Modal>
     </div>

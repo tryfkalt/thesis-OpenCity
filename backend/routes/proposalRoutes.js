@@ -3,6 +3,7 @@ const {
   createProposal,
   getProposalData,
   getProposals,
+  getProposalFromIPFS,
   getGovernorSettings,
   storeExecHash,
   getExecHash,
@@ -51,6 +52,16 @@ router.get("/proposals/:proposalId/txhash", async (req, res) => {
     await getExecHash(req, res);
   } catch (error) {
     console.error("Error fetching transaction hash:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.get("/proposal/ipfs", async (req, res) => {
+  try {
+    console.log("Fetching proposal from IPFS...");
+    await getProposalFromIPFS(req, res);
+  } catch (error) {
+    console.error("Error fetching proposal:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 });

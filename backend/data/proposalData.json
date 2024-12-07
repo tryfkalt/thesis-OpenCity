@@ -1,3 +1,13 @@
 [
-  
+  {
+    "title": "teste",
+    "description": "test",
+    "coordinates": {
+      "lat": 51.51867760878029,
+      "lng": -0.14316558837890628
+    },
+    "proposalId": "6435032367506581166399773208253412032553298709829195663893413777090580817262",
+    "proposer": "0x15d34aaf54267db7d7c367839aaf71a00a2c6a65",
+    "ipfsHash": "Qme5zZq2gVcq1euJB8osSFKEBwpr8eNSaZXtrRQPgks4zT"
+  }
 ]

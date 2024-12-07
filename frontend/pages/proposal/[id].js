@@ -13,9 +13,10 @@ import Header from "../../components/Header";
 import Map from "../../components/Map";
 import QueueProposal from "../../components/Queue-Execute/QueueProposal";
 import ExecuteProposal from "../../components/Queue-Execute/ExecuteProposal";
-import { Button } from "web3uikit";
+import Spinner from "../../components/Spinner/Spinner";
 import styles from "../../styles/Proposal.module.css";
 import { GET_PROPOSAL_BY_ID } from "../../constants/subgraphQueries";
+import { SP } from "next/dist/shared/lib/utils";
 
 const ProposalDetails = () => {
   const { query } = useRouter();
@@ -33,13 +34,11 @@ const ProposalDetails = () => {
   const [majoritySupport, setMajoritySupport] = useState("");
   const [participationRate, setParticipationRate] = useState(0);
   const [execTxHash, setExecTxHash] = useState(null);
+  const [loading, setLoading] = useState(false);
+
   const { runContractFunction } = useWeb3Contract();
 
-  const {
-    loading,
-    error,
-    data: proposalFromGraph,
-  } = useQuery(GET_PROPOSAL_BY_ID, {
+  const { error, data: proposalFromGraph } = useQuery(GET_PROPOSAL_BY_ID, {
     variables: { proposalId: proposalId },
   });
 
@@ -48,9 +47,10 @@ const ProposalDetails = () => {
     useEffect(() => {
       const fetchProposalDetails = async (id) => {
         try {
+          setLoading(true);
           const response = await axios.get(`http://localhost:5000/proposals/${id}`);
           console.log("RESPONSE", response.data);
-            setProposal({ ...response.data, proposalId: id });
+          setProposal({ ...response.data, proposalId: id });
           setSelectedCoords(response.data.coordinates);
 
           const governorAddress = contractAddressesGovernor[chainId]?.[0];
@@ -78,8 +78,7 @@ const ProposalDetails = () => {
               params: { blockNumber: proposalSnapshot },
             };
             const proposalQuorum = await runContractFunction({ params: quorumOptions });
-
-            setQuorum(proposalQuorum.toString()); // Save quorum to state
+            setQuorum(proposalQuorum.toString());
           }
 
           // Set queue and execute eligibility based on proposal state and proposer
@@ -88,6 +87,8 @@ const ProposalDetails = () => {
           fetchVotes(id);
         } catch (error) {
           console.error("Error fetching proposal details:", error);
+        } finally {
+          setLoading(false);
         }
       };
       if (isWeb3Enabled && proposalId) {
@@ -98,8 +99,7 @@ const ProposalDetails = () => {
     useEffect(() => {
       const fetchProposalDetails = async () => {
         try {
-          console.log("ProposalsGraph:", proposalFromGraph);
-
+          setLoading(true);
           // Ex?tract IPFS hash from description
           const extractIpfsHash = (description) => {
             const parts = description.split("#");
@@ -110,18 +110,19 @@ const ProposalDetails = () => {
             extractIpfsHash(proposalFromGraph.proposalCreateds[0]?.description); // Access the first proposal
           if (!ipfsHash) {
             console.error("No IPFS hash found");
+            setLoading(false);
             return;
           }
 
           // Fetch proposal data from IPFS
           const ipfsResponse = await axios.get(`https://gateway.pinata.cloud/ipfs/${ipfsHash}`);
-          console.log("IPFS DATA", { ...ipfsResponse.data, ipfsHash });
           setProposal({ ...ipfsResponse.data, ipfsHash, proposalId });
           setSelectedCoords(ipfsResponse.data.coordinates);
           // Fetch proposal state
           const governorAddress = contractAddressesGovernor[chainId]?.[0];
           if (!governorAddress) {
             console.error("Governor address not found for the current chain.");
+            setLoading(false);
             return;
           }
 
@@ -167,6 +168,8 @@ const ProposalDetails = () => {
           fetchVotes(proposalId);
         } catch (error) {
           console.error("Error fetching proposal details:", error);
+        } finally {
+          setLoading(false);
         }
       };
 
@@ -175,6 +178,21 @@ const ProposalDetails = () => {
       }
     }, [isWeb3Enabled, proposalId, proposalFromGraph, chainId]);
   }
+
+  useEffect(() => {
+    const fetchTxHash = async () => {
+      try {
+        const response = await axios.get(`http://localhost:5000/proposals/${proposalId}/txhash`);
+        if (response.data.txHash) {
+          setExecTxHash(response.data.txHash);
+        }
+      } catch (error) {
+        console.error("Error fetching transaction hash:", error);
+      }
+    };
+
+    fetchTxHash();
+  }, [proposalId]);
 
   const fetchVotes = async (id) => {
     try {
@@ -239,20 +257,14 @@ const ProposalDetails = () => {
     }
   };
 
-  useEffect(() => {
-    const fetchTxHash = async () => {
-      try {
-        const response = await axios.get(`http://localhost:5000/proposals/${proposalId}/txhash`);
-        if (response.data.txHash) {
-          setExecTxHash(response.data.txHash);
-        }
-      } catch (error) {
-        console.error("Error fetching transaction hash:", error);
-      }
-    };
-
-    fetchTxHash();
-  }, [proposalId]);
+  const getDefeatReason = (forVotes, againstVotes, participationRate) => {
+    if (forVotes <= againstVotes) {
+      return "Majority not in favor.";
+    } else if (participationRate < 50) {
+      return "Quorum not reached.";
+    }
+    return "Unknown reason.";
+  };
 
   const handleExecution = (hash) => {
     setExecTxHash(hash);
@@ -262,7 +274,9 @@ const ProposalDetails = () => {
   return (
     <div className={styles.container}>
       <Header />
-      {proposal ? (
+      {loading ? (
+        <Spinner />
+      ) : proposal ? (
         <>
           <h2 className={styles.headerTitle}>Proposal Details</h2>
           <div className={styles.proposalDetails}>
@@ -288,7 +302,10 @@ const ProposalDetails = () => {
                   : ""
               }`}
             >
-              Status: {status}
+              Status: {status}{" "}
+              {status === "Defeated"
+                ? `: ${getDefeatReason(votes.for, votes.against, participationRate)}`
+                : ""}
             </p>
             <p className={styles.proposalProposer}>Proposer: {proposal.proposer}</p>
             {status != "Pending" ? (

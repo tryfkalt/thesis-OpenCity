@@ -1,10 +1,9 @@
-// pages/proposals.js
 import { useEffect, useState } from "react";
 import { useMoralis, useWeb3Contract } from "react-moralis";
 import axios from "axios";
 import { ethers } from "ethers";
-import { useQuery, gql } from "@apollo/client";
-import { Table, Avatar, Tag, Button, Modal } from "web3uikit";
+import { useQuery } from "@apollo/client";
+import { Table, Avatar, Tag, Button } from "web3uikit";
 import {
   abiGovernor,
   contractAddressesGovernor,
@@ -12,15 +11,17 @@ import {
   contractAddressesProposalContract,
 } from "../constants";
 import Header from "../components/Header";
+import Spinner from "../components/Spinner/Spinner";
 import styles from "../styles/ProposalsPage.module.css";
 import { useRouter } from "next/router";
-import { GET_PROPOSALS } from "../constants/subgraphQueries";
+import { GET_PROPOSALS, GET_EXECUTED_PROPOSALS } from "../constants/subgraphQueries";
 
 const ProposalsPage = () => {
   const { isWeb3Enabled, chainId: chainIdHex, account } = useMoralis();
   const chainId = parseInt(chainIdHex, 16);
   const [proposals, setProposals] = useState([]);
   const [executedProposals, setExecutedProposals] = useState([]);
+  const [loading, setLoading] = useState(false);
   const { runContractFunction } = useWeb3Contract();
   const router = useRouter();
 
@@ -34,11 +35,14 @@ const ProposalsPage = () => {
 
   const SCALING_FACTOR = ethers.BigNumber.from(1e6);
 
-  const { loading, error, data: proposalsFromGraph } = useQuery(GET_PROPOSALS);
+  const { error, data: proposalsFromGraph } = useQuery(GET_PROPOSALS);
+  const { data: executedProposalsFromGraph } = useQuery(GET_EXECUTED_PROPOSALS);
+
   if (chainId === 31337) {
     useEffect(() => {
       const fetchProposalsMetadata = async () => {
         try {
+          setLoading(true);
           const metadataResponse = await axios.get("http://localhost:5000/proposals");
           const metadata = metadataResponse.data;
           const proposalDetails = await Promise.all(
@@ -67,64 +71,103 @@ const ProposalsPage = () => {
           setProposals(proposalDetails);
         } catch (error) {
           console.error("Error fetching proposals:", error);
+        } finally {
+          setLoading(false);
         }
       };
-      // const fetchExecutedProposals = async () => {
-      //   try {
-      //     const executedProposalsOptions = {
-      //       abi: abiProposalContract,
-      //       contractAddress: proposalContractAddress,
-      //       functionName: "getAllProposals",
-      //       params: {},
-      //     };
+      const fetchExecutedProposals = async () => {
+        try {
+          setLoading(true);
 
-      //     const executedProposals = await runContractFunction({
-      //       params: executedProposalsOptions,
-      //       onSuccess: (proposals) => setExecutedProposals(proposals),
-      //       onError: (error) => console.error("Error fetching executed proposals:", error),
-      //     });
+          // Fetch proposals from the smart contract
+          const executedProposalsOptions = {
+            abi: abiProposalContract,
+            contractAddress: proposalContractAddress,
+            functionName: "getAllProposals",
+            params: {},
+          };
 
-      //     console.log("Executed Proposals[0]:", executedProposals[0]);
+          const rawProposals = await runContractFunction({
+            params: executedProposalsOptions,
+            onSuccess: (proposals) => proposals,
+            onError: (error) => {
+              console.error("Error fetching executed proposals:", error);
+              setLoading(false);
+              return [];
+            },
+          });
 
-      //     // Check if proposals exist
-      //     if (executedProposals && executedProposals.length > 0) {
+          // Convert proposals to a more readable format
+          const convertedProposals = rawProposals.map((proposal) => ({
+            title: proposal.title || "N/A",
+            status: "Executed",
+            proposer: proposal.proposer,
+            latitude: convertScaledCoordinate(proposal.latitude, SCALING_FACTOR),
+            longitude: convertScaledCoordinate(proposal.longitude, SCALING_FACTOR),
+          }));
 
-      //       // Get raw BigNumber values for latitude and longitude
-      //       const rawLatitude = executedProposals[0].latitude;
-      //       const rawLongitude = executedProposals[0].longitude;
+          // Fetch proposalId from localhost and merge with convertedProposals
+          const mergedProposals = await Promise.all(
+            convertedProposals.map(async (convertedProposal, index) => {
+              const correspondingRawProposal = rawProposals[index];
+              try {
+                const response = await axios.get(
+                  `http://localhost:5000/proposal/ipfs?ipfsHash=${correspondingRawProposal.ipfsHash}`
+                );
+                const proposalId = response.data;
+                return {
+                  ...convertedProposal,
+                  proposalId, // Add proposalId fetched from localhost
+                };
+              } catch (error) {
+                console.error(
+                  `Error fetching proposalId for IPFS hash ${correspondingRawProposal.ipfsHash}:`,
+                  error
+                );
+                setLoading(false);
+                return {
+                  ...convertedProposal,
+                  proposalId: null, // Handle error by setting proposalId to null
+                };
+              }
+            })
+          );
+          setExecutedProposals(mergedProposals);
+        } catch (error) {
+          console.error("Error processing executed proposals:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
 
-      //       // Convert BigNumbers back to original floating-point values
-      //       const latitude = convertScaledCoordinate(rawLatitude, SCALING_FACTOR);
-      //       const longitude = convertScaledCoordinate(rawLongitude, SCALING_FACTOR);
-
-      //     }
-      //   } catch (error) {
-      //     console.error("Error fetching executed proposals:", error);
-      //   }
-      // };
       if (isWeb3Enabled && governorAddress) {
         fetchProposalsMetadata();
-        // fetchExecutedProposals();
+        fetchExecutedProposals();
+      } else {
+        setLoading(false);
       }
     }, [isWeb3Enabled, governorAddress]);
   } else {
     useEffect(() => {
       const fetchProposalsFromGraph = async () => {
         try {
-          if (!proposalsFromGraph) return; // Wait for data to be available
+          setLoading(true);
+          if (!proposalsFromGraph) {
+            setLoading(false);
+            return;
+          }
 
           const extractIpfsHash = (description) => {
             const parts = description.split("#");
             return parts.length > 1 ? parts[1] : null;
           };
-          console.log("Proposalss", proposalsFromGraph);
+
           const proposalDetails = await Promise.all(
             proposalsFromGraph.proposalCreateds.map(async (proposal) => {
-              console.log("Proposal taken", proposal);
               const ipfsHash = proposal?.ipfsHash || extractIpfsHash(proposal.description);
-              console.log("ipfsHash", ipfsHash);
               if (!ipfsHash) {
                 console.warn(`No IPFS hash found in description: ${proposal.description}`);
+                setLoading(false);
                 return null;
               }
 
@@ -156,51 +199,66 @@ const ProposalsPage = () => {
                 };
               } catch (error) {
                 console.error(`Error processing proposal ${proposal.proposalId}:`, error);
-                return null; // Handle individual proposal fetch failure gracefully
+                return null;
               }
             })
           );
           setProposals(proposalDetails);
         } catch (error) {
           console.error("Error processing proposals from The Graph:", error);
+        } finally {
+          setLoading(false);
         }
       };
-      // const fetchExecutedProposals = async () => {
-      //   try {
-      //     const executedProposalsOptions = {
-      //       abi: abiProposalContract,
-      //       contractAddress: proposalContractAddress,
-      //       functionName: "getAllProposals",
-      //       params: {},
-      //     };
+      const fetchExecutedProposals = async () => {
+        try {
+          setLoading(true);
 
-      //     const executedProposals = await runContractFunction({
-      //       params: executedProposalsOptions,
-      //       onSuccess: (proposals) => setExecutedProposals(proposals),
-      //       onError: (error) => console.error("Error fetching executed proposals:", error),
-      //     });
+          const executedProposalsOptions = {
+            abi: abiProposalContract,
+            contractAddress: proposalContractAddress,
+            functionName: "getAllProposals",
+            params: {},
+          };
 
-      //     console.log("Executed Proposals[0]:", executedProposals[0]);
+          const rawProposals = await runContractFunction({
+            params: executedProposalsOptions,
+            onSuccess: (proposals) => proposals,
+            onError: (error) => {
+              console.error("Error fetching executed proposals:", error);
+              return [];
+            },
+          });
 
-      //     // Check if proposals exist
-      //     if (executedProposals && executedProposals.length > 0) {
+          // Convert BigNumber coordinates and other required fields
+          const convertedProposals = rawProposals.map((proposal, index) => ({
+            title: proposal.title || "N/A",
+            status: "Executed",
+            proposer: proposal.proposer,
+            latitude: convertScaledCoordinate(proposal.latitude, SCALING_FACTOR),
+            longitude: convertScaledCoordinate(proposal.longitude, SCALING_FACTOR),
+          }));
+          if (executedProposalsFromGraph && executedProposalsFromGraph.proposalExecuteds) {
+            const graphProposals = executedProposalsFromGraph.proposalExecuteds;
 
-      //       // Get raw BigNumber values for latitude and longitude
-      //       const rawLatitude = executedProposals[0].latitude;
-      //       const rawLongitude = executedProposals[0].longitude;
+            const mergedProposals = convertedProposals.map((contractProposal, index) => ({
+              ...contractProposal,
+              proposalId: graphProposals[index]?.proposalId || null, // Use the proposalId from the Graph
+            }));
+            setExecutedProposals(mergedProposals);
+          } else {
+            setExecutedProposals(convertedProposals);
+          }
+        } catch (error) {
+          console.error("Error processing executed proposals:", error);
+        } finally {
+          setLoading(false);
+        }
+      };
 
-      //       // Convert BigNumbers back to original floating-point values
-      //       const latitude = convertScaledCoordinate(rawLatitude, SCALING_FACTOR);
-      //       const longitude = convertScaledCoordinate(rawLongitude, SCALING_FACTOR);
-
-      //     }
-      //   } catch (error) {
-      //     console.error("Error fetching executed proposals:", error);
-      //   }
-      // };
       if (isWeb3Enabled && governorAddress && proposalsFromGraph) {
         fetchProposalsFromGraph();
-        // fetchExecutedProposals();
+        fetchExecutedProposals();
       }
     }, [isWeb3Enabled, governorAddress, proposalsFromGraph]);
   }
@@ -259,48 +317,6 @@ const ProposalsPage = () => {
     }
   };
 
-  const tableDataPending = proposals.map((proposal) => [
-    <Avatar key={`${proposal.proposalId}-avatar`} isRounded size={36} theme="image" />,
-    <span key={`${proposal.proposalId}-title`}>{proposal.title}</span>,
-    <Tag
-      key={`${proposal.proposalId}-status`}
-      color={getStatusColor(proposal.status)}
-      text={proposal.status}
-    />,
-    <span
-      key={`${proposal.proposalId}-coordinates`}
-    >{`${proposal.coordinates.lat}, ${proposal.coordinates.lng}`}</span>,
-    <span key={`${proposal.proposalId}-proposer`}>{proposal.proposer}</span>,
-  ]);
-
-  // const tableDataExecuted = executedProposals.map((proposal) => [
-  //   <Avatar key={`${proposal.proposalId}-avatar`} isRounded size={36} theme="image" />,
-  //   <span key={`${proposal.proposalId}-title`}>{proposal.title}</span>,
-  //   <Tag
-  //     key={`${proposal.proposalId}-status`}
-  //     color={getStatusColor(proposal.status)}
-  //     text={proposal.status}
-  //   />,
-  //   <span
-  //     key={`${proposal.proposalId}-coordinates`}
-  //   >{`${proposal.coordinates.lat}, ${proposal.coordinates.lng}`}</span>,
-  //   <span key={`${proposal.proposalId}-proposer`}>{proposal.proposer}</span>,
-  // ]);
-
-  // const tableDataExecuted = executedProposals.map((proposal) => [
-  //   <Avatar key={`${proposal.proposalId}-avatar`} isRounded size={36} theme="image" />,
-  //   <span key={`${proposal.proposalId}-title`}>{proposal.title}</span>,
-  //   <Tag
-  //     key={`${proposal.proposalId}-status`}
-  //     color={getStatusColor(proposal.status)}
-  //     text={proposal.status}
-  //   />,
-  //   <span
-  //     key={`${proposal.proposalId}-coordinates`}
-  //   >{`${proposal.latitude}, ${proposal.longitude}`}</span>,
-  //   <span key={`${proposal.proposalId}-proposer`}>{proposal.proposer}</span>,
-  // ]);
-
   const handleProposalCreate = () => {
     router.push("/proposal/create");
   };
@@ -309,48 +325,88 @@ const ProposalsPage = () => {
     router.push(`/proposal/${proposalId}`);
   };
 
+  const pendingProposals = proposals.filter((proposal) => proposal.status !== "Executed");
+
+  const tableDataPending = pendingProposals.map((proposal) => [
+    <Avatar key={`${proposal.proposalId}-avatar`} isRounded size={36} theme="image" />,
+    <span key={`${proposal.proposalId}-title`}>{proposal.title}</span>,
+    <Tag
+      key={`${proposal.proposalId}-status`}
+      color={getStatusColor(proposal.status)}
+      text={proposal.status}
+    />,
+    <span key={`${proposal.proposalId}-coordinates`}>{`${proposal.coordinates.lat.toFixed(
+      7
+    )}, ${proposal.coordinates.lng.toFixed(7)}`}</span>,
+    <span key={`${proposal.proposalId}-proposer`}>{proposal.proposer}</span>,
+  ]);
+
+  const tableDataExecuted = executedProposals.map((proposal) => [
+    <Avatar key={`${proposal.proposalId}-avatar`} isRounded size={36} theme="image" />,
+    <span key={`${proposal.proposalId}-title`}>{proposal.title}</span>,
+    <Tag
+      key={`${proposal.proposalId}-status`}
+      color={getStatusColor(proposal.status)}
+      text={proposal.status}
+    />,
+    <span key={`${proposal.proposalId}-coordinates`}>{`${proposal.latitude.toFixed(
+      6
+    )}, ${proposal.longitude.toFixed(6)}`}</span>,
+    <span key={`${proposal.proposalId}-proposer`}>{proposal.proposer}</span>,
+  ]);
+
   return (
     <div className={styles.container}>
-      <Header />
-      <h2 className={styles.title}>Recent Proposals</h2>
-      <div className={styles.proposalButton}>
-        <Button text="+New Proposal" theme="primary" onClick={handleProposalCreate} size="large" />
-      </div>
-      <Table
-        columnsConfig="80px 2fr 1fr 1fr 2fr"
-        data={tableDataPending}
-        header={[
-          "",
-          <span>Title</span>,
-          <span>Status</span>,
-          <span>Coordinates</span>,
-          <span>Proposer</span>,
-        ]}
-        isColumnSortable={[false, true, false, false, false]}
-        maxPages={3}
-        pageSize={5}
-        onPageNumberChanged={() => {}}
-        onRowClick={(row) => handleRowClick(proposals[row].proposalId)}
-      />
-      {/* <h2 className={styles.title}>Executed Proposals</h2>
-      <Table
-        columnsConfig="80px 2fr 3fr 2fr 1fr 2fr 1fr"
-        data={tableDataExecuted}
-        header={[
-          "",
-          <span>Title</span>,
-          <span>Status</span>,
-          <span>Coordinates</span>,
-          <span>Proposer</span>,
-        ]}
-        isColumnSortable={[false, true, false, false, false, false, false]}
-        maxPages={3}
-        pageSize={5}
-        onPageNumberChanged={() => {}}
-        onRowClick={(row) => handleRowClick(executedProposals[row].proposalId)}
-      /> */}
+      {loading ? (
+        <Spinner />
+      ) : (
+        <>
+          <Header />
+          <h2 className={styles.title}>Pending Proposals</h2>
+          <div className={styles.proposalButton}>
+            <Button
+              text="+New Proposal"
+              theme="primary"
+              onClick={handleProposalCreate}
+              size="large"
+            />
+          </div>
+          <Table
+            columnsConfig="80px 2fr 1fr 1fr 2fr"
+            data={tableDataPending}
+            header={[
+              "",
+              <span>Title</span>,
+              <span>Status</span>,
+              <span>Coordinates</span>,
+              <span>Proposer</span>,
+            ]}
+            isColumnSortable={[false, true, false, false, false]}
+            maxPages={3}
+            pageSize={5}
+            onPageNumberChanged={() => {}}
+            onRowClick={(row) => handleRowClick(pendingProposals[row].proposalId)}
+          />
+          <h2 className={styles.title}>Executed Proposals</h2>
+          <Table
+            columnsConfig="80px 2fr 1fr 1fr 2fr"
+            data={tableDataExecuted}
+            header={[
+              "",
+              <span>Title</span>,
+              <span>Status</span>,
+              <span>Coordinates</span>,
+              <span>Proposer</span>,
+            ]}
+            isColumnSortable={[false, true, false, false, false]}
+            maxPages={3}
+            pageSize={5}
+            onPageNumberChanged={() => {}}
+            onRowClick={(row) => handleRowClick(executedProposals[row].proposalId)}
+          />
+        </>
+      )}
     </div>
   );
 };
-
 export default ProposalsPage;

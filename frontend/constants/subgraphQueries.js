@@ -24,4 +24,13 @@ const GET_PROPOSAL_BY_ID = gql`
   }
 `;
 
-export { GET_PROPOSALS, GET_PROPOSAL_BY_ID };
+const GET_EXECUTED_PROPOSALS = gql`
+  {
+    proposalExecuteds(first: 2) {
+      id
+      proposalId
+    }
+  }
+`;
+
+export { GET_PROPOSALS, GET_PROPOSAL_BY_ID, GET_EXECUTED_PROPOSALS };

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import { useMoralis, useWeb3Contract } from "react-moralis";
 import { useNotification, Radios, Input, Button, TextArea } from "web3uikit";
+import Spinner from "../Spinner/Spinner";
 import {
   abiGovernor,
   contractAddressesGovernor,
@@ -28,6 +29,7 @@ const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
   const [voterPower, setVoterPower] = useState(null); // To store the voting power
   const [snapshotBlock, setSnapshotBlock] = useState(null); // To store the snapshot block
   const [votingPower, setVotingPower] = useState("0");
+  const [loading, setLoading] = useState(false);
 
   const governorAddress =
     chainId in contractAddressesGovernor ? contractAddressesGovernor[chainId][0] : null;
@@ -84,7 +86,7 @@ const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
       });
       return;
     }
-
+    setLoading(true);
     setIsVoting(true);
     const voteProposalOptions = {
       abi: abiGovernor,
@@ -106,6 +108,7 @@ const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
     } catch (error) {
       handleError(error);
     } finally {
+      setLoading(false);
       setIsVoting(false);
     }
   }, [vote, proposalId, isWeb3Enabled, governorAddress, reason]);

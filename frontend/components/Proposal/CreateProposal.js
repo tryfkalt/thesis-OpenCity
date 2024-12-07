@@ -11,6 +11,7 @@ import {
   contractAddressesGovernanceToken,
 } from "../../constants";
 import { useNotification, Form } from "web3uikit";
+import Spinner from "../Spinner/Spinner";
 import axios from "axios";
 import dotenv from "dotenv";
 
@@ -26,9 +27,9 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [canPropose, setCanPropose] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [proposalThreshold, setProposalThreshold] = useState(null);
 
   const governorAddress =
@@ -134,6 +135,12 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
     } catch (error) {
       console.error("Error creating proposal:", error);
       setMessage("Error creating proposal: " + error.message);
+      dispatch({
+        type: "error",
+        message: "Error creating proposal: " + error.message,
+        title: "Transaction Notification",
+        position: "topR",
+      });
     } finally {
       setLoading(false);
     }
@@ -174,6 +181,12 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
     } catch (error) {
       console.error("Error saving proposal:", error);
       setMessage("Failed to save proposal. Please check the console for details.");
+      dispatch({
+        type: "error",
+        message: " Failed to save proposal. Please check the console for details.",
+        title: "Transaction Notification",
+        position: "topR",
+      });
     }
   };
 
@@ -234,6 +247,12 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
     console.error("Proposal submission error:", error);
     setMessage("Proposal submission failed. Please see console for details.");
     setLoading(false);
+    dispatch({
+      type: "error",
+      message: "Proposal submission failed. Please see console for details.",
+      title: "Transaction Notification",
+      position: "topR",
+    });
   };
 
   async function updateUI() {
@@ -294,7 +313,13 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
           theme: "primary",
         }}
       />
-      {loading && <p>Submitting proposal...</p>}
+
+      {/* Add a global loader */}
+      {loading && (
+        <div className={styles["loading-overlay"]}>
+          <Spinner />
+        </div>
+      )}
       {message && <p>{message}</p>}
     </div>
   );

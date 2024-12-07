@@ -1,8 +1,8 @@
-// components/QueueProposal.js
 import { useState } from "react";
 import { ethers } from "ethers";
 import axios from "axios";
 import { useMoralis, useWeb3Contract } from "react-moralis";
+import Spinner from "../Spinner/Spinner";
 import {
   abiGovernor,
   abiProposalContract,
@@ -27,17 +27,13 @@ const QueueProposal = ({ proposalDetails }) => {
   const dispatch = useNotification();
   const { runContractFunction } = useWeb3Contract();
   console.log("proposalDetails", proposalDetails);
+
   async function queueProposal() {
     try {
       setLoading(true);
       setMessage("Queueing proposal...");
       const SCALING_FACTOR = 1e6;
-      const lat = ethers.BigNumber.from(
-        (proposalDetails.coordinates.lat * SCALING_FACTOR).toFixed(0)
-      );
-      const lng = ethers.BigNumber.from(
-        (proposalDetails.coordinates.lng * SCALING_FACTOR).toFixed(0)
-      );
+      
       const functionToCall = "storeProposal";
       const proposalInterface = new ethers.utils.Interface(abiProposalContract);
       const args = [
@@ -65,6 +61,7 @@ const QueueProposal = ({ proposalDetails }) => {
         },
         gasLimit: ethers.utils.hexlify(500000),
       };
+
       await runContractFunction({
         params: queueOptions,
         onSuccess: (tx) => handleQueueSuccess(tx, proposalDetails),
@@ -77,6 +74,7 @@ const QueueProposal = ({ proposalDetails }) => {
       setLoading(false);
     }
   }
+
   const handleQueueSuccess = async (tx, proposalData) => {
     try {
       const queueReceipt = await tx.wait(1);
@@ -90,22 +88,16 @@ const QueueProposal = ({ proposalDetails }) => {
         throw new Error("Failed to pin data to IPFS");
       }
 
-      // Send proposal data (including IPFS hash) to backend
-      // const response = await axios.post("http://localhost:5000/", {
-      //   ...proposalData,
-      //   ipfsHash,
-      // });
       dispatch({
         type: "success",
         message: "Proposal queued successfully!",
         title: "Queue Proposal",
         position: "topR",
       });
-
       console.log("Proposal queued successfully!");
     } catch (error) {
       console.error("Error handling queue success:", error);
-      setMessage("Error handling queue success: ");
+      setMessage("Error handling queue success.");
     }
   };
 
@@ -132,6 +124,7 @@ const QueueProposal = ({ proposalDetails }) => {
       <button onClick={queueProposal} className={styles.queueButton} disabled={loading}>
         {loading ? "Queueing..." : "Queue Proposal"}
       </button>
+      {loading && <Spinner />}
       {message && <p className={styles.message}>{message}</p>}
     </div>
   );

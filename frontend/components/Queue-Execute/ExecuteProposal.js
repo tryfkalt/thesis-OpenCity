@@ -2,6 +2,7 @@ import { useState } from "react";
 import { ethers } from "ethers";
 import { useMoralis, useWeb3Contract } from "react-moralis";
 import axios from "axios";
+import Spinner from "../Spinner/Spinner";
 import {
   abiGovernor,
   abiProposalContract,
@@ -28,6 +29,7 @@ const ExecuteProposal = ({ proposalDetails, onExecuted }) => {
       setLoading(true);
       setMessage("Executing proposal...");
       console.log("Executing proposal:", proposalDetails);
+
       const SCALING_FACTOR = 1e6; // Scale factor for fixed-point representation
       const functionToCall = "storeProposal";
       const proposalInterface = new ethers.utils.Interface(abiProposalContract);
@@ -80,10 +82,13 @@ const ExecuteProposal = ({ proposalDetails, onExecuted }) => {
         position: "topR",
       });
 
-      const response = await axios.post(`http://localhost:5000/proposals/${proposalDetails.proposalId}/txhash`, {
-        txHash: tx.hash
-      });
-      
+      const response = await axios.post(
+        `http://localhost:5000/proposals/${proposalDetails.proposalId}/txhash`,
+        {
+          txHash: tx.hash,
+        }
+      );
+
       // Retrieve the updated proposal details
       const proposalOptions = {
         abi: abiProposalContract,
@@ -118,9 +123,13 @@ const ExecuteProposal = ({ proposalDetails, onExecuted }) => {
 
   return (
     <div className={styles.container}>
-      <button onClick={executeProposal} className={styles.executeButton} disabled={loading}>
-        {loading ? "Executing..." : "Execute Proposal"}
-      </button>
+      {loading ? (
+        <Spinner />
+      ) : (
+        <button onClick={executeProposal} className={styles.executeButton} disabled={loading}>
+          {loading ? "Executing..." : "Execute Proposal"}
+        </button>
+      )}
       {message && <p className={styles.message}>{message}</p>}
     </div>
   );

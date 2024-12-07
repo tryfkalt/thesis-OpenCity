@@ -2,10 +2,8 @@ import React, { useState, useEffect } from "react";
 import { ethers } from "ethers";
 import { useMoralis, useWeb3Contract } from "react-moralis";
 import { Modal, Input, Button, Notification, Blockie } from "web3uikit";
-import {
-  abiGovernanceToken,
-  contractAddressesGovernanceToken,
-} from "../../constants";
+import Spinner from "../Spinner/Spinner";
+import { abiGovernanceToken, contractAddressesGovernanceToken } from "../../constants";
 import styles from "../../styles/Delegate.module.css";
 
 const DelegateComponent = () => {
@@ -19,9 +17,9 @@ const DelegateComponent = () => {
   const [ethAmount, setEthAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const [tokenBalance, setTokenBalance] = useState("0");
-  const [delegatedBalance, setDelegatedBalance] = useState("0"); // New state to track delegated tokens
-  const [delegatedPower, setDelegatedPower] = useState("0");
+  const [delegatedBalance, setDelegatedBalance] = useState("0");
   const [previousVotingPower, setPreviousVotingPower] = useState("0");
+  const [maxExchangeAmount, setMaxExchangeAmount] = useState("0");
 
   const { isWeb3Enabled, chainId: chainIdHex, account } = useMoralis();
   const chainId = parseInt(chainIdHex, 16);
@@ -191,11 +189,41 @@ const DelegateComponent = () => {
     }
   };
 
+  const fetchTokenDetails = async () => {
+    setLoading(true);
+    try {
+      const tokenDetailsOptions = {
+        abi: abiGovernanceToken,
+        contractAddress: governanceTokenAddress,
+        functionName: "maxExchangeAmount",
+        params: {},
+      };
+
+      const maxExchangeAmount = await runContractFunction({ params: tokenDetailsOptions });
+      setMaxExchangeAmount(maxExchangeAmount.toString());
+    } catch (error) {
+      console.error("Error fetching token details:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // const withdrawEth = async () => {
+  //   setLoading(true);
+  //   const withdrawOptions = {
+  //     abi: abiGovernanceToken,
+  //     contractAddress: governanceTokenAddress,
+  //     functionName: "withdrawETH",
+  //   };
+  //   const tx = await runContractFunction({ params: withdrawOptions, onSuccess: handleSuccess });
+  // };
+
   useEffect(() => {
     if (isWeb3Enabled && account) {
       fetchDeployerBalance();
       fetchTokenBalance();
       fetchVotingPower();
+      fetchTokenDetails();
     }
   }, [account, chainId, isWeb3Enabled]);
 
@@ -239,6 +267,13 @@ const DelegateComponent = () => {
           disabled={!isWeb3Enabled || !account || loading}
           style={{ margin: "auto" }}
         />
+        {/* <Button
+          onClick={withdrawEth}
+          text="Withdraw"
+          theme="primary"
+          disabled={!isWeb3Enabled || !account || loading}
+          style={{ margin: "auto" }}
+        /> */}
       </div>
 
       {/* Delegate Voting Power Modal */}
@@ -271,6 +306,7 @@ const DelegateComponent = () => {
             />
           </div>
         </div>
+        {loading && <Spinner />}
       </Modal>
 
       {/* Custom Address Modal */}
@@ -312,6 +348,8 @@ const DelegateComponent = () => {
           placeholder="Enter amount in ETH"
           type="number"
         />
+        <p className={styles.exchangeAmountText}>Max exchange amount is: {maxExchangeAmount/100} ETH </p>
+        {loading && <Spinner />}
       </Modal>
     </div>
   );

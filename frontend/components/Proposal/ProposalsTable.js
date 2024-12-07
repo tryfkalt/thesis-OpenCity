@@ -69,19 +69,15 @@ const ProposalsTable = () => {
     useEffect(() => {
       const fetchProposalsFromGraph = async () => {
         try {
-          console.log("Proposals from Graph", proposalsFromGraph);
           if (!proposalsFromGraph) return; // Wait for data to be available
 
           const extractIpfsHash = (description) => {
             const parts = description.split("#");
             return parts.length > 1 ? parts[1] : null;
           };
-          console.log("Proposalss", proposalsFromGraph);
           const proposalDetails = await Promise.all(
             proposalsFromGraph.proposalCreateds.map(async (proposal) => {
-              console.log("Proposal taken", proposal);
               const ipfsHash = proposal?.ipfsHash || extractIpfsHash(proposal.description);
-              console.log("IPFS Hash", ipfsHash);
             if (!ipfsHash) {
                 console.warn(`No IPFS hash found in description: ${proposal.description}`);
                 return null;
@@ -119,7 +115,6 @@ const ProposalsTable = () => {
               }
             })
           );
-          console.log("Proposal Details", proposalDetails);
           setProposals(proposalDetails);
         } catch (error) {
           console.error("Error processing proposals from The Graph:", error);
