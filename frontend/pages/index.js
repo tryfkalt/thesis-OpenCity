@@ -13,12 +13,35 @@ const supportedChains = ["31337", "11155111"];
 export default function Home() {
   const { isWeb3Enabled, chainId: chainIdHex, account } = useMoralis();
   const chainId = parseInt(chainIdHex, 16);
-
+  const [userLocation, setUserLocation] = useState({ lat: null, lng: null });
   const [selectedCoords, setSelectedCoords] = useState({ lat: "", lng: "" });
   const [loading, setLoading] = useState(false);
   const [totalSupply, setTotalSupply] = useState(null);
 
   const { runContractFunction } = useWeb3Contract();
+
+  // Track user's current location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      const watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.error("Error fetching location: ", error);
+        },
+        { enableHighAccuracy: true }
+      );
+
+      // Clean up the watcher on component unmount
+      return () => navigator.geolocation.clearWatch(watchId);
+    } else {
+      console.error("Geolocation is not supported by this browser.");
+    }
+  }, []);
 
   useEffect(() => {
     const fetchTotalSupply = async () => {
@@ -82,7 +105,7 @@ export default function Home() {
               {supportedChains.includes(parseInt(chainId).toString()) ? (
                 <div className={styles.proposalsMapContainer}>
                   <ProposalsTable />
-                  <Map onMapClick={setSelectedCoords} />
+                  <Map userLocation={userLocation} onMapClick={setSelectedCoords} />
                 </div>
               ) : (
                 <div>{`Please switch to a supported chain. Supported Chain Ids: ${supportedChains.join(

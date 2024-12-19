@@ -1,13 +1,22 @@
-import { MapContainer, TileLayer, Marker, Popup, useMapEvent } from "react-leaflet";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  useMapEvent,
+  Polyline,
+  Circle,
+} from "react-leaflet";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import styles from "../../styles/Home.module.css";
-// import "../../styles/Cluster.module.css";
 import L, { divIcon, point } from "leaflet";
 import MarkerClusterGroup from "react-leaflet-markercluster";
 import { useMoralis, useWeb3Contract } from "react-moralis";
+import calculateDistance from "../../utils/calculateDistance";
 import { Modal, Button } from "web3uikit";
 import { abiGovernor, contractAddressesGovernor } from "../../constants";
+import range from "../../constants/variables";
 import VoteDetails from "../Vote/VoteDetails";
 import SearchBar from "./SearchBar";
 import VoteForm from "../Vote/VoteForm";
@@ -47,7 +56,14 @@ const defaultMarkerIcon = new L.Icon({
   popupAnchor: [0, -50],
 });
 
-const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords }) => {
+const Map = ({
+  userLocation,
+  onMapClick,
+  proposalStatus,
+  createCoords,
+  staticMarker,
+  idCoords,
+}) => {
   const router = useRouter();
   const { isWeb3Enabled, chainId: chainIdHex, account, enableWeb3 } = useMoralis();
   const chainId = parseInt(chainIdHex, 16);
@@ -57,8 +73,9 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
   // State Variables
   const [mapMarkers, setMapMarkers] = useState([]);
   const [defaultMarkerPosition, setDefaultMarkerPosition] = useState(
-    createCoords || { lat: 51.505, lng: -0.09 }
+    createCoords || userLocation || { lat: 51.505, lng: -0.09 }
   );
+  const [useUserLocation, setUseUserLocation] = useState(userLocation ? true : false);
   const [defaultMarkerPopupContent, setDefaultMarkerPopupContent] =
     useState("New Proposal Location");
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -76,6 +93,7 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
   // Hooks
   useEffect(() => {
     if (createCoords) {
+      console.log("HELP");
       setDefaultMarkerPosition(createCoords);
     }
   }, [createCoords]);
@@ -86,7 +104,6 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
         try {
           const metadataResponse = await axios.get("http://localhost:5000/proposals");
           const metadata = metadataResponse.data;
-
           const proposalDetails = await Promise.all(
             metadata.map(async (proposal) => {
               const ipfsResponse = await axios.get(
@@ -98,7 +115,6 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
                 functionName: "state",
                 params: { proposalId: proposal.proposalId },
               };
-
               let proposalState;
               await runContractFunction({
                 params: stateOptions,
@@ -109,7 +125,10 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
               });
 
               const status = getStatusText(proposalState);
-              return { ...proposal, ...ipfsResponse.data, status };
+              const distance =
+                userLocation && calculateDistance(userLocation, ipfsResponse.data.coordinates);
+              const isInRange = distance && distance <= range; // 10 km range
+              return { ...proposal, ...ipfsResponse.data, status, distance, isInRange };
             })
           );
 
@@ -126,7 +145,7 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
     useEffect(() => {
       const fetchProposalsFromGraph = async () => {
         try {
-          if (!proposalsFromGraph) return; // Wait for data to be available
+          if (!proposalsFromGraph) return;
           const extractIpfsHash = (description) => {
             const parts = description.split("#");
             return parts.length > 1 ? parts[1] : null;
@@ -159,12 +178,12 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
                 });
 
                 const status = getStatusText(proposalState);
+                const distance =
+                  userLocation && calculateDistance(userLocation, ipfsResponse.data.coordinates);
+                console.log("distance", distance);
+                const isInRange = distance && distance <= range;
 
-                return {
-                  ...proposal,
-                  ...ipfsResponse.data,
-                  status,
-                };
+                return { ...proposal, ...ipfsResponse.data, status, distance, isInRange };
               } catch (error) {
                 console.error(`Error processing proposal ${proposal.proposalId}:`, error);
                 return null; // Handle individual proposal fetch failure gracefully
@@ -225,7 +244,7 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
   const fetchProposalDetails = async (proposalId) => {
     try {
       const response = await axios.get(`http://localhost:5000/proposals/${proposalId}`);
-      setSelectedProposal(response.data); // Store the fetched proposal details in selectedProposal
+      setSelectedProposal(response.data);
     } catch (error) {
       console.error("Error fetching proposal details:", error);
     }
@@ -299,35 +318,78 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
       if (!isClickInsideSearchBar) {
         const newCoords = { lat: e.latlng.lat, lng: e.latlng.lng };
         setDefaultMarkerPosition(newCoords);
+        setUseUserLocation(false);
         onMapClick(newCoords);
       }
     });
     return null;
   };
+  const dottedLineCoords =
+    userLocation && idCoords ? [userLocation, [idCoords.lat, idCoords.lng]] : null;
 
   return (
     <div>
       <MapContainer
         className={styles["map-container"]}
-        center={createCoords || idCoords || [51.505, -0.09]}
+        center={
+          idCoords
+            ? idCoords
+            : createCoords
+            ? createCoords
+            : useUserLocation && userLocation.lat !== null && userLocation.lng !== null
+            ? userLocation
+            : [51.505, -0.09]
+        }
         zoom={13}
+        whenReady={() => console.log("Map is ready")}
+        onClick={(e) => {
+          if (!staticMarker) {
+            const coords = e.latlng;
+            setDefaultMarkerPosition(coords);
+            onMapClick(coords);
+          }
+        }}
       >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
         <MapClickHandler />
+        {userLocation && userLocation.lat !== null && userLocation.lng !== null && (
+          <Marker
+            position={userLocation || [51.505, -0.09]}
+            icon={L.divIcon({
+              className: styles["current-location-container"],
+              html: `
+              <div class="${styles["outer-circle"]}"></div>
+              <div class="${styles["inner-circle"]}"></div>
+               `,
+              iconSize: [30, 30],
+              iconAnchor: [15, 15],
+            })}
+          ></Marker>
+        )}
+
         <SearchBar onSearchResult={handleSearchResult} />
+        {userLocation && (
+          <Circle
+            center={userLocation}
+            radius={range * 1000} // range in meters
+            pathOptions={{ color: "blue", fillColor: "lightblue", fillOpacity: 0.2 }}
+          />
+        )}
         <MarkerClusterGroup showCoverageOnHover={false}>
           <Marker
-            position={defaultMarkerPosition}
+            position={createCoords ? createCoords : defaultMarkerPosition}
             icon={defaultMarkerIcon}
             draggable={true}
             eventHandlers={{
               dragend: (e) => {
                 const marker = e.target;
                 const position = marker.getLatLng();
+                console.log(staticMarker);
                 setDefaultMarkerPosition({ lat: position.lat, lng: position.lng });
+                setUseUserLocation(false);
                 onMapClick({ lat: position.lat, lng: position.lng });
               },
             }}
@@ -355,6 +417,7 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
               </Popup>
             )}
           </Marker>
+
           {mapMarkers.map((marker, idx) => (
             <Marker key={idx} position={marker?.coordinates} icon={getMarkerIcon(marker?.status)}>
               <Popup>
@@ -363,7 +426,13 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
                 <strong>Coordinates:</strong> {marker?.coordinates.lat.toFixed(4)},{" "}
                 {marker?.coordinates.lng.toFixed(4)}
                 <br />
-                <br />
+                <strong>Distance from you:</strong>{" "}
+                {marker.distance ? `${marker.distance.toFixed(2)} km` : "Unknown"}
+                {marker.isInRange ? (
+                  <p style={{ color: "green", marginTop: "12px" }}>In range to vote</p>
+                ) : (
+                  <p style={{ color: "red", marginTop: "12px"}}>Outside range to vote</p>
+                )}
                 {marker?.status === "Pending" ? (
                   <p>Proposal vote hasn't started yet.</p>
                 ) : marker?.status === "Queued" ? (
@@ -378,13 +447,16 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
                   <p>You cannot vote on your own proposal.</p>
                 ) : (
                   proposalStatus == "Active" && (
-                    <Button
-                      onClick={() => handleVoteClick(marker)}
-                      text="Vote Here"
-                      theme="primary"
-                      size="medium"
-                      style={{ margin: "auto" }}
-                    />
+                    <div>
+                      <Button
+                        onClick={() => handleVoteClick(marker)}
+                        text="Vote Here"
+                        theme="primary"
+                        size="medium"
+                        style={{ margin: "auto" }}
+                        disabled={!marker.isInRange}
+                      />
+                    </div>
                   )
                 )}
                 <a
@@ -398,6 +470,17 @@ const Map = ({ onMapClick, proposalStatus, createCoords, staticMarker, idCoords 
               </Popup>
             </Marker>
           ))}
+
+          {dottedLineCoords && (
+            <Polyline
+              positions={dottedLineCoords}
+              pathOptions={{
+                color: "blue",
+                dashArray: "5, 10",
+                weight: 2,
+              }}
+            />
+          )}
         </MarkerClusterGroup>
       </MapContainer>
 

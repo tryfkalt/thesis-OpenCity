@@ -14,21 +14,45 @@ const CreateProposalPage = () => {
   const { lat, lng } = router.query;
   const { isWeb3Enabled, chainId } = useMoralis();
   const [proposals, setProposals] = useState([]);
-  const [selectedCoords, setSelectedCoords] = useState({ lat: lat ?? 51.505, lng: lng ?? -0.09 });
+  const [userLocation, setUserLocation] = useState({ lat: null, lng: null });
+  const [selectedCoords, setSelectedCoords] = useState({
+    lat: lat || userLocation.lat,
+    lng: lng || userLocation.lng,
+  });
   const [isStatic, setIsStatic] = useState(true);
-  const [proposalThreshold, setProposalThreshold] = useState("0");
   const [loading, setLoading] = useState(true);
+
+  // Track user's current location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      const watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.error("Error fetching location: ", error);
+        },
+        { enableHighAccuracy: true }
+      );
+
+      // Clean up the watcher on component unmount
+      return () => navigator.geolocation.clearWatch(watchId);
+    } else {
+      console.error("Geolocation is not supported by this browser.");
+    }
+  }, []);
 
   // Set isStatic to false after the initial render
   useEffect(() => {
-    if (isStatic) {
-      setIsStatic(false);
-    }
-    setTimeout(() => {
-      setLoading(false);
-    }, 500);
-  }, []);
+    const timer = setTimeout(() => setIsStatic(false), 500); // Ensure one render with isStatic=true
+    setTimeout(() => setLoading(false), 500);
 
+    return () => clearTimeout(timer);
+  }, []);
+  
   const handleProposalSubmit = (proposalData) => {
     setProposals([...proposals, proposalData]);
   };
@@ -52,20 +76,28 @@ const CreateProposalPage = () => {
                   <div className={styles.proposalForm}>
                     <ProposalForm
                       onProposalSubmit={handleProposalSubmit}
-                      coordinates={selectedCoords}
-                      // setLoading={setLoading}
+                      coordinates={selectedCoords ?? userLocation}
+                      // setLoading={setLoading}t
                     />
                   </div>
                   <div className={styles.map}>
                     {isStatic ? (
                       <Map
+                        userLocation={userLocation}
                         markers={proposals}
                         onMapClick={setSelectedCoords}
-                        createCoords={{ lat: lat ?? 51.505, lng: lng ?? -0.09 }}
+                        createCoords={
+                          lat && lng
+                            ? { lat, lng }
+                            : userLocation.lat && userLocation.lng
+                            ? userLocation
+                            : { lat: 51.505, lng: -0.09 }
+                        }
                         staticMarker={isStatic}
                       />
                     ) : (
                       <Map
+                        userLocation={userLocation}
                         markers={proposals}
                         onMapClick={setSelectedCoords}
                         staticMarker={isStatic}
@@ -84,7 +116,7 @@ const CreateProposalPage = () => {
           )}
         </>
       )}
-      <footer className={styles.footer}>© 2024 Open World. All rights reserved.</footer>
+      <footer className={styles.footer}>© 2024 Open City. All rights reserved.</footer>
     </div>
   );
 };

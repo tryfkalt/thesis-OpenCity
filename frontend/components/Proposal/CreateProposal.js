@@ -279,29 +279,39 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
         className={styles["form-content"]}
         onSubmit={createProposal}
         data={[
-          { name: "Title", type: "text", value: title, key: "title", inputWidth: "100%" },
+          {
+            name: "Title",
+            type: "text",
+            value: title,
+            key: "title",
+            inputWidth: "100%",
+            validation: { required: true },
+            placeholder: "Enter proposal title",
+          },
           {
             name: "Description",
-            type: "textarea",
+            type: "text",
             value: description,
             key: "description",
             inputWidth: "100%",
+            validation: { required: true },
+            placeholder: "Enter proposal description",
           },
           {
             name: "Latitude",
             type: "text",
             value: coordinates.lat,
             key: "lat",
-            disabled: true,
             inputWidth: "100%",
+            disabled: true,
           },
           {
             name: "Longitude",
             type: "text",
             value: coordinates.lng,
             key: "lng",
-            disabled: true,
             inputWidth: "100%",
+            disabled: true,
           },
         ]}
         title="Create Proposal"

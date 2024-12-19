@@ -24,6 +24,7 @@ const ProposalDetails = () => {
   const { isWeb3Enabled, chainId: chainIdHex, account } = useMoralis();
   const chainId = parseInt(chainIdHex, 16);
 
+  const [userLocation, setUserLocation] = useState({ lat: "", lng: "" });
   const [proposal, setProposal] = useState(null);
   const [status, setStatus] = useState("");
   const [quorum, setQuorum] = useState(null);
@@ -42,6 +43,29 @@ const ProposalDetails = () => {
     variables: { proposalId: proposalId },
   });
 
+  // Track user's current location
+  useEffect(() => {
+    if (navigator.geolocation) {
+      const watchId = navigator.geolocation.watchPosition(
+        (position) => {
+          setUserLocation({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (error) => {
+          console.error("Error fetching location: ", error);
+        },
+        { enableHighAccuracy: true }
+      );
+
+      // Clean up the watcher on component unmount
+      return () => navigator.geolocation.clearWatch(watchId);
+    } else {
+      console.error("Geolocation is not supported by this browser.");
+    }
+  }, []);
+
   // console.log(proposalFromGraph);
   if (chainId === 31337) {
     useEffect(() => {
@@ -49,10 +73,8 @@ const ProposalDetails = () => {
         try {
           setLoading(true);
           const response = await axios.get(`http://localhost:5000/proposals/${id}`);
-          console.log("RESPONSE", response.data);
           setProposal({ ...response.data, proposalId: id });
           setSelectedCoords(response.data.coordinates);
-
           const governorAddress = contractAddressesGovernor[chainId]?.[0];
           const stateOptions = {
             abi: abiGovernor,
@@ -134,6 +156,7 @@ const ProposalDetails = () => {
           };
           const proposalState = await runContractFunction({ params: stateOptions });
           const proposalStatus = getStatusText(proposalState);
+
           setStatus(proposalStatus);
 
           // If not pending, fetch additional details
@@ -382,7 +405,7 @@ const ProposalDetails = () => {
           <div className={styles.mapContainer}>
             {proposal !== null && proposal.coordinates && (
               <Map
-                // markers={[proposal]}
+                userLocation={userLocation}
                 onMapClick={setSelectedCoords}
                 proposalStatus={status}
                 idCoords={{ lat: proposal.coordinates.lat, lng: proposal.coordinates.lng }}
