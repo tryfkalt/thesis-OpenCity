@@ -9,6 +9,8 @@ typechain
 cache
 artifacts
 proposals.json
+.backend/data/execHash.json
+.backend/data/proposalData.json
 .notes.md
 typechain-types
 gas-report.txt

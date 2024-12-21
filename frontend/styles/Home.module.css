@@ -9,6 +9,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  font-family: "Montserrat", sans-serif;
   align-items: center;
 }
 
@@ -16,9 +17,13 @@
   display: flex;
   flex: 1;
   padding: 2rem 0;
+  margin-top: 35px;
+  color: #888;
   border-top: 1px solid #eaeaea;
   justify-content: center;
   align-items: center;
+  font-size: 0.9rem;
+  font-family: "Montserrat", sans-serif;
 }
 
 .footer a {
@@ -26,11 +31,13 @@
   justify-content: center;
   align-items: center;
   flex-grow: 1;
+  font-family: "Montserrat", sans-serif;
 }
 
 .title a {
   color: #0070f3;
   text-decoration: none;
+  font-family: "Montserrat", sans-serif;
 }
 
 .title a:hover,
@@ -43,17 +50,20 @@
   margin: 0;
   line-height: 1.15;
   font-size: 4rem;
+  font-family: "Montserrat", sans-serif;
 }
 
 .title,
 .description {
   text-align: center;
+  font-family: "Montserrat", sans-serif;
 }
 
 .description {
   margin: 4rem 0;
   line-height: 1.5;
   font-size: 1.5rem;
+  font-family: "Montserrat", sans-serif;
 }
 
 .code {
@@ -61,7 +71,7 @@
   border-radius: 5px;
   padding: 0.75rem;
   font-size: 1.1rem;
-  font-family: Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono,
+  font-family: "Montserrat", Menlo, Monaco, Lucida Console, Liberation Mono, DejaVu Sans Mono,
     Bitstream Vera Sans Mono, Courier New, monospace;
 }
 
@@ -71,6 +81,7 @@
   justify-content: center;
   flex-wrap: wrap;
   max-width: 800px;
+  font-family: "Montserrat", sans-serif;
 }
 
 .card {
@@ -83,6 +94,7 @@
   border-radius: 10px;
   transition: color 0.15s ease, border-color 0.15s ease;
   max-width: 300px;
+  font-family: "Montserrat", sans-serif;
 }
 
 .card:hover,
@@ -95,17 +107,20 @@
 .card h2 {
   margin: 0 0 1rem 0;
   font-size: 1.5rem;
+  font-family: "Montserrat", sans-serif;
 }
 
 .card p {
   margin: 0;
   font-size: 1.25rem;
   line-height: 1.5;
+  font-family: "Montserrat", sans-serif;
 }
 
 .logo {
   height: 1em;
   margin-left: 0.5rem;
+  font-family: "Montserrat", sans-serif;
 }
 
 @media (max-width: 600px) {
@@ -114,13 +129,6 @@
     flex-direction: column;
   }
 }
-
-/* .container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 20px;
-} */
 
 .form-container {
   display: flex;
@@ -133,11 +141,13 @@
   padding: 20px;
   border-radius: 8px;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  font-family: "Montserrat", sans-serif;
 }
 
 .form-container label {
   font-weight: bold;
   margin-bottom: 5px;
+  font-family: "Montserrat", sans-serif;
 }
 
 .form-container input,
@@ -147,6 +157,7 @@
   font-size: 1rem;
   border: 1px solid #ddd;
   border-radius: 4px;
+  font-family: "Montserrat", sans-serif;
 }
 
 .form-container button {
@@ -156,6 +167,7 @@
   border: none;
   font-weight: bold;
   margin-top: 10px;
+  font-family: "Montserrat", sans-serif;
 }
 
 .form-container button:hover {
@@ -163,9 +175,197 @@
 }
 
 .map-container {
-  width: 100%;
   height: 40rem;
   padding: 20px;
   padding-right: 10px;
   z-index: 0;
+  font-family: "Montserrat", sans-serif;
+}
+
+.input-container {
+  margin: 10px 0;
+  font-family: "Montserrat", sans-serif;
+}
+
+.proposal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 400px;
+  max-width: 100%;
+  background: #f9f9f9;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin: auto;
+  font-family: "Montserrat", sans-serif;
+}
+
+#form-submit {
+  background-color: #0070f3;
+  color: white;
+  cursor: pointer;
+  border: none;
+  font-weight: bold;
+  margin-top: 10px;
+  font-family: "Montserrat", sans-serif;
+}
+
+.form-content {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin: auto;
+  margin-top: 20px;
+  font-family: "Montserrat", sans-serif;
+}
+
+.hero {
+  text-align: center;
+  margin-bottom: 20px;
+  font-family: "Montserrat", sans-serif;
+}
+
+.hero h1 {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #333;
+  font-family: "Montserrat", sans-serif;
+}
+
+.hero p {
+  font-size: 1.2rem;
+  color: #666;
+  font-family: "Montserrat", sans-serif;
+}
+
+.totalSupplyBox {
+  width: 100%;
+  max-width: 400px;
+  margin: auto;
+  padding: 20px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+  text-align: center;
+}
+
+.totalSupplyBox h2 {
+  margin: auto;
+  font-size: 1.5em;
+  color: #333;
+}
+
+.totalSupplyBox p {
+  font-size: 1.2em;
+  color: #555;
+}
+
+/* Container for the current location marker */
+.current-location-container {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Container for the current location marker */
+.current-location-container {
+  position: relative;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Outer pulsating circle */
+.outer-circle {
+  position: absolute;
+  width: 50px; /* Outer circle size */
+  height: 50px;
+  background-color: rgba(0, 123, 255, 0.3); /* Light blue */
+  border-radius: 50%;
+  animation: pulsate 1.5s infinite ease-out;
+}
+
+/* Inner solid blue dot */
+.inner-circle {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background-color: #007bff;
+  border-radius: 50%;
+  z-index: 10;
+}
+
+/* Pulsating animation */
+@keyframes pulsate {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.5);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.contentWrapper {
+  display: flex;
+  flex: 1;
+}
+.infoBox {
+  position: absolute;
+  margin-top: 120px;
+  padding: 15px;
+  width: 250px;
+  height: 200px;
+  background-color: #f0f2f5;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  text-align: center;
+  margin-right: 30px;
+  z-index: 1000; /* Lower than the modal overlay */
+  font-family: "Montserrat", sans-serif;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.infoBox h2 {
+  font-size: 1.25rem;
+  margin-bottom: 0px;
+}
+
+.infoBox ol {
+  list-style: decimal inside;
+  padding: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.infoBox li {
+  margin: 10px 0;
+  margin-bottom: 0px;
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.infoBox .activeStep {
+  font-weight: bold;
+  color: #222;
+}
+
+.mainContent {
+  flex: 1;
+  padding: 20px;
 }

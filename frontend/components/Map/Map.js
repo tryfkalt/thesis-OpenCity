@@ -1,43 +1,507 @@
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from "react-leaflet";
-import "leaflet/dist/leaflet.css";
-import { useState, useEffect } from "react";
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  Popup,
+  useMapEvent,
+  Polyline,
+  Circle,
+} from "react-leaflet";
+import { useState, useEffect, useRef } from "react";
+import L from "leaflet";
+import axios from "axios";
+import MarkerClusterGroup from "react-leaflet-markercluster";
+import { useMoralis, useWeb3Contract } from "react-moralis";
+import calculateDistance from "../../utils/calculateDistance";
+import { Modal, Button } from "web3uikit";
+import { abiGovernor, contractAddressesGovernor } from "../../constants";
+import { range } from "../../constants/variables";
+import { getStatusText } from "../../utils/map-utils/tableUtils";
+import extractIpfsHash from "../../utils/extractIpfsHash";
+import VoteDetails from "../Vote/VoteDetails";
+import SearchBar from "./SearchBar";
+import VoteForm from "../Vote/VoteForm";
+import Spinner from "../Spinner/Spinner";
+import { useRouter } from "next/router";
+import { useQuery, useLazyQuery } from "@apollo/client";
+import { GET_PROPOSALS, GET_PROPOSAL_BY_ID } from "../../constants/subgraphQueries";
 import styles from "../../styles/Home.module.css";
-import { map } from "leaflet";
 
-const Map = ({ markers, onMapClick }) => {
-  const [mapMarkers, setMapMarkers] = useState(markers || []);
-  const [isClient, setIsClient] = useState(false);
+/**
+ * Map component that displays a map with various markers from proposals and allows interaction with them.
+ *
+ * @param {Object} props - The properties object.
+ * @param {Object} props.userLocation - The user's current location with latitude and longitude.
+ * @param {Function} props.onMapClick - Callback function to handle map click events.
+ * @param {string} props.proposalStatus - The status of the proposal.
+ * @param {Object} props.createCoords - Coordinates for creating a new proposal when redirecting to create page.
+ * @param {boolean} props.staticMarker - Flag to determine if the marker is static.
+ * @param {Object} props.idCoords - Coordinates for a specific ID.
+ *
+ * @returns {JSX.Element} The rendered Map component.
+ */
+const Map = ({
+  userLocation,
+  onMapClick,
+  proposalStatus,
+  createCoords,
+  staticMarker,
+  idCoords,
+}) => {
+  const router = useRouter();
+  const { isWeb3Enabled, chainId: chainIdHex, account, enableWeb3 } = useMoralis();
+  const chainId = parseInt(chainIdHex, 16);
+  const { runContractFunction } = useWeb3Contract();
+  const voteProposalRef = useRef(null);
+
+  // State Variables
+  const [mapMarkers, setMapMarkers] = useState([]);
+  const [defaultMarkerPosition, setDefaultMarkerPosition] = useState(
+    createCoords && createCoords.lat !== null && createCoords.lng !== null
+      ? createCoords
+      : userLocation && userLocation.lat !== null && userLocation.lng !== null
+      ? userLocation
+      : { lat: 51.505, lng: -0.09 }
+  );
+  const [useUserLocation, setUseUserLocation] = useState(userLocation ? true : false);
+  const [defaultMarkerPopupContent, setDefaultMarkerPopupContent] =
+    useState("New Proposal Location");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedProposal, setSelectedProposal] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  // Contract Address
+  const governorAddress =
+    chainId in contractAddressesGovernor ? contractAddressesGovernor[chainId][0] : null;
+
+  // GraphQL Queries
+  const { error, data: proposalsFromGraph } = useQuery(GET_PROPOSALS);
+  const [getProposalFromGraph, { data: proposalFromGraph }] = useLazyQuery(GET_PROPOSAL_BY_ID);
+
+  const pendingMarkerIcon = new L.Icon({
+    iconUrl: "/Pending.png",
+    iconSize: [50, 50],
+    iconAnchor: [25, 50],
+    popupAnchor: [0, -50],
+  });
+  const activeMarkerIcon = new L.Icon({
+    iconUrl: "/Active.png",
+    iconSize: [50, 50],
+    iconAnchor: [25, 50],
+    popupAnchor: [0, -50],
+  });
+  const acceptedMarkerIcon = new L.Icon({
+    iconUrl: "/Accepted.png",
+    iconSize: [50, 50],
+    iconAnchor: [25, 50],
+    popupAnchor: [0, -50],
+  });
+  const deniedMarkerIcon = new L.Icon({
+    iconUrl: "/Denied.png",
+    iconSize: [50, 50],
+    iconAnchor: [25, 50],
+    popupAnchor: [0, -50],
+  });
+  const defaultMarkerIcon = new L.Icon({
+    iconUrl: "/Default.png",
+    iconSize: [50, 50],
+    iconAnchor: [25, 50],
+    popupAnchor: [0, -50],
+  });
+
+  const getMarkerIcon = (status) => {
+    switch (status) {
+      case "Pending":
+        return pendingMarkerIcon;
+      case "Active":
+        return activeMarkerIcon;
+      case "Succeeded":
+      case "Executed":
+        return acceptedMarkerIcon;
+      case "Defeated":
+      case "Canceled":
+        return deniedMarkerIcon;
+      default:
+        return defaultMarkerIcon;
+    }
+  };
+
+  // Hooks
+  useEffect(() => {
+    const fetchProposalsMetadata = async () => {
+      try {
+        const metadataResponse = await axios.get("http://localhost:5000/proposals");
+        const metadata = metadataResponse.data;
+        const proposalDetails = await Promise.all(
+          metadata.map(async (proposal) => {
+            const ipfsResponse = await axios.get(
+              `https://gateway.pinata.cloud/ipfs/${proposal.ipfsHash}`
+            );
+            const stateOptions = {
+              abi: abiGovernor,
+              contractAddress: governorAddress,
+              functionName: "state",
+              params: { proposalId: proposal.proposalId },
+            };
+            let proposalState;
+            await runContractFunction({
+              params: stateOptions,
+              onSuccess: (state) => {
+                proposalState = state;
+              },
+              onError: (error) => console.error("Error fetching proposal state:", error),
+            });
+
+            const status = getStatusText(proposalState);
+            const distance =
+              userLocation && calculateDistance(userLocation, ipfsResponse.data.coordinates);
+            const isInRange = distance && distance <= range; // 10 km range
+            return { ...proposal, ...ipfsResponse.data, status, distance, isInRange };
+          })
+        );
+
+        setMapMarkers(proposalDetails);
+      } catch (error) {
+        console.error("Error fetching proposals:", error);
+      }
+    };
+
+    const fetchProposalsFromGraph = async () => {
+      try {
+        if (!proposalsFromGraph) return;
+
+        const proposalDetails = await Promise.all(
+          proposalsFromGraph.proposalCreateds.map(async (proposal) => {
+            const ipfsHash = proposal?.ipfsHash || extractIpfsHash(proposal.description);
+            if (!ipfsHash) {
+              console.warn(`No IPFS hash found in description: ${proposal.description}`);
+              return null;
+            }
+
+            try {
+              const ipfsResponse = await axios.get(`https://gateway.pinata.cloud/ipfs/${ipfsHash}`);
+              const stateOptions = {
+                abi: abiGovernor,
+                contractAddress: governorAddress,
+                functionName: "state",
+                params: { proposalId: proposal.proposalId },
+              };
+
+              let proposalState;
+              await runContractFunction({
+                params: stateOptions,
+                onSuccess: (state) => (proposalState = state),
+                onError: (error) => console.error("Error fetching proposal state:", error),
+              });
+              const status = getStatusText(proposalState);
+              const distance =
+                userLocation && calculateDistance(userLocation, ipfsResponse.data.coordinates);
+              const isInRange = distance && distance <= range;
+
+              return { ...proposal, ...ipfsResponse.data, status, distance, isInRange };
+            } catch (error) {
+              console.error(`Error processing proposal ${proposal.proposalId}:`, error);
+              return null; // Handle individual proposal fetch failure gracefully
+            }
+          })
+        );
+        setMapMarkers(proposalDetails);
+      } catch (error) {
+        console.error("Error processing proposals from The Graph:", error);
+      }
+    };
+
+    // Logic to fetch proposals based on the chainId
+    if (isWeb3Enabled && governorAddress) {
+      if (chainId == 31337) {
+        fetchProposalsMetadata();
+      } else {
+        fetchProposalsFromGraph();
+      }
+    }
+  }, [isWeb3Enabled, governorAddress, proposalsFromGraph, chainId, userLocation, range]);
+
+  const fetchProposalDetails = async (proposalId) => {
+    try {
+      const response = await axios.get(`http://localhost:5000/proposals/${proposalId}`);
+      setSelectedProposal(response.data);
+    } catch (error) {
+      console.error("Error fetching proposal details:", error);
+    }
+  };
+
+  const fetchProposalDetailsFromGraph = async (proposal) => {
+    try {
+      const ipfsHash = proposal.description.split("#")[1];
+      const ipfsResponse = await axios.get(`https://gateway.pinata.cloud/ipfs/${ipfsHash}`);
+      setSelectedProposal({ ...proposal, ...ipfsResponse.data });
+    } catch (error) {
+      console.error("Error fetching proposal details from The Graph:", error);
+    }
+  };
 
   useEffect(() => {
-    // Set isClient to true when the component is mounted
-    setIsClient(true);
-  }, []);
+    if (proposalFromGraph && proposalFromGraph.proposalCreateds.length > 0) {
+      const fetchedProposal = proposalFromGraph.proposalCreateds[0]; // Assuming there's always at least one result
+      fetchProposalDetailsFromGraph(fetchedProposal);
+      setIsModalOpen(true);
+    }
+  }, [proposalFromGraph]);
+
+  // Event Handlers
+  const handleProposalCreate = () => {
+    router.push({
+      pathname: "/proposal/create",
+      query: {
+        lat: defaultMarkerPosition.lat,
+        lng: defaultMarkerPosition.lng,
+      },
+    });
+  };
+
+  const handleVoteClick = async (proposal) => {
+    if (!isWeb3Enabled) {
+      await enableWeb3();
+    }
+    if (account === proposal.proposer) {
+      alert("You cannot vote on your own proposal.");
+      return;
+    }
+    if (chainId == 31337) {
+      await fetchProposalDetails(proposal.proposalId);
+    } else {
+      getProposalFromGraph({ variables: { proposalId: proposal.proposalId } });
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleSearchResult = ({ lat, lng, place_name }) => {
+    setDefaultMarkerPosition({ lat, lng });
+    setDefaultMarkerPopupContent(place_name);
+  };
+
+  const handleVoteSubmit = async () => {
+    if (voteProposalRef.current) {
+      setLoading(true);
+      await voteProposalRef.current(); // Calls voteProposal in VoteForm
+      setLoading(false);
+    }
+    setIsModalOpen(false);
+  };
 
   const MapClickHandler = () => {
-    useMapEvents({
-      click(e) {
-        onMapClick(e.latlng);
-      },
+    useMapEvent("click", (e) => {
+      // Check if the click originated from the search bar or its children
+      const clickedElement = e.originalEvent.target;
+      const isClickInsideSearchBar = clickedElement.closest(".mapboxgl-ctrl-geocoder") !== null;
+      // Only update marker position if click is outside the search bar
+      if (!isClickInsideSearchBar) {
+        const newCoords = { lat: e.latlng.lat, lng: e.latlng.lng };
+        setDefaultMarkerPosition(newCoords);
+        setUseUserLocation(false);
+        onMapClick(newCoords);
+      }
     });
     return null;
   };
 
-  if (!isClient) return null;
-
+  const dottedLineCoords =
+    userLocation && idCoords ? [userLocation, [idCoords.lat, idCoords.lng]] : null;
+    
   return (
     <div>
-      <MapContainer className={styles["map-container"]} center={[51.505, -0.09]} zoom={13}>
+      <MapContainer
+        className={styles["map-container"]}
+        center={
+          idCoords
+            ? idCoords
+            : createCoords
+            ? createCoords
+            : useUserLocation && userLocation.lat !== null && userLocation.lng !== null
+            ? userLocation
+            : [51.505, -0.09]
+        }
+        zoom={13}
+        whenReady={() => console.log("Map is ready")}
+        onClick={(e) => {
+          if (!staticMarker) {
+            const coords = e.latlng;
+            setDefaultMarkerPosition(coords);
+            onMapClick(coords);
+          }
+        }}
+      >
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
-        {mapMarkers.map((marker, index) => (
-          <Marker key={index} position={[marker.lat, marker.lng]}>
-            <Popup>{marker.description}</Popup>
-          </Marker>
-        ))}
         <MapClickHandler />
+        {userLocation && userLocation.lat !== null && userLocation.lng !== null && (
+          <Marker
+            position={userLocation || [51.505, -0.09]}
+            icon={L.divIcon({
+              className: styles["current-location-container"],
+              html: `
+              <div class="${styles["outer-circle"]}"></div>
+              <div class="${styles["inner-circle"]}"></div>
+               `,
+              iconSize: [30, 30],
+              iconAnchor: [15, 15],
+            })}
+          ></Marker>
+        )}
+
+        <SearchBar onSearchResult={handleSearchResult} />
+        {userLocation && (
+          <Circle
+            center={userLocation}
+            radius={range * 1000} // range in meters
+            pathOptions={{ color: "blue", fillColor: "lightblue", fillOpacity: 0.2 }}
+          />
+        )}
+        <MarkerClusterGroup showCoverageOnHover={false}>
+          <Marker
+            position={createCoords ? createCoords : defaultMarkerPosition}
+            icon={defaultMarkerIcon}
+            draggable={true}
+            eventHandlers={{
+              dragend: (e) => {
+                const marker = e.target;
+                const position = marker.getLatLng();
+                setDefaultMarkerPosition({ lat: position.lat, lng: position.lng });
+                setUseUserLocation(false);
+                onMapClick({ lat: position.lat, lng: position.lng });
+              },
+            }}
+          >
+            {!staticMarker && (
+              <Popup>
+                <strong style={{ color: "Green", margin: "auto" }}>New Proposal Location</strong>
+                <br />
+                Drag or click on the map to choose location.
+                <Button
+                  id="popUpNew"
+                  text="+ New Proposal"
+                  size="small"
+                  theme="colored"
+                  color="green"
+                  style={{ margin: "auto", marginTop: "15px" }}
+                  onClick={handleProposalCreate}
+                />
+              </Popup>
+            )}
+
+            {staticMarker && (
+              <Popup open>
+                <strong>Hello</strong>
+              </Popup>
+            )}
+          </Marker>
+
+          {mapMarkers.map((marker, idx) => (
+            <Marker key={idx} position={marker?.coordinates} icon={getMarkerIcon(marker?.status)}>
+              <Popup>
+                <strong>Proposal:</strong> {marker?.title}
+                <br />
+                <strong>Coordinates:</strong> {marker?.coordinates.lat}° N,{" "}
+                {marker?.coordinates.lng}° E
+                <br />
+                <strong>Distance from you:</strong>{" "}
+                {marker.distance ? `${marker.distance.toFixed(2)} km` : "Unknown"}
+                {marker.isInRange ? (
+                  <p style={{ color: "green", marginTop: "12px" }}>In range to vote</p>
+                ) : (
+                  <p style={{ color: "red", marginTop: "12px" }}>Outside range to vote</p>
+                )}
+                {marker?.status === "Pending" ? (
+                  <p>Proposal vote hasn&apos;t started yet.</p>
+                ) : marker?.status === "Queued" ? (
+                  <p>Proposal is pending execution.</p>
+                ) : marker?.status === "Defeated" ? (
+                  <p>Proposal not successful.</p>
+                ) : marker?.status === "Succeeded" ? (
+                  <p>Proposal successful, waiting to queue.</p>
+                ) : marker?.status === "Executed" ? (
+                  <p>Proposal executed.</p>
+                ) : account === marker?.proposer ? (
+                  <p>You cannot vote on your own proposal.</p>
+                ) : (
+                  proposalStatus == "Active" && (
+                    <div>
+                      <Button
+                        onClick={() => handleVoteClick(marker)}
+                        text="Vote Here"
+                        theme="primary"
+                        size="medium"
+                        style={{ margin: "auto" }}
+                        disabled={!marker.isInRange}
+                      />
+                    </div>
+                  )
+                )}
+                <a
+                  href={`/proposal/${marker?.proposalId}`}
+                  style={{ display: "block", textAlign: "center", marginTop: "10px" }}
+                  // target="_blank"
+                  // rel="noopener noreferrer"
+                >
+                  View Details
+                </a>
+              </Popup>
+            </Marker>
+          ))}
+
+          {dottedLineCoords && (
+            <Polyline
+              positions={dottedLineCoords}
+              pathOptions={{
+                color: "blue",
+                dashArray: "5, 10",
+                weight: 2,
+              }}
+            />
+          )}
+        </MarkerClusterGroup>
       </MapContainer>
+
+      <Modal
+        isVisible={isModalOpen}
+        onCancel={() => setIsModalOpen(false)}
+        onCloseButtonPressed={() => setIsModalOpen(false)}
+        title="Vote On Proposal"
+        okText="Submit"
+        onOk={handleVoteSubmit}
+        style={{
+          width: "470px",
+          maxWidth: "90vw",
+          padding: "730px",
+          borderRadius: "12px",
+          margin: "auto",
+          boxShadow: "0px 4px 10px rgba(0, 0, 0, 0.1)",
+          fontFamily: "Montserrat, sans-serif",
+          zIndex: "1000",
+        }}
+      >
+        {loading ? (
+          <div className="spinnerContainer">
+            <Spinner />
+            <p>Submitting your vote, please wait...</p>
+          </div>
+        ) : (
+          selectedProposal && (
+            <>
+              <VoteDetails proposalDetails={selectedProposal} />
+              <VoteForm
+                proposalDetails={selectedProposal}
+                onVoteSubmit={(voteProposal) => {
+                  voteProposalRef.current = voteProposal;
+                }}
+                setLoading={setLoading} // Pass setLoading to VoteForm
+              />
+            </>
+          )
+        )}
+      </Modal>
     </div>
   );
 };

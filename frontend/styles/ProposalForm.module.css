@@ -1,0 +1,113 @@
+/* Main container for the proposal form */
+.proposal-form {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  height: 1;
+  width: 100%;
+  /* max-width: 500px; */
+  background: #f9f9f9;
+  /* padding: 20px; */
+  border-radius: 8px;
+  /* margin: auto; */
+  margin-top: 20px;
+  /* margin-bottom: 20px; */
+  font-family: "Montserrat", sans-serif;
+}
+
+.form-content {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Form title styling */
+
+.form-content text {
+  font-size: 2rem;
+  font-weight: bold;
+  color: rgb(104, 115, 141);
+  text-align: center;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  padding-top: 10px;
+  font-family: "Montserrat", sans-serif;
+}
+
+.form-content h3 {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: rgb(104, 115, 141);
+  text-align: center;
+  margin-bottom: 15px;
+  padding-bottom: 15px;
+  padding-top: 10px;
+  font-family: "Montserrat", sans-serif;
+}
+
+.form-content h4 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: rgb(104, 115, 141);
+  font-family: "Montserrat", sans-serif;
+}
+
+/* Input and textarea styling
+.form-content input[type="text"],
+.form-content textarea {
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 100%;
+  transition: border-color 0.3s ease;
+  font-family: 'Montserrat', sans-serif;
+} */
+
+.form-content textarea {
+  min-height: 80px;
+  font-family: "Montserrat", sans-serif;
+}
+
+/* Disabled input styling for lat/lng fields */
+.form-content input[disabled] {
+  background-color: #f1f1f1;
+  color: #888;
+  cursor: not-allowed;
+  font-family: "Montserrat", sans-serif;
+}
+
+/* Button styling */
+.form-content button {
+  background-color: #0070f3;
+  color: white;
+  padding: 12px;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+  transition: background-color 0.3s ease;
+  font-family: "Montserrat", sans-serif;
+}
+
+.form-content button:hover {
+  background-color: #005bb5;
+}
+
+/* Loading and message text */
+.form-content p {
+  font-size: 0.9rem;
+  color: #555;
+  margin-top: 10px;
+  font-family: "Montserrat", sans-serif;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .proposal-form {
+    width: 100%;
+    padding: 15px;
+  }
+}

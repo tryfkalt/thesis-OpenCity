@@ -1,0 +1,374 @@
+/* Proposal.module.css */
+
+.container {
+  margin: 0 auto;
+  font-family: "Montserrat", sans-serif;
+  background-color: #f8f9fa;
+  padding: 0 2rem;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Header */
+.headerTitle {
+  font-size: 2.2rem;
+  color: #333;
+  margin-bottom: 25px;
+  text-align: center;
+}
+
+/* Subheader */
+.subHeaderTitle {
+  font-size: 1.75rem;
+  color: #444;
+  margin-top: 40px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+/* Proposal Details Section */
+.proposalDetails {
+  width: 100%;
+  max-width: 600px;
+  background-color: #fff;
+  padding: 25px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 20px auto;
+  border-left: 5px solid #007bff;
+  font-family: "Montserrat", sans-serif;
+}
+
+.proposalDetails p {
+  margin: 10px 0;
+  color: #333;
+  font-size: 1.1rem;
+  line-height: 1.5;
+}
+
+/* Individual Styles for Proposal Info */
+.proposalTitle {
+  font-size: 1.5rem;
+  color: #007bff;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.proposalDescription {
+  font-size: 1.1rem;
+  color: #555;
+  font-style: italic;
+  margin-bottom: 10px;
+}
+
+/* Base style for proposal status */
+.proposalStatus {
+  font-size: 1.1rem;
+  font-weight: bold;
+  padding: 8px 12px;
+  border-radius: 5px;
+  display: inline-block;
+  margin-top: 10px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  color: #fff; /* Text color set to white for contrast */
+}
+
+/* Status-specific styles */
+
+/* Pending: Yellow background */
+.statusPending {
+  background-color: #ffc107; /* Yellow */
+  border: 1px solid #e0a800;
+}
+
+/* Active: Blue background */
+.statusActive {
+  background-color: #007bff; /* Blue */
+  border: 1px solid #0056b3;
+}
+
+/* Successful: Green background */
+.statusSucceeded {
+  background-color: #28a745; /* Green */
+  border: 1px solid #218838;
+}
+
+/* Defeated: Red background */
+.statusDefeated {
+  background-color: #dc3545; /* Red */
+  border: 1px solid #c82333;
+}
+
+/* Queued: Orange background */
+.statusQueued {
+  background-color: #fd7e14; /* Orange */
+  border: 1px solid #e8590c;
+}
+
+/* Executed: Teal background */
+.statusExecuted {
+  background-color: #20c997; /* Teal */
+  border: 1px solid #17a589;
+}
+
+.proposalCoords {
+  font-size: 1rem;
+  color: #555;
+  /* background-color: #f0f8ff; */
+  /* padding: 8px; */
+  /* border-radius: 5px; */
+  /* display: inline-block; */
+  margin-top: 10px;
+}
+
+.proposalProposer {
+  font-size: 1rem;
+  font-weight: bold;
+  color: #007bff;
+  margin-top: 10px;
+}
+
+/* Quorum Section */
+.quorumDetails {
+  font-size: 1.1rem;
+  color: #28a745;
+  font-weight: bold;
+  margin-top: 15px;
+  background-color: #e9f7ef;
+  padding: 10px;
+  border-radius: 5px;
+  display: inline-block;
+  border: 1px solid #c3e6cb;
+}
+
+/* Media Queries */
+@media (max-width: 768px) {
+  .proposalDetails {
+    width: 90%;
+    padding: 20px;
+  }
+  .proposalTitle {
+    font-size: 1.3rem;
+  }
+  .proposalDescription {
+    font-size: 1rem;
+  }
+  .proposalStatus,
+  .proposalCoords,
+  .proposalProposer,
+  .quorumDetails {
+    font-size: 0.9rem;
+  }
+}
+.participationRateContainer {
+  width: 100%;
+  max-width: 600px;
+  margin: auto;
+}
+
+.participationRateText {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+  color: #555;
+  margin-bottom: 5px;
+}
+
+.progressBarBackground {
+  width: 100%;
+  height: 8px;
+  background-color: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressBarFill {
+  height: 100%;
+  background-color: #7a5fff; /* Change this color as desired */
+  border-radius: 4px 0 0 4px;
+}
+
+.participationLabel {
+  font-size: 0.8rem;
+  color: #777;
+  margin-top: 5px;
+}
+
+/* Base style for proposal support */
+
+.supportContainer {
+  display: flex;
+  justify-content: center;
+}
+
+.proposalSupport {
+  font-size: 1.1rem;
+  font-weight: bold;
+  padding: 10px 15px;
+  border-radius: 5px;
+  display: inline-block;
+  margin-top: 15px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Positive majority support */
+.supportYes {
+  color: #fff;
+  background-color: #28a745; /* Green background for positive */
+  border: 1px solid #218838;
+}
+
+/* Negative majority support */
+.supportNo {
+  color: #fff;
+  background-color: #dc3545; /* Red background for negative */
+  border: 1px solid #c82333;
+}
+
+/* .proposalDetails p {
+  margin: 12px 0;
+  color: #555;
+  font-size: 1rem;
+  line-height: 1.5;
+} */
+
+/* Voting Stats Section */
+.voteStats {
+  display: flex;
+  justify-content: space-around;
+  background-color: #e6f7ff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.voteStats div {
+  text-align: center;
+  color: #333;
+}
+
+.voteStatsTitle {
+  font-size: 1.3rem;
+  color: #007bff;
+  margin-bottom: 8px;
+  font-weight: bold;
+}
+
+.voteStatsText {
+  font-size: 1.1rem;
+  color: #555;
+}
+
+/* Status Section */
+.status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 24px;
+  border-radius: 10px;
+  background-color: #f1f3f8;
+  color: #333;
+  font-size: 1.1rem;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+  margin-bottom: 25px;
+}
+
+.statusIcon {
+  font-size: 1.8rem;
+  color: #28a745;
+}
+
+/* Voting Button */
+.voteButton {
+  display: flex;
+  justify-content: center;
+  margin-top: 25px;
+}
+
+.voteButton button {
+  background-color: #007bff;
+  color: #fff;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.3s ease;
+}
+
+.voteButton button:hover {
+  background-color: #0056b3;
+}
+
+/* Map Section */
+.mapContainer {
+  margin-top: 25px;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Queue and Execute Section */
+.queueExecute {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 25px;
+  margin-bottom: 25px;
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.queueExecuteButton {
+  background-color: #dc3545;
+  color: #fff;
+  padding: 16px 20px; /* Increased padding for a bigger button */
+  border-radius: 5px;
+  cursor: pointer;
+  border: none;
+  font-size: 1.2rem; /* Increased font size for a bigger button */
+}
+
+.queueExecuteButton:hover {
+  background-color: #c82333;
+}
+.etherscanContainer {
+  max-width: 600px;
+  display: flex;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.etherscanLink {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 30px;
+  text-decoration: none;
+  color: #ffffff;
+  background-color: #007bff; /* A nice blue color */
+  padding: 10px 20px;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: bold;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.etherscanLink:hover {
+  background-color: #0056b3; /* Darker blue for hover effect */
+  transform: translateY(-2px); /* Slight lift effect */
+  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+}
+
+.etherscanLink:active {
+  background-color: #003f7f; /* Even darker blue for active state */
+  transform: translateY(0); /* Reset lift effect */
+  box-shadow: 0 3px 5px rgba(0, 0, 0, 0.2);
+}

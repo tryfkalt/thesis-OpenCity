@@ -1,13 +1,28 @@
 
 import { ethers, network } from "hardhat";
-import { NEW_STORE_VALUE, FUNC, PROPOSAL_DESCRIPTION, developmentChains, VOTING_DELAY, proposalsFile } from "../helper-hardhat-config";
+import { FUNC, PROPOSAL_DESCRIPTION, developmentChains, VOTING_DELAY, proposalsFile, STORE_PARAMS } from "../helper-hardhat-config";
 import { moveBlocks } from "../utils/move-blocks";
 import * as fs from "fs";
 
-export async function propose(args: any[], functionToCall: string, proposalDescription: string) {
+/**
+ * Proposes a new action to the GovernorContract.
+ *
+ * @param args - The arguments to be passed to the function being proposed.
+ * @param functionToCall - The name of the function to call on the ProposalContract.
+ * @param proposalDescription - A description of the proposal.
+ *
+ * @remarks
+ * This function encodes the function call with the provided arguments and submits a proposal to the GovernorContract.
+ * It then waits for the proposal transaction to be mined and retrieves the proposal ID, state, snapshot block number,
+ * and deadline block number. If the network is a development chain, it advances the blocks to simulate the voting delay.
+ * The proposal ID is stored for future reference.
+ *
+ * @throws Will throw an error if the contract interactions fail.
+ */
+async function propose(args: any, functionToCall: string, proposalDescription: string) {
     const governor = await ethers.getContract("GovernorContract");
-    const box = await ethers.getContract("HazardProposal");
-    // console.log(box);
+    const box = await ethers.getContract("ProposalContract");
+
     // this is the calldata on the propose function
     const encodedFunctionCall = box.interface.encodeFunctionData(functionToCall, args);
     console.log(`Proposing ${functionToCall} on ${box.address} with args: ${args}`);
@@ -26,9 +41,10 @@ export async function propose(args: any[], functionToCall: string, proposalDescr
     const proposalSnapShot = await governor.proposalSnapshot(proposalId);
     // the proposal snapshot is the block number at which the proposal was created
     const proposalDeadline = await governor.proposalDeadline(proposalId);
-    // the proposal deadline is the block number at which the proposal will expire
+
     // save the proposalId
     storeProposalId(proposalId);
+
 
     console.log(`Current Proposal State: ${proposalState}`)
     // What block # the proposal was snapshot
@@ -37,7 +53,7 @@ export async function propose(args: any[], functionToCall: string, proposalDescr
     console.log(`Current Proposal Deadline: ${proposalDeadline}`)
 }
 
-function storeProposalId(proposalId: any) {
+async function storeProposalId(proposalId: any) {
     const chainId = network.config.chainId!.toString();
     let proposals: any;
 
@@ -47,12 +63,13 @@ function storeProposalId(proposalId: any) {
         proposals = {};
         proposals[chainId] = [];
     }
-    // console.log(proposals);
     proposals[chainId].push(proposalId.toString());
     fs.writeFileSync(proposalsFile, JSON.stringify(proposals), "utf8");
 }
 
-propose([NEW_STORE_VALUE], FUNC, PROPOSAL_DESCRIPTION).then(() => process.exit(0)).catch(error => {
+propose(STORE_PARAMS, FUNC, PROPOSAL_DESCRIPTION).then(() => process.exit(0)).catch(error => {
     console.error(error);
     process.exit(1);
 });
+
+module.exports = { propose, storeProposalId }; 

@@ -5,8 +5,10 @@ import "@openzeppelin/contracts/governance/TimelockController.sol";
 
 contract TimeLock is TimelockController {
   constructor(
-    uint256 minDelay,
-    address[] memory proposers,
-    address[] memory executors
-  ) TimelockController(minDelay, proposers, executors) {}
+    uint256 minDelay, // Minimum delay before an operation can be executed
+    address[] memory proposers, // Addresses allowed to propose operations
+    address[] memory executors, // Addresses allowed to execute operations
+    address admin // Address of the admin
+  ) TimelockController(minDelay, proposers, executors) {
+  }
 }

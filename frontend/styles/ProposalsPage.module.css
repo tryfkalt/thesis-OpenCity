@@ -1,0 +1,91 @@
+.container {
+  padding: 0 2rem;
+  font-family: "Montserrat", sans-serif;
+}
+
+.proposalButton {
+  max-width: fit-content;
+  margin-left: auto;
+  /* margin-right: auto; */
+  font-family: "Montserrat", sans-serif;
+  padding-top: 20px;
+  padding-bottom: 20px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: bold;
+  color: #333;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* padding-top: 20px; */
+  font-family: "Montserrat", sans-serif;
+}
+.filterAndButton {
+  margin-top: 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.filterContainer {
+  display: flex-inline;
+  align-items: center;
+  gap: 10px;
+}
+
+.filterContainer label {
+  font-size: 16px;
+  font-weight: 500;
+  margin-right: 8px;
+}
+
+.filterTitle {
+  font-size: 16px;
+  font-weight: 500;
+  margin-right: 8px;
+  margin-bottom: 10px;
+  color: #333;
+  font-family: "Montserrat", sans-serif;
+}
+.filterDropdown {
+  width: 300px;
+}
+
+.filterDropdown .filter__control {
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  padding: 5px;
+  font-size: 14px;
+}
+
+.filterDropdown .filter__control:hover {
+  border-color: #2563eb;
+  box-shadow: 0 0 5px rgba(37, 99, 235, 0.5);
+}
+
+.filterDropdown .filter__multi-value {
+  background-color: #eff6ff;
+  border-radius: 4px;
+}
+
+.filterDropdown .filter__multi-value__label {
+  font-size: 14px;
+  color: #1d4ed8;
+}
+
+.filterDropdown .filter__multi-value__remove {
+  color: #1d4ed8;
+  cursor: pointer;
+}
+
+.filterDropdown .filter__menu {
+  border-radius: 8px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  font-size: 14px;
+}

@@ -9,8 +9,12 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@apollo/client": "^3.11.10",
+    "@mapbox/mapbox-gl-geocoder": "^5.0.3",
     "@walletconnect/ethereum-provider": "^2.17.0",
+    "graphql": "^16.9.0",
     "leaflet": "^1.9.4",
+    "leaflet.markercluster": "^1.5.3",
     "magic-sdk": "^28.11.0",
     "moralis": "^1.8.0",
     "moralis-v1": "^1.11.0",
@@ -18,11 +22,15 @@
     "react": "^18",
     "react-dom": "^18",
     "react-leaflet": "^4.2.1",
+    "react-leaflet-markercluster": "^4.1.1",
     "react-moralis": "^1.4.0",
-    "web3uikit": "^0.1.159"
+    "react-select": "^5.9.0",
+    "react-spinners": "^0.15.0",
+    "web3uikit": "^1.0.4"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.4",
+    "dotenv": "^16.4.5",
     "eslint": "^8",
     "eslint-config-next": "14.2.14",
     "postcss": "^8.4.12",
