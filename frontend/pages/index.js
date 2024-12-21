@@ -86,36 +86,59 @@ export default function Home() {
             <link rel="icon" href="/favicon.ico" />
           </Head>
           <Header />
-          <section className={styles.hero}>
-            <h1>OpenCity: Decentralized Governance for the World </h1>
-            <p>Explore, propose, and vote on changes to the world.</p>
-          </section>
-          {isWeb3Enabled ? (
-            <>
-              <div className={styles.totalSupplyBox}>
-                <h2>Total Supply</h2>
-                {totalSupply !== null ? (
-                  <p>{totalSupply.toLocaleString()} Tokens</p>
-                ) : (
-                  <p>Loading...</p>
-                )}
-              </div>
+          <div className={styles.contentWrapper}>
+            {/* Info Box */}
+            <aside className={styles.infoBox}>
+              <h2>How to Use OpenCity</h2>
+              <ol>
+                <li className={!isWeb3Enabled ? styles.activeStep : ""}>
+                  Connect your wallet to begin.
+                </li>
+                <li className={isWeb3Enabled && !selectedCoords ? styles.activeStep : ""}>
+                  Select a location on the map to make a proposal.
+                </li>
+                <li>
+                  Vote on proposals to shape the future.
+                </li>
+              </ol>
+            </aside>
 
-              <DelegateComponent />
-              {supportedChains.includes(parseInt(chainId).toString()) ? (
-                <div className={styles.proposalsMapContainer}>
-                  <ProposalsTable />
-                  <Map userLocation={userLocation} onMapClick={setSelectedCoords} />
-                </div>
+            {/* Main Content */}
+            <main className={styles.mainContent}>
+              <section className={styles.hero}>
+                <h1>OpenCity: Decentralized Governance for the World</h1>
+                <p>Explore, propose, and vote on changes to the world.</p>
+              </section>
+              {isWeb3Enabled ? (
+                <>
+                  <div className={styles.totalSupplyBox}>
+                    <h2>Total Supply</h2>
+                    {totalSupply !== null ? (
+                      <p>{totalSupply.toLocaleString()} Tokens</p>
+                    ) : (
+                      <p>Loading...</p>
+                    )}
+                  </div>
+
+                  <DelegateComponent />
+                  {supportedChains.includes(parseInt(chainId).toString()) ? (
+                    <div className={styles.proposalsMapContainer}>
+                      <ProposalsTable />
+                      <Map userLocation={userLocation} onMapClick={setSelectedCoords} />
+                    </div>
+                  ) : (
+                    <div>
+                      {`Please switch to a supported chain. Supported Chain Ids: ${supportedChains.join(
+                        ", "
+                      )}`}
+                    </div>
+                  )}
+                </>
               ) : (
-                <div>{`Please switch to a supported chain. Supported Chain Ids: ${supportedChains.join(
-                  ", "
-                )}`}</div>
+                <div>Please connect to a Wallet to interact with OpenCity features.</div>
               )}
-            </>
-          ) : (
-            <div>Please connect to a Wallet</div>
-          )}
+            </main>
+          </div>
           <footer className={styles.footer}>© 2024 OpenCity. All rights reserved.</footer>
         </>
       )}

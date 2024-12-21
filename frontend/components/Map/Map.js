@@ -8,6 +8,7 @@ import {
   Circle,
 } from "react-leaflet";
 import { useState, useEffect, useRef } from "react";
+import L from "leaflet";
 import axios from "axios";
 import MarkerClusterGroup from "react-leaflet-markercluster";
 import { useMoralis, useWeb3Contract } from "react-moralis";
@@ -15,7 +16,7 @@ import calculateDistance from "../../utils/calculateDistance";
 import { Modal, Button } from "web3uikit";
 import { abiGovernor, contractAddressesGovernor } from "../../constants";
 import { range } from "../../constants/variables";
-import { getMarkerIcon, getStatusText, defaultMarkerIcon } from "../../utils/map-utils/tableUtils";
+import { getStatusText } from "../../utils/map-utils/tableUtils";
 import extractIpfsHash from "../../utils/extractIpfsHash";
 import VoteDetails from "../Vote/VoteDetails";
 import SearchBar from "./SearchBar";
@@ -28,7 +29,7 @@ import styles from "../../styles/Home.module.css";
 
 /**
  * Map component that displays a map with various markers from proposals and allows interaction with them.
- * 
+ *
  * @param {Object} props - The properties object.
  * @param {Object} props.userLocation - The user's current location with latitude and longitude.
  * @param {Function} props.onMapClick - Callback function to handle map click events.
@@ -36,7 +37,7 @@ import styles from "../../styles/Home.module.css";
  * @param {Object} props.createCoords - Coordinates for creating a new proposal when redirecting to create page.
  * @param {boolean} props.staticMarker - Flag to determine if the marker is static.
  * @param {Object} props.idCoords - Coordinates for a specific ID.
- * 
+ *
  * @returns {JSX.Element} The rendered Map component.
  */
 const Map = ({
@@ -56,7 +57,11 @@ const Map = ({
   // State Variables
   const [mapMarkers, setMapMarkers] = useState([]);
   const [defaultMarkerPosition, setDefaultMarkerPosition] = useState(
-    createCoords || userLocation || { lat: 51.505, lng: -0.09 }
+    createCoords && createCoords.lat !== null && createCoords.lng !== null
+      ? createCoords
+      : userLocation && userLocation.lat !== null && userLocation.lng !== null
+      ? userLocation
+      : { lat: 51.505, lng: -0.09 }
   );
   const [useUserLocation, setUseUserLocation] = useState(userLocation ? true : false);
   const [defaultMarkerPopupContent, setDefaultMarkerPopupContent] =
@@ -73,111 +78,148 @@ const Map = ({
   const { error, data: proposalsFromGraph } = useQuery(GET_PROPOSALS);
   const [getProposalFromGraph, { data: proposalFromGraph }] = useLazyQuery(GET_PROPOSAL_BY_ID);
 
+  const pendingMarkerIcon = new L.Icon({
+    iconUrl: "/Pending.png",
+    iconSize: [50, 50],
+    iconAnchor: [25, 50],
+    popupAnchor: [0, -50],
+  });
+  const activeMarkerIcon = new L.Icon({
+    iconUrl: "/Active.png",
+    iconSize: [50, 50],
+    iconAnchor: [25, 50],
+    popupAnchor: [0, -50],
+  });
+  const acceptedMarkerIcon = new L.Icon({
+    iconUrl: "/Accepted.png",
+    iconSize: [50, 50],
+    iconAnchor: [25, 50],
+    popupAnchor: [0, -50],
+  });
+  const deniedMarkerIcon = new L.Icon({
+    iconUrl: "/Denied.png",
+    iconSize: [50, 50],
+    iconAnchor: [25, 50],
+    popupAnchor: [0, -50],
+  });
+  const defaultMarkerIcon = new L.Icon({
+    iconUrl: "/Default.png",
+    iconSize: [50, 50],
+    iconAnchor: [25, 50],
+    popupAnchor: [0, -50],
+  });
+
+  const getMarkerIcon = (status) => {
+    switch (status) {
+      case "Pending":
+        return pendingMarkerIcon;
+      case "Active":
+        return activeMarkerIcon;
+      case "Succeeded":
+      case "Executed":
+        return acceptedMarkerIcon;
+      case "Defeated":
+      case "Canceled":
+        return deniedMarkerIcon;
+      default:
+        return defaultMarkerIcon;
+    }
+  };
+
   // Hooks
   useEffect(() => {
-    if (createCoords) {
-      setDefaultMarkerPosition(createCoords);
-    }
-  }, [createCoords]);
+    const fetchProposalsMetadata = async () => {
+      try {
+        const metadataResponse = await axios.get("http://localhost:5000/proposals");
+        const metadata = metadataResponse.data;
+        const proposalDetails = await Promise.all(
+          metadata.map(async (proposal) => {
+            const ipfsResponse = await axios.get(
+              `https://gateway.pinata.cloud/ipfs/${proposal.ipfsHash}`
+            );
+            const stateOptions = {
+              abi: abiGovernor,
+              contractAddress: governorAddress,
+              functionName: "state",
+              params: { proposalId: proposal.proposalId },
+            };
+            let proposalState;
+            await runContractFunction({
+              params: stateOptions,
+              onSuccess: (state) => {
+                proposalState = state;
+              },
+              onError: (error) => console.error("Error fetching proposal state:", error),
+            });
 
-  if (chainId == 31337) {
-    useEffect(() => {
-      const fetchProposalsMetadata = async () => {
-        try {
-          const metadataResponse = await axios.get("http://localhost:5000/proposals");
-          const metadata = metadataResponse.data;
-          const proposalDetails = await Promise.all(
-            metadata.map(async (proposal) => {
-              const ipfsResponse = await axios.get(
-                `https://gateway.pinata.cloud/ipfs/${proposal.ipfsHash}`
-              );
+            const status = getStatusText(proposalState);
+            const distance =
+              userLocation && calculateDistance(userLocation, ipfsResponse.data.coordinates);
+            const isInRange = distance && distance <= range; // 10 km range
+            return { ...proposal, ...ipfsResponse.data, status, distance, isInRange };
+          })
+        );
+
+        setMapMarkers(proposalDetails);
+      } catch (error) {
+        console.error("Error fetching proposals:", error);
+      }
+    };
+
+    const fetchProposalsFromGraph = async () => {
+      try {
+        if (!proposalsFromGraph) return;
+
+        const proposalDetails = await Promise.all(
+          proposalsFromGraph.proposalCreateds.map(async (proposal) => {
+            const ipfsHash = proposal?.ipfsHash || extractIpfsHash(proposal.description);
+            if (!ipfsHash) {
+              console.warn(`No IPFS hash found in description: ${proposal.description}`);
+              return null;
+            }
+
+            try {
+              const ipfsResponse = await axios.get(`https://gateway.pinata.cloud/ipfs/${ipfsHash}`);
               const stateOptions = {
                 abi: abiGovernor,
                 contractAddress: governorAddress,
                 functionName: "state",
                 params: { proposalId: proposal.proposalId },
               };
+
               let proposalState;
               await runContractFunction({
                 params: stateOptions,
-                onSuccess: (state) => {
-                  proposalState = state;
-                },
+                onSuccess: (state) => (proposalState = state),
                 onError: (error) => console.error("Error fetching proposal state:", error),
               });
-
               const status = getStatusText(proposalState);
               const distance =
                 userLocation && calculateDistance(userLocation, ipfsResponse.data.coordinates);
-              const isInRange = distance && distance <= range; // 10 km range
+              const isInRange = distance && distance <= range;
+
               return { ...proposal, ...ipfsResponse.data, status, distance, isInRange };
-            })
-          );
-
-          setMapMarkers(proposalDetails);
-        } catch (error) {
-          console.error("Error fetching proposals:", error);
-        }
-      };
-      if (isWeb3Enabled && governorAddress) {
-        fetchProposalsMetadata();
+            } catch (error) {
+              console.error(`Error processing proposal ${proposal.proposalId}:`, error);
+              return null; // Handle individual proposal fetch failure gracefully
+            }
+          })
+        );
+        setMapMarkers(proposalDetails);
+      } catch (error) {
+        console.error("Error processing proposals from The Graph:", error);
       }
-    }, [isWeb3Enabled, governorAddress]);
-  } else {
-    useEffect(() => {
-      const fetchProposalsFromGraph = async () => {
-        try {
-          if (!proposalsFromGraph) return;
+    };
 
-          const proposalDetails = await Promise.all(
-            proposalsFromGraph.proposalCreateds.map(async (proposal) => {
-              const ipfsHash = proposal?.ipfsHash || extractIpfsHash(proposal.description);
-              if (!ipfsHash) {
-                console.warn(`No IPFS hash found in description: ${proposal.description}`);
-                return null;
-              }
-
-              try {
-                const ipfsResponse = await axios.get(
-                  `https://gateway.pinata.cloud/ipfs/${ipfsHash}`
-                );
-                const stateOptions = {
-                  abi: abiGovernor,
-                  contractAddress: governorAddress,
-                  functionName: "state",
-                  params: { proposalId: proposal.proposalId },
-                };
-
-                let proposalState;
-                await runContractFunction({
-                  params: stateOptions,
-                  onSuccess: (state) => (proposalState = state),
-                  onError: (error) => console.error("Error fetching proposal state:", error),
-                });
-
-                const status = getStatusText(proposalState);
-                const distance =
-                  userLocation && calculateDistance(userLocation, ipfsResponse.data.coordinates);
-                console.log("distance", distance);
-                const isInRange = distance && distance <= range;
-
-                return { ...proposal, ...ipfsResponse.data, status, distance, isInRange };
-              } catch (error) {
-                console.error(`Error processing proposal ${proposal.proposalId}:`, error);
-                return null; // Handle individual proposal fetch failure gracefully
-              }
-            })
-          );
-          setMapMarkers(proposalDetails);
-        } catch (error) {
-          console.error("Error processing proposals from The Graph:", error);
-        }
-      };
-      if (isWeb3Enabled && governorAddress) {
+    // Logic to fetch proposals based on the chainId
+    if (isWeb3Enabled && governorAddress) {
+      if (chainId == 31337) {
+        fetchProposalsMetadata();
+      } else {
         fetchProposalsFromGraph();
       }
-    }, [isWeb3Enabled, governorAddress, proposalsFromGraph]);
-  }
+    }
+  }, [isWeb3Enabled, governorAddress, proposalsFromGraph, chainId, userLocation, range]);
 
   const fetchProposalDetails = async (proposalId) => {
     try {
@@ -265,7 +307,7 @@ const Map = ({
 
   const dottedLineCoords =
     userLocation && idCoords ? [userLocation, [idCoords.lat, idCoords.lng]] : null;
-
+    
   return (
     <div>
       <MapContainer
@@ -326,7 +368,6 @@ const Map = ({
               dragend: (e) => {
                 const marker = e.target;
                 const position = marker.getLatLng();
-                console.log(staticMarker);
                 setDefaultMarkerPosition({ lat: position.lat, lng: position.lng });
                 setUseUserLocation(false);
                 onMapClick({ lat: position.lat, lng: position.lng });
@@ -362,8 +403,8 @@ const Map = ({
               <Popup>
                 <strong>Proposal:</strong> {marker?.title}
                 <br />
-                <strong>Coordinates:</strong> {marker?.coordinates.lat.toFixed(4)},{" "}
-                {marker?.coordinates.lng.toFixed(4)}
+                <strong>Coordinates:</strong> {marker?.coordinates.lat}° N,{" "}
+                {marker?.coordinates.lng}° E
                 <br />
                 <strong>Distance from you:</strong>{" "}
                 {marker.distance ? `${marker.distance.toFixed(2)} km` : "Unknown"}
@@ -373,7 +414,7 @@ const Map = ({
                   <p style={{ color: "red", marginTop: "12px" }}>Outside range to vote</p>
                 )}
                 {marker?.status === "Pending" ? (
-                  <p>Proposal vote hasn't started yet.</p>
+                  <p>Proposal vote hasn&apos;t started yet.</p>
                 ) : marker?.status === "Queued" ? (
                   <p>Proposal is pending execution.</p>
                 ) : marker?.status === "Defeated" ? (

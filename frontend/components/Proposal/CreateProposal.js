@@ -66,6 +66,8 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
         runContractFunction({ params: votingPowerOptions }),
       ]);
 
+      console.log("Threshold:", threshold.toString());
+
       setProposalThreshold(threshold);
       setCanPropose(ethers.BigNumber.from(votingPower).gte(threshold));
     } catch (error) {
@@ -102,14 +104,6 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
       );
 
       const category = normalizedCategoryMapping[normalizedCategoryString];
-
-      if (isNaN(category)) {
-        throw new Error("Invalid category selected.");
-      }
-
-      if (isNaN(category)) {
-        throw new Error("Invalid category selected.");
-      }
 
       if (isNaN(category)) {
         throw new Error("Invalid category selected.");

@@ -66,32 +66,33 @@ const ProposalDetails = () => {
     }
   }, []);
 
-  // console.log(proposalFromGraph);
-  if (chainId === 31337) {
-    useEffect(() => {
-      const fetchProposalDetails = async (id) => {
-        try {
-          setLoading(true);
-          const response = await axios.get(`http://localhost:5000/proposals/${id}`);
-          setProposal({ ...response.data, proposalId: id });
+  useEffect(() => {
+    const fetchProposalDetails = async () => {
+      try {
+        setLoading(true);
+
+        // Handle the logic based on the chainId
+        if (chainId === 31337) {
+          const response = await axios.get(`http://localhost:5000/proposals/${proposalId}`);
+          setProposal({ ...response.data, proposalId });
           setSelectedCoords(response.data.coordinates);
           const governorAddress = contractAddressesGovernor[chainId]?.[0];
           const stateOptions = {
             abi: abiGovernor,
             contractAddress: governorAddress,
             functionName: "state",
-            params: { proposalId: id },
+            params: { proposalId },
           };
           const snapshotOptions = {
             abi: abiGovernor,
             contractAddress: governorAddress,
             functionName: "proposalSnapshot",
-            params: { proposalId: id },
+            params: { proposalId },
           };
           const proposalState = await runContractFunction({ params: stateOptions });
           setStatus(getStatusText(proposalState));
 
-          if (status !== "Pending") {
+          if (proposalState !== "Pending") {
             const proposalSnapshot = await runContractFunction({ params: snapshotOptions });
             const quorumOptions = {
               abi: abiGovernor,
@@ -106,37 +107,28 @@ const ProposalDetails = () => {
           // Set queue and execute eligibility based on proposal state and proposer
           setCanQueue(account === response.data.proposer && proposalState === 4); // Succeeded
           setCanExecute(account === response.data.proposer && proposalState === 5); // Queued
-          fetchVotes(id);
-        } catch (error) {
-          console.error("Error fetching proposal details:", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      if (isWeb3Enabled && proposalId) {
-        fetchProposalDetails(proposalId);
-      }
-    }, [isWeb3Enabled, proposalId]);
-  } else {
-    useEffect(() => {
-      const fetchProposalDetails = async () => {
-        try {
-          setLoading(true);
-
+          fetchVotes(proposalId);
+        } else {
           const ipfsHash =
             proposalFromGraph.proposalCreateds[0]?.ipfsHash ||
-            extractIpfsHash(proposalFromGraph.proposalCreateds[0]?.description); // Access the first proposal
+            extractIpfsHash(proposalFromGraph.proposalCreateds[0]?.description);
+          console.log("IPFS hash:", ipfsHash);
           if (!ipfsHash) {
             console.error("No IPFS hash found");
             setLoading(false);
             return;
           }
-
-          // Fetch proposal data from IPFS
+          console.log(proposalFromGraph.proposalCreateds[0]);
           const ipfsResponse = await axios.get(`https://gateway.pinata.cloud/ipfs/${ipfsHash}`);
-          setProposal({ ...ipfsResponse.data, ipfsHash, proposalId });
+          console.log("IPFS response:", ipfsResponse.data);
+          setProposal({
+            ...ipfsResponse.data,
+            ipfsHash,
+            proposalId,
+            proposer: proposalFromGraph.proposalCreateds[0]?.proposer,
+          });
           setSelectedCoords(ipfsResponse.data.coordinates);
-          // Fetch proposal state
+
           const governorAddress = contractAddressesGovernor[chainId]?.[0];
           if (!governorAddress) {
             console.error("Governor address not found for the current chain.");
@@ -185,18 +177,18 @@ const ProposalDetails = () => {
 
           // Fetch votes
           fetchVotes(proposalId);
-        } catch (error) {
-          console.error("Error fetching proposal details:", error);
-        } finally {
-          setLoading(false);
         }
-      };
-
-      if (isWeb3Enabled && proposalId && proposalFromGraph) {
-        fetchProposalDetails();
+      } catch (error) {
+        console.error("Error fetching proposal details:", error);
+      } finally {
+        setLoading(false);
       }
-    }, [isWeb3Enabled, proposalId, proposalFromGraph, chainId]);
-  }
+    };
+
+    if (isWeb3Enabled && proposalId && (chainId === 31337 || proposalFromGraph)) {
+      fetchProposalDetails();
+    }
+  }, [isWeb3Enabled, proposalId, proposalFromGraph, chainId, account]);
 
   useEffect(() => {
     const fetchTxHash = async () => {
@@ -302,7 +294,7 @@ const ProposalDetails = () => {
             <p className={styles.proposalTitle}>Title: {proposal.title}</p>
             <p className={styles.proposalDescription}>Description: {proposal.description}</p>
             <p className={styles.proposalCoords}>
-              Coordinates: {`${proposal.coordinates.lat}, ${proposal.coordinates.lng}`}
+              Coordinates: {`${proposal.coordinates.lat}° N, ${proposal.coordinates.lng}° E`}
             </p>
             <p
               className={`${styles.proposalStatus} ${

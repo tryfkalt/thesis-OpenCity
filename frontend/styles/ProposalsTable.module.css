@@ -1,11 +1,15 @@
 /* ProposalsTable.module.css */
-.container { 
-  padding: 1rem 2rem;
+.container {
   background-color: #fff;
   border-radius: 8px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  margin-top: 50px;
-  margin-bottom: 20px;
-  font-family: 'Montserrat', sans-serif;
+  margin: 30px auto;
+  font-family: "Montserrat", sans-serif;
 }
 
+.tableTitle {
+  font-size: 1.6rem;
+  color: #666;
+  font-weight: bold;
+  font-family: "Montserrat", sans-serif;
+  text-align: center;
+}

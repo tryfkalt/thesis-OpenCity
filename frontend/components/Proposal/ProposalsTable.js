@@ -24,10 +24,11 @@ const ProposalsTable = () => {
 
   const { loading, error, data: proposalsFromGraph } = useQuery(GET_PROPOSALS);
 
-  if (chainId === 31337) {
-    useEffect(() => {
-      const fetchProposalsMetadata = async () => {
-        try {
+  useEffect(() => {
+    const fetchProposals = async () => {
+      try {
+        if (chainId === 31337) {
+          // Fetch proposals from localhost
           const metadataResponse = await axios.get("http://localhost:5000/proposals");
           const metadata = metadataResponse.data;
 
@@ -58,21 +59,9 @@ const ProposalsTable = () => {
             })
           );
           setProposals(proposalDetails);
-        } catch (error) {
-          console.error("Error fetching proposals:", error);
-        }
-      };
-
-      if (isWeb3Enabled && governorAddress) {
-        fetchProposalsMetadata();
-      }
-    }, [isWeb3Enabled, governorAddress]);
-  } else {
-    useEffect(() => {
-      const fetchProposalsFromGraph = async () => {
-        try {
+        } else {
+          // Fetch proposals from The Graph
           if (!proposalsFromGraph) return; // Wait for data to be available
-
           const proposalDetails = await Promise.all(
             proposalsFromGraph.proposalCreateds.map(async (proposal) => {
               const ipfsHash = proposal?.ipfsHash || extractIpfsHash(proposal.description);
@@ -114,16 +103,16 @@ const ProposalsTable = () => {
             })
           );
           setProposals(proposalDetails);
-        } catch (error) {
-          console.error("Error processing proposals from The Graph:", error);
         }
-      };
-
-      if (isWeb3Enabled && governorAddress && proposalsFromGraph) {
-        fetchProposalsFromGraph();
+      } catch (error) {
+        console.error("Error processing proposals:", error);
       }
-    }, [isWeb3Enabled, governorAddress, proposalsFromGraph]);
-  }
+    };
+
+    if (isWeb3Enabled && governorAddress) {
+      fetchProposals();
+    }
+  }, [isWeb3Enabled, governorAddress, proposalsFromGraph, chainId]);
 
   const tableData = proposals.map((proposal) => {
     return [
@@ -147,16 +136,16 @@ const ProposalsTable = () => {
 
   return (
     <div className={styles.container}>
-      <h2>Recent Proposals</h2>
+      <p className={styles.tableTitle}>Recent Proposals</p>
       <Table
         columnsConfig="80px 2fr 1fr 1fr 2fr"
         data={tableData}
         header={[
           "",
-          <span>Title</span>,
-          <span>Status</span>,
-          <span>Coordinates</span>,
-          <span>Proposer</span>,
+          <span key="title">Title</span>,
+          <span key="status">Status</span>,
+          <span key="coordinates">Coordinates</span>,
+          <span key="proposer">Proposer</span>,
         ]}
         isColumnSortable={[false, true, false, false, false]}
         maxPages={3}

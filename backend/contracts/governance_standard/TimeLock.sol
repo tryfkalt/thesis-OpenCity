@@ -8,7 +8,7 @@ contract TimeLock is TimelockController {
     uint256 minDelay, // Minimum delay before an operation can be executed
     address[] memory proposers, // Addresses allowed to propose operations
     address[] memory executors, // Addresses allowed to execute operations
-    address admin // Address of the admin (deployer)
+    address admin // Address of the admin
   ) TimelockController(minDelay, proposers, executors) {
   }
 }

@@ -46,18 +46,133 @@ const ProposalsPage = () => {
   const { error, data: proposalsFromGraph } = useQuery(GET_PROPOSALS);
   const { data: executedProposalsFromGraph } = useQuery(GET_EXECUTED_PROPOSALS);
 
-  if (chainId === 31337) {
-    useEffect(() => {
-      const fetchProposalsMetadata = async () => {
-        try {
-          setLoading(true);
-          const metadataResponse = await axios.get("http://localhost:5000/proposals");
-          const metadata = metadataResponse.data;
-          const proposalDetails = await Promise.all(
-            metadata.map(async (proposal) => {
-              const ipfsResponse = await axios.get(
-                `https://gateway.pinata.cloud/ipfs/${proposal.ipfsHash}`
+  useEffect(() => {
+    const fetchProposalsMetadata = async () => {
+      try {
+        setLoading(true);
+        const metadataResponse = await axios.get("http://localhost:5000/proposals");
+        const metadata = metadataResponse.data;
+        const proposalDetails = await Promise.all(
+          metadata.map(async (proposal) => {
+            const ipfsResponse = await axios.get(
+              `https://gateway.pinata.cloud/ipfs/${proposal.ipfsHash}`
+            );
+            const stateOptions = {
+              abi: abiGovernor,
+              contractAddress: governorAddress,
+              functionName: "state",
+              params: { proposalId: proposal.proposalId },
+            };
+
+            let proposalState;
+            await runContractFunction({
+              params: stateOptions,
+              onSuccess: (state) => (proposalState = state),
+              onError: (error) => console.error("Error fetching proposal state:", error),
+            });
+
+            const status = getStatusText(proposalState);
+            return { ...proposal, ...ipfsResponse.data, status };
+          })
+        );
+        setProposals(proposalDetails);
+      } catch (error) {
+        console.error("Error fetching proposals:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const fetchExecutedProposals = async () => {
+      try {
+        setLoading(true);
+
+        const executedProposalsOptions = {
+          abi: abiProposalContract,
+          contractAddress: proposalContractAddress,
+          functionName: "getAllProposals",
+          params: {},
+        };
+
+        const rawProposals = await runContractFunction({
+          params: executedProposalsOptions,
+          onSuccess: (proposals) => proposals,
+          onError: (error) => {
+            console.error("Error fetching executed proposals:", error);
+            setLoading(false);
+            return [];
+          },
+        });
+
+        const convertedProposals = rawProposals.map((proposal) => ({
+          title: proposal.title || "N/A",
+          status: "Executed",
+          proposer: proposal.proposer,
+          latitude: convertScaledCoordinate(
+            proposal.latitude,
+            ethers.BigNumber.from(SCALING_FACTOR)
+          ),
+          longitude: convertScaledCoordinate(
+            proposal.longitude,
+            ethers.BigNumber.from(SCALING_FACTOR)
+          ),
+          category: proposal.category || "N/A",
+        }));
+
+        const mergedProposals = await Promise.all(
+          convertedProposals.map(async (convertedProposal, index) => {
+            const correspondingRawProposal = rawProposals[index];
+            try {
+              const response = await axios.get(
+                `http://localhost:5000/proposal/ipfs?ipfsHash=${correspondingRawProposal.ipfsHash}`
               );
+              const proposalId = response.data;
+
+              return {
+                ...convertedProposal,
+                proposalId,
+              };
+            } catch (error) {
+              console.error(
+                `Error fetching proposalId for IPFS hash ${correspondingRawProposal.ipfsHash}:`,
+                error
+              );
+              setLoading(false);
+              return {
+                ...convertedProposal,
+                proposalId: null,
+              };
+            }
+          })
+        );
+        setExecutedProposals(mergedProposals);
+      } catch (error) {
+        console.error("Error processing executed proposals:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const fetchProposalsFromGraph = async () => {
+      try {
+        setLoading(true);
+        if (!proposalsFromGraph) {
+          setLoading(false);
+          return;
+        }
+
+        const proposalDetails = await Promise.all(
+          proposalsFromGraph.proposalCreateds.map(async (proposal) => {
+            const ipfsHash = proposal?.ipfsHash || extractIpfsHash(proposal.description);
+            if (!ipfsHash) {
+              console.warn(`No IPFS hash found in description: ${proposal.description}`);
+              setLoading(false);
+              return null;
+            }
+
+            try {
+              const ipfsResponse = await axios.get(`https://gateway.pinata.cloud/ipfs/${ipfsHash}`);
+
               const stateOptions = {
                 abi: abiGovernor,
                 contractAddress: governorAddress,
@@ -73,213 +188,38 @@ const ProposalsPage = () => {
               });
 
               const status = getStatusText(proposalState);
-              return { ...proposal, ...ipfsResponse.data, status };
-            })
-          );
-          setProposals(proposalDetails);
-        } catch (error) {
-          console.error("Error fetching proposals:", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      const fetchExecutedProposals = async () => {
-        try {
-          setLoading(true);
 
-          // Fetch proposals from the smart contract
-          const executedProposalsOptions = {
-            abi: abiProposalContract,
-            contractAddress: proposalContractAddress,
-            functionName: "getAllProposals",
-            params: {},
-          };
-
-          const rawProposals = await runContractFunction({
-            params: executedProposalsOptions,
-            onSuccess: (proposals) => proposals,
-            onError: (error) => {
-              console.error("Error fetching executed proposals:", error);
-              setLoading(false);
-              return [];
-            },
-          });
-
-          // Convert proposals to a more readable format
-          const convertedProposals = rawProposals.map((proposal) => ({
-            title: proposal.title || "N/A",
-            status: "Executed",
-            proposer: proposal.proposer,
-            latitude: convertScaledCoordinate(
-              proposal.latitude,
-              ethers.BigNumber.from(SCALING_FACTOR)
-            ),
-            longitude: convertScaledCoordinate(
-              proposal.longitude,
-              ethers.BigNumber.from(SCALING_FACTOR)
-            ),
-            category: proposal.category || "N/A",
-          }));
-
-          // Fetch proposalId from localhost and merge with convertedProposals
-          const mergedProposals = await Promise.all(
-            convertedProposals.map(async (convertedProposal, index) => {
-              const correspondingRawProposal = rawProposals[index];
-              try {
-                const response = await axios.get(
-                  `http://localhost:5000/proposal/ipfs?ipfsHash=${correspondingRawProposal.ipfsHash}`
-                );
-                const proposalId = response.data;
-
-                return {
-                  ...convertedProposal,
-                  proposalId, // Add proposalId fetched from localhost
-                };
-              } catch (error) {
-                console.error(
-                  `Error fetching proposalId for IPFS hash ${correspondingRawProposal.ipfsHash}:`,
-                  error
-                );
-                setLoading(false);
-                return {
-                  ...convertedProposal,
-                  proposalId: null, // Handle error by setting proposalId to null
-                };
-              }
-            })
-          );
-          setExecutedProposals(mergedProposals);
-        } catch (error) {
-          console.error("Error processing executed proposals:", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      if (isWeb3Enabled && governorAddress) {
-        fetchProposalsMetadata();
-        fetchExecutedProposals();
-      } else {
+              return {
+                ...proposal,
+                ...ipfsResponse.data,
+                status,
+              };
+            } catch (error) {
+              console.error(`Error processing proposal ${proposal.proposalId}:`, error);
+              return null;
+            }
+          })
+        );
+        setProposals(proposalDetails);
+      } catch (error) {
+        console.error("Error processing proposals from The Graph:", error);
+      } finally {
         setLoading(false);
       }
-    }, [isWeb3Enabled, governorAddress]);
-  } else {
-    useEffect(() => {
-      const fetchProposalsFromGraph = async () => {
-        try {
-          setLoading(true);
-          if (!proposalsFromGraph) {
-            setLoading(false);
-            return;
-          }
+    };
 
-          const proposalDetails = await Promise.all(
-            proposalsFromGraph.proposalCreateds.map(async (proposal) => {
-              const ipfsHash = proposal?.ipfsHash || extractIpfsHash(proposal.description);
-              if (!ipfsHash) {
-                console.warn(`No IPFS hash found in description: ${proposal.description}`);
-                setLoading(false);
-                return null;
-              }
-
-              try {
-                const ipfsResponse = await axios.get(
-                  `https://gateway.pinata.cloud/ipfs/${ipfsHash}`
-                );
-
-                const stateOptions = {
-                  abi: abiGovernor,
-                  contractAddress: governorAddress,
-                  functionName: "state",
-                  params: { proposalId: proposal.proposalId },
-                };
-
-                let proposalState;
-                await runContractFunction({
-                  params: stateOptions,
-                  onSuccess: (state) => (proposalState = state),
-                  onError: (error) => console.error("Error fetching proposal state:", error),
-                });
-
-                const status = getStatusText(proposalState);
-
-                return {
-                  ...proposal,
-                  ...ipfsResponse.data,
-                  status,
-                };
-              } catch (error) {
-                console.error(`Error processing proposal ${proposal.proposalId}:`, error);
-                return null;
-              }
-            })
-          );
-          setProposals(proposalDetails);
-        } catch (error) {
-          console.error("Error processing proposals from The Graph:", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      const fetchExecutedProposals = async () => {
-        try {
-          setLoading(true);
-
-          const executedProposalsOptions = {
-            abi: abiProposalContract,
-            contractAddress: proposalContractAddress,
-            functionName: "getAllProposals",
-            params: {},
-          };
-
-          const rawProposals = await runContractFunction({
-            params: executedProposalsOptions,
-            onSuccess: (proposals) => proposals,
-            onError: (error) => {
-              console.error("Error fetching executed proposals:", error);
-              return [];
-            },
-          });
-
-          // Convert BigNumber coordinates and other required fields
-          const convertedProposals = rawProposals.map((proposal, index) => ({
-            title: proposal.title || "N/A",
-            status: "Executed",
-            proposer: proposal.proposer,
-            latitude: convertScaledCoordinate(
-              proposal.latitude,
-              ethers.BigNumber.from(SCALING_FACTOR)
-            ),
-            longitude: convertScaledCoordinate(
-              proposal.longitude,
-              ethers.BigNumber.from(SCALING_FACTOR)
-            ),
-            category: proposal.category || "N/A",
-          }));
-          if (executedProposalsFromGraph && executedProposalsFromGraph.proposalExecuteds) {
-            const graphProposals = executedProposalsFromGraph.proposalExecuteds;
-
-            const mergedProposals = convertedProposals.map((contractProposal, index) => ({
-              ...contractProposal,
-              proposalId: graphProposals[index]?.proposalId || null, // Use the proposalId from the Graph
-            }));
-            setExecutedProposals(mergedProposals);
-          } else {
-            setExecutedProposals(convertedProposals);
-          }
-        } catch (error) {
-          console.error("Error processing executed proposals:", error);
-        } finally {
-          setLoading(false);
-        }
-      };
-
-      if (isWeb3Enabled && governorAddress && proposalsFromGraph) {
+    if (isWeb3Enabled && governorAddress) {
+      if (chainId === 31337) {
+        fetchProposalsMetadata();
+        fetchExecutedProposals();
+      } else if (proposalsFromGraph) {
         fetchProposalsFromGraph();
         fetchExecutedProposals();
       }
-    }, [isWeb3Enabled, governorAddress, proposalsFromGraph]);
-  }
+    } else {
+      setLoading(false);
+    }
+  }, [isWeb3Enabled, governorAddress, proposalsFromGraph, chainId]);
 
   const handleProposalCreate = () => {
     router.push("/proposal/create");
@@ -291,7 +231,6 @@ const ProposalsPage = () => {
 
   // Filter proposals by selected category
   const pendingProposals = proposals.filter((proposal) => proposal.status !== "Executed");
-
   // Reverse the categoryMapping for numeric-to-name mapping
   const reverseCategoryMapping = Object.fromEntries(
     Object.entries(categoryMapping).map(([key, value]) => [value, key])
@@ -300,7 +239,6 @@ const ProposalsPage = () => {
   const filteredPendingProposals = pendingProposals.filter((proposal) => {
     const categoryName = reverseCategoryMapping[proposal.category]; // Map number to name
     const categoryEnumValue = CategoryEnums[categoryName.replace(/ /g, "")]; // Get enum value
-
     // Check if any of the selected categories match or "All" is selected
     return selectedCategory.includes("All") || selectedCategory.includes(categoryEnumValue);
   });
@@ -324,7 +262,7 @@ const ProposalsPage = () => {
         text={proposal.status}
       />,
       <span key={`${proposal.proposalId}-coordinates`}>
-        {`${proposal.coordinates.lat.toFixed(7)}, ${proposal.coordinates.lng.toFixed(7)}`}
+        {`${proposal.coordinates.lat}, ${proposal.coordinates.lng}`}
       </span>,
       <span key={`${proposal.proposalId}-proposer`}>{proposal.proposer}</span>,
       <span key={`${proposal.proposalId}-category`}>{categoryName || "Unknown Category"}</span>,
@@ -342,7 +280,7 @@ const ProposalsPage = () => {
         text={proposal.status}
       />,
       <span key={`${proposal.proposalId}-coordinates`}>
-        {`${proposal.latitude.toFixed(6)}, ${proposal.longitude.toFixed(6)}`}
+        {`${proposal.latitude}, ${proposal.longitude}`}
       </span>,
       <span key={`${proposal.proposalId}-proposer`}>{proposal.proposer}</span>,
       <span key={`${proposal.proposalId}-category`}>{categoryName || "Unknown Category"}</span>,
@@ -410,7 +348,7 @@ const ProposalsPage = () => {
               <span key="status">Status</span>,
               <span key="coordinates">Coordinates</span>,
               <span key="proposer">Proposer</span>,
-              <span key="category">Category</span>
+              <span key="category">Category</span>,
             ]}
             isColumnSortable={[false, true, false, false, false]}
             maxPages={10}
@@ -428,7 +366,7 @@ const ProposalsPage = () => {
               <span key="status">Status</span>,
               <span key="coordinates">Coordinates</span>,
               <span key="proposer">Proposer</span>,
-              <span key="category">Category</span>
+              <span key="category">Category</span>,
             ]}
             isColumnSortable={[false, true, false, false, false]}
             maxPages={10}

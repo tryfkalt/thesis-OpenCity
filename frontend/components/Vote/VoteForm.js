@@ -135,7 +135,6 @@ const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
   };
 
   const fetchInfo = async () => {
-    console.log("ProposalID:", proposalId);
     try {
       const stateOptions = {
         abi: abiGovernor,
