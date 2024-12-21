@@ -4,10 +4,25 @@ import { FUNC, PROPOSAL_DESCRIPTION, developmentChains, VOTING_DELAY, proposalsF
 import { moveBlocks } from "../utils/move-blocks";
 import * as fs from "fs";
 
+/**
+ * Proposes a new action to the GovernorContract.
+ *
+ * @param args - The arguments to be passed to the function being proposed.
+ * @param functionToCall - The name of the function to call on the ProposalContract.
+ * @param proposalDescription - A description of the proposal.
+ *
+ * @remarks
+ * This function encodes the function call with the provided arguments and submits a proposal to the GovernorContract.
+ * It then waits for the proposal transaction to be mined and retrieves the proposal ID, state, snapshot block number,
+ * and deadline block number. If the network is a development chain, it advances the blocks to simulate the voting delay.
+ * The proposal ID is stored for future reference.
+ *
+ * @throws Will throw an error if the contract interactions fail.
+ */
 async function propose(args: any, functionToCall: string, proposalDescription: string) {
     const governor = await ethers.getContract("GovernorContract");
     const box = await ethers.getContract("ProposalContract");
-    // console.log(box);
+
     // this is the calldata on the propose function
     const encodedFunctionCall = box.interface.encodeFunctionData(functionToCall, args);
     console.log(`Proposing ${functionToCall} on ${box.address} with args: ${args}`);
@@ -26,8 +41,6 @@ async function propose(args: any, functionToCall: string, proposalDescription: s
     const proposalSnapShot = await governor.proposalSnapshot(proposalId);
     // the proposal snapshot is the block number at which the proposal was created
     const proposalDeadline = await governor.proposalDeadline(proposalId);
-    // // the proposal deadline is the block number at which the proposal will expire
-    // const quorumProposal = await governor.quorum(proposalSnapShot)
 
     // save the proposalId
     storeProposalId(proposalId);
@@ -38,15 +51,6 @@ async function propose(args: any, functionToCall: string, proposalDescription: s
     console.log(`Current Proposal Snapshot: ${proposalSnapShot}`)
     // The block number the proposal voting expires
     console.log(`Current Proposal Deadline: ${proposalDeadline}`)
-    // The quorum percentage required for the proposal to pass
-    // console.log(`Current Proposal Quorum: ${quorumProposal}`)
-
-    // return {
-    //     proposalId: proposalId.toString(),
-    //     proposalState,
-    //     proposalSnapShot,
-    //     proposalDeadline,
-    // };
 }
 
 async function storeProposalId(proposalId: any) {
@@ -59,7 +63,6 @@ async function storeProposalId(proposalId: any) {
         proposals = {};
         proposals[chainId] = [];
     }
-    // console.log(proposals);
     proposals[chainId].push(proposalId.toString());
     fs.writeFileSync(proposalsFile, JSON.stringify(proposals), "utf8");
 }

@@ -19,6 +19,7 @@ const setupContracts: DeployFunction = async function (hre: HardhatRuntimeEnviro
     const timeLock = await ethers.getContractAt("TimeLock", timeLockAddress);
     const governor = await ethers.getContractAt("GovernorContract", governorAddress);
 
+    // Retrieve the roles from the TimeLock contract
     const proposerRole = await timeLock.PROPOSER_ROLE();
     const executorRole = await timeLock.EXECUTOR_ROLE();
     const adminRole = await timeLock.TIMELOCK_ADMIN_ROLE();
@@ -30,18 +31,20 @@ const setupContracts: DeployFunction = async function (hre: HardhatRuntimeEnviro
 
     if (!isAdmin) {
         console.log("Granting adminRole to deployer...");
+        // Grant the admin role to the deployer if not already granted
         const tx = await timeLock.grantRole(adminRole, deployer.address);
         await tx.wait();
     }
 
-    // Grant roles first
+    // Grant the proposer role to the Governor contract
     const proposerTx = await timeLock.grantRole(proposerRole, governor.address);
     await proposerTx.wait(1);
 
+    // Grant the executor role to the zero address (open execution)
     const executorTx = await timeLock.grantRole(executorRole, ADDRESS_ZERO);
     await executorTx.wait(1);
 
-    // Then revoke the admin role if necessary
+    // Revoke the admin role from the deployer to enforce governance
     const revokeTx = await timeLock.revokeRole(adminRole, deployer.address);
     await revokeTx.wait(1);
 

@@ -3,8 +3,6 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 
-const PINATA_API_KEY = process.env.PINATA_API_KEY;
-const PINATA_API_SECRET = process.env.PINATA_SECRET_API_KEY;
 const PINATA_JWT = process.env.PINATA_JWT;
 
 const pinJSONToIPFS = async (JSONBody) => {

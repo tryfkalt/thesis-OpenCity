@@ -80,7 +80,7 @@ async function updateContractAddresses() {
   // Update the address for the ProposalContract contract
   if (chainId in proposalContractAddresses) {
     if (!proposalContractAddresses[chainId].includes(proposalContract.address)) {
-      proposalContractAddresses[chainId] = proposalContract.address;
+      proposalContractAddresses[chainId].push(proposalContract.address);
     }
   } else {
     proposalContractAddresses[chainId] = [proposalContract.address];
@@ -89,7 +89,7 @@ async function updateContractAddresses() {
   // Update the address for the GovernanceToken contract
   if (chainId in governanceTokenAddresses) {
     if (!governanceTokenAddresses[chainId].includes(governanceToken.address)) {
-      governanceTokenAddresses[chainId] = governanceToken.address;
+      governanceTokenAddresses[chainId].push(governanceToken.address);
     }
   } else {
     governanceTokenAddresses[chainId] = [governanceToken.address];
@@ -98,7 +98,7 @@ async function updateContractAddresses() {
   // Update the address for the Timelock contract
   if (chainId in timelockAddresses) {
     if (!timelockAddresses[chainId].includes(timelock.address)) {
-      timelockAddresses[chainId] = timelock.address;
+      timelockAddresses[chainId].push(timelock.address);
     }
   } else {
     timelockAddresses[chainId] = [timelock.address];

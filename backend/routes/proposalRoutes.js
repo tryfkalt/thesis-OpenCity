@@ -74,5 +74,5 @@ router.get("/settings", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-// Export the router
+
 module.exports = router;

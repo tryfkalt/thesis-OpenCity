@@ -4,6 +4,23 @@ import { developmentChains, networkConfig } from '../helper-hardhat-config';
 import verify from "../helper-functions";
 import { ethers } from 'hardhat';
 
+/**
+ * Deploys the GovernanceToken contract and handles post-deployment tasks such as verification and delegation.
+ *
+ * @param {HardhatRuntimeEnvironment} hre - The Hardhat runtime environment.
+ * @returns {Promise<void>} - A promise that resolves when the deployment and post-deployment tasks are complete.
+ *
+ * @remarks
+ * This function performs the following steps:
+ * 1. Retrieves named accounts and deployment utilities from the Hardhat runtime environment.
+ * 2. Deploys the GovernanceToken contract using the deployer account.
+ * 3. Logs the deployed contract address.
+ * 4. Verifies the contract on Etherscan if the deployment is on a non-development chain.
+ * 5. Delegates voting power to the deployer account.
+ *
+ * @example
+ * await deployGovernanceToken(hre);
+ */
 const deployGovernanceToken: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
     const { getNamedAccounts, deployments, network } = hre;
     const { deploy, log } = deployments;
