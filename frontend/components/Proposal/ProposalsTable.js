@@ -2,7 +2,9 @@ import { useEffect, useState } from "react";
 import { useMoralis, useWeb3Contract } from "react-moralis";
 import { useQuery, gql } from "@apollo/client";
 import axios from "axios";
-import { ethers } from "ethers";
+import extractIpfsHash from "../../utils/extractIpfsHash";
+import getStatusColor from "../../utils/proposalsUtils/tableUtils";
+import { getStatusText } from "../../utils/map-utils/tableUtils";
 import { abiGovernor, contractAddressesGovernor } from "../../constants";
 import { Table, Avatar, Tag } from "web3uikit";
 import { useRouter } from "next/router";
@@ -71,14 +73,10 @@ const ProposalsTable = () => {
         try {
           if (!proposalsFromGraph) return; // Wait for data to be available
 
-          const extractIpfsHash = (description) => {
-            const parts = description.split("#");
-            return parts.length > 1 ? parts[1] : null;
-          };
           const proposalDetails = await Promise.all(
             proposalsFromGraph.proposalCreateds.map(async (proposal) => {
               const ipfsHash = proposal?.ipfsHash || extractIpfsHash(proposal.description);
-            if (!ipfsHash) {
+              if (!ipfsHash) {
                 console.warn(`No IPFS hash found in description: ${proposal.description}`);
                 return null;
               }
@@ -127,52 +125,6 @@ const ProposalsTable = () => {
     }, [isWeb3Enabled, governorAddress, proposalsFromGraph]);
   }
 
-  const getStatusText = (state) => {
-    switch (state) {
-      case 0:
-        return "Pending";
-      case 1:
-        return "Active";
-      case 2:
-        return "Canceled";
-      case 3:
-        return "Defeated";
-      case 4:
-        return "Succeeded";
-      case 5:
-        return "Queued";
-      case 6:
-        return "Expired";
-      case 7:
-        return "Executed";
-      default:
-        return "Unknown";
-    }
-  };
-
-  // Move getStatusColor above tableData to ensure it's defined before being used
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "Pending":
-        return "yellow";
-      case "Active":
-        return "blue";
-      case "Canceled":
-        return "red";
-      case "Defeated":
-        return "red";
-      case "Succeeded":
-        return "green";
-      case "Queued":
-        return "orange";
-      case "Expired":
-        return "gray";
-      case "Executed":
-        return "green";
-      default:
-        return "yellow";
-    }
-  };
   const tableData = proposals.map((proposal) => {
     return [
       <Avatar key={`${proposal.proposalId}-avatar`} isRounded size={36} theme="image" />,

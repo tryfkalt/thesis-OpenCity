@@ -4,6 +4,23 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract ProposalContract is Ownable {
+    // Enum to hold proposal categories
+    enum Category {
+        GovernanceAndAdministration,
+        Infrastructure,
+        EnvironmentAndNaturalResources,
+        PublicSafetyAndHazards,
+        HealthAndWellbeing,
+        Transportation,
+        EconomyAndEmployment,
+        HousingAndUrbanDevelopment,
+        EducationAndCulture,
+        DemographicsAndSociety,
+        WeatherAndClimate,
+        TechnologyAndInnovation,
+        TourismAndRecreation
+    }
+
     // Struct to hold proposal data
     struct Proposal {
         uint256 id;
@@ -13,6 +30,7 @@ contract ProposalContract is Ownable {
         int256 longitude;
         address proposer;
         string ipfsHash;
+        Category category;
     }
 
     // Mapping to store proposals by ID
@@ -27,7 +45,8 @@ contract ProposalContract is Ownable {
         int256 latitude,
         int256 longitude,
         address proposer,
-        string ipfsHash
+        string ipfsHash,
+        Category category
     );
 
     constructor() {}
@@ -40,6 +59,7 @@ contract ProposalContract is Ownable {
      * @param _latitude The latitude of the proposal's location.
      * @param _longitude The longitude of the proposal's location.
      * @param _ipfsHash The IPFS hash containing proposal data.
+     * @param _category The category of the proposal.
      */
     function storeProposal(
         string memory _title,
@@ -47,7 +67,8 @@ contract ProposalContract is Ownable {
         int256 _latitude,
         int256 _longitude,
         address _proposer,
-        string memory _ipfsHash
+        string memory _ipfsHash,
+        Category _category
     ) public {
         proposals[proposalCount] = Proposal({
             id: proposalCount,
@@ -56,7 +77,8 @@ contract ProposalContract is Ownable {
             latitude: _latitude,
             longitude: _longitude,
             proposer: _proposer,
-            ipfsHash: _ipfsHash
+            ipfsHash: _ipfsHash,
+            category: _category
         });
         
         emit ProposalAdded(
@@ -66,7 +88,8 @@ contract ProposalContract is Ownable {
             _latitude,
             _longitude,
             _proposer,
-            _ipfsHash
+            _ipfsHash,
+            _category
         );
         
         // Increment proposal count after storing
@@ -88,7 +111,8 @@ contract ProposalContract is Ownable {
             int256 latitude,
             int256 longitude,
             address proposer,
-            string memory ipfsHash
+            string memory ipfsHash,
+            Category category
         )
     {
         Proposal storage proposal = proposals[_id];
@@ -99,7 +123,8 @@ contract ProposalContract is Ownable {
             proposal.latitude,
             proposal.longitude,
             proposal.proposer,
-            proposal.ipfsHash
+            proposal.ipfsHash,
+            proposal.category
         );
     }
 

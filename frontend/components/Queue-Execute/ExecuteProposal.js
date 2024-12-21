@@ -9,6 +9,7 @@ import {
   contractAddressesGovernor,
   contractAddressesProposalContract,
 } from "../../constants";
+import { SCALING_FACTOR } from "../../constants/variables";
 import { useNotification } from "web3uikit";
 import styles from "../../styles/Queue-Execute.module.css";
 
@@ -30,17 +31,18 @@ const ExecuteProposal = ({ proposalDetails, onExecuted }) => {
       setMessage("Executing proposal...");
       console.log("Executing proposal:", proposalDetails);
 
-      const SCALING_FACTOR = 1e6; // Scale factor for fixed-point representation
       const functionToCall = "storeProposal";
       const proposalInterface = new ethers.utils.Interface(abiProposalContract);
       const args = [
         proposalDetails.title,
         proposalDetails.description,
-        ethers.BigNumber.from((proposalDetails.coordinates.lat * SCALING_FACTOR).toFixed(0)), // Scale latitude
-        ethers.BigNumber.from((proposalDetails.coordinates.lng * SCALING_FACTOR).toFixed(0)), // Scale longitude
+        ethers.BigNumber.from((proposalDetails.coordinates.lat * SCALING_FACTOR).toFixed(0)),
+        ethers.BigNumber.from((proposalDetails.coordinates.lng * SCALING_FACTOR).toFixed(0)),
         account,
         proposalDetails.ipfsHash,
+        proposalDetails.category,
       ];
+      console.log("Proposal args:", args);
       const encodedFunctionCall = proposalInterface.encodeFunctionData(functionToCall, args);
       const descriptionHash = ethers.utils.keccak256(
         ethers.utils.toUtf8Bytes(`${proposalDetails.description}#${proposalDetails.ipfsHash}`)

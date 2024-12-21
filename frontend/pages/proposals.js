@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
+import Select from "react-select";
 import { useMoralis, useWeb3Contract } from "react-moralis";
 import axios from "axios";
 import { ethers } from "ethers";
@@ -10,6 +12,13 @@ import {
   abiProposalContract,
   contractAddressesProposalContract,
 } from "../constants";
+import { SCALING_FACTOR } from "../constants/variables";
+import extractIpfsHash from "../utils/extractIpfsHash";
+import getStatusColor from "../utils/proposalsUtils/tableUtils";
+import { getStatusText } from "../utils/map-utils/tableUtils";
+import { convertScaledCoordinate } from "../utils/map-utils/convertCoordsUtils";
+import categoryMapping from "../constants/categoryMapping";
+import CategoryEnums from "../constants/categoryEnums";
 import Header from "../components/Header";
 import Spinner from "../components/Spinner/Spinner";
 import styles from "../styles/ProposalsPage.module.css";
@@ -17,10 +26,11 @@ import { useRouter } from "next/router";
 import { GET_PROPOSALS, GET_EXECUTED_PROPOSALS } from "../constants/subgraphQueries";
 
 const ProposalsPage = () => {
-  const { isWeb3Enabled, chainId: chainIdHex, account } = useMoralis();
+  const { isWeb3Enabled, chainId: chainIdHex } = useMoralis();
   const chainId = parseInt(chainIdHex, 16);
   const [proposals, setProposals] = useState([]);
   const [executedProposals, setExecutedProposals] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(["All"]);
   const [loading, setLoading] = useState(false);
   const { runContractFunction } = useWeb3Contract();
   const router = useRouter();
@@ -32,8 +42,6 @@ const ProposalsPage = () => {
     chainId in contractAddressesProposalContract
       ? contractAddressesProposalContract[chainId][0]
       : null;
-
-  const SCALING_FACTOR = ethers.BigNumber.from(1e6);
 
   const { error, data: proposalsFromGraph } = useQuery(GET_PROPOSALS);
   const { data: executedProposalsFromGraph } = useQuery(GET_EXECUTED_PROPOSALS);
@@ -102,8 +110,15 @@ const ProposalsPage = () => {
             title: proposal.title || "N/A",
             status: "Executed",
             proposer: proposal.proposer,
-            latitude: convertScaledCoordinate(proposal.latitude, SCALING_FACTOR),
-            longitude: convertScaledCoordinate(proposal.longitude, SCALING_FACTOR),
+            latitude: convertScaledCoordinate(
+              proposal.latitude,
+              ethers.BigNumber.from(SCALING_FACTOR)
+            ),
+            longitude: convertScaledCoordinate(
+              proposal.longitude,
+              ethers.BigNumber.from(SCALING_FACTOR)
+            ),
+            category: proposal.category || "N/A",
           }));
 
           // Fetch proposalId from localhost and merge with convertedProposals
@@ -115,6 +130,7 @@ const ProposalsPage = () => {
                   `http://localhost:5000/proposal/ipfs?ipfsHash=${correspondingRawProposal.ipfsHash}`
                 );
                 const proposalId = response.data;
+
                 return {
                   ...convertedProposal,
                   proposalId, // Add proposalId fetched from localhost
@@ -156,11 +172,6 @@ const ProposalsPage = () => {
             setLoading(false);
             return;
           }
-
-          const extractIpfsHash = (description) => {
-            const parts = description.split("#");
-            return parts.length > 1 ? parts[1] : null;
-          };
 
           const proposalDetails = await Promise.all(
             proposalsFromGraph.proposalCreateds.map(async (proposal) => {
@@ -235,8 +246,15 @@ const ProposalsPage = () => {
             title: proposal.title || "N/A",
             status: "Executed",
             proposer: proposal.proposer,
-            latitude: convertScaledCoordinate(proposal.latitude, SCALING_FACTOR),
-            longitude: convertScaledCoordinate(proposal.longitude, SCALING_FACTOR),
+            latitude: convertScaledCoordinate(
+              proposal.latitude,
+              ethers.BigNumber.from(SCALING_FACTOR)
+            ),
+            longitude: convertScaledCoordinate(
+              proposal.longitude,
+              ethers.BigNumber.from(SCALING_FACTOR)
+            ),
+            category: proposal.category || "N/A",
           }));
           if (executedProposalsFromGraph && executedProposalsFromGraph.proposalExecuteds) {
             const graphProposals = executedProposalsFromGraph.proposalExecuteds;
@@ -263,60 +281,6 @@ const ProposalsPage = () => {
     }, [isWeb3Enabled, governorAddress, proposalsFromGraph]);
   }
 
-  // Helper functions
-
-  function convertScaledCoordinate(bigNumberValue, scalingFactor) {
-    // Convert BigNumber to a JavaScript number or string
-    const scaledValue = bigNumberValue.toNumber(); // or bigNumberValue.toNumber() if it's safe
-    return scaledValue / scalingFactor; // Scale it back to the original value
-  }
-
-  const getStatusText = (state) => {
-    switch (state) {
-      case 0:
-        return "Pending";
-      case 1:
-        return "Active";
-      case 2:
-        return "Canceled";
-      case 3:
-        return "Defeated";
-      case 4:
-        return "Succeeded";
-      case 5:
-        return "Queued";
-      case 6:
-        return "Expired";
-      case 7:
-        return "Executed";
-      default:
-        return "Unknown";
-    }
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "Pending":
-        return "yellow";
-      case "Active":
-        return "blue";
-      case "Canceled":
-        return "red";
-      case "Defeated":
-        return "red";
-      case "Succeeded":
-        return "green";
-      case "Queued":
-        return "orange";
-      case "Expired":
-        return "gray";
-      case "Executed":
-        return "green";
-      default:
-        return "yellow";
-    }
-  };
-
   const handleProposalCreate = () => {
     router.push("/proposal/create");
   };
@@ -325,35 +289,74 @@ const ProposalsPage = () => {
     router.push(`/proposal/${proposalId}`);
   };
 
+  // Filter proposals by selected category
   const pendingProposals = proposals.filter((proposal) => proposal.status !== "Executed");
 
-  const tableDataPending = pendingProposals.map((proposal) => [
-    <Avatar key={`${proposal.proposalId}-avatar`} isRounded size={36} theme="image" />,
-    <span key={`${proposal.proposalId}-title`}>{proposal.title}</span>,
-    <Tag
-      key={`${proposal.proposalId}-status`}
-      color={getStatusColor(proposal.status)}
-      text={proposal.status}
-    />,
-    <span key={`${proposal.proposalId}-coordinates`}>{`${proposal.coordinates.lat.toFixed(
-      7
-    )}, ${proposal.coordinates.lng.toFixed(7)}`}</span>,
-    <span key={`${proposal.proposalId}-proposer`}>{proposal.proposer}</span>,
-  ]);
+  // Reverse the categoryMapping for numeric-to-name mapping
+  const reverseCategoryMapping = Object.fromEntries(
+    Object.entries(categoryMapping).map(([key, value]) => [value, key])
+  );
 
-  const tableDataExecuted = executedProposals.map((proposal) => [
-    <Avatar key={`${proposal.proposalId}-avatar`} isRounded size={36} theme="image" />,
-    <span key={`${proposal.proposalId}-title`}>{proposal.title}</span>,
-    <Tag
-      key={`${proposal.proposalId}-status`}
-      color={getStatusColor(proposal.status)}
-      text={proposal.status}
-    />,
-    <span key={`${proposal.proposalId}-coordinates`}>{`${proposal.latitude.toFixed(
-      6
-    )}, ${proposal.longitude.toFixed(6)}`}</span>,
-    <span key={`${proposal.proposalId}-proposer`}>{proposal.proposer}</span>,
-  ]);
+  const filteredPendingProposals = pendingProposals.filter((proposal) => {
+    const categoryName = reverseCategoryMapping[proposal.category]; // Map number to name
+    const categoryEnumValue = CategoryEnums[categoryName.replace(/ /g, "")]; // Get enum value
+
+    // Check if any of the selected categories match or "All" is selected
+    return selectedCategory.includes("All") || selectedCategory.includes(categoryEnumValue);
+  });
+
+  const filteredExecutedProposals = executedProposals.filter((proposal) => {
+    const categoryName = reverseCategoryMapping[proposal.category]; // Map number to name
+    const categoryEnumValue = CategoryEnums[categoryName.replace(/ /g, "")]; // Get enum value
+
+    // Check if any of the selected categories match or "All" is selected
+    return selectedCategory.includes("All") || selectedCategory.includes(categoryEnumValue);
+  });
+
+  const tableDataPending = filteredPendingProposals.map((proposal) => {
+    const categoryName = reverseCategoryMapping[proposal.category]; // Map number to name
+    return [
+      <Avatar key={`${proposal.proposalId}-avatar`} isRounded size={36} theme="image" />,
+      <span key={`${proposal.proposalId}-title`}>{proposal.title}</span>,
+      <Tag
+        key={`${proposal.proposalId}-status`}
+        color={getStatusColor(proposal.status)}
+        text={proposal.status}
+      />,
+      <span key={`${proposal.proposalId}-coordinates`}>
+        {`${proposal.coordinates.lat.toFixed(7)}, ${proposal.coordinates.lng.toFixed(7)}`}
+      </span>,
+      <span key={`${proposal.proposalId}-proposer`}>{proposal.proposer}</span>,
+      <span key={`${proposal.proposalId}-category`}>{categoryName || "Unknown Category"}</span>,
+    ];
+  });
+
+  const tableDataExecuted = filteredExecutedProposals.map((proposal) => {
+    const categoryName = reverseCategoryMapping[proposal.category]; // Map number to name
+    return [
+      <Avatar key={`${proposal.proposalId}-avatar`} isRounded size={36} theme="image" />,
+      <span key={`${proposal.proposalId}-title`}>{proposal.title}</span>,
+      <Tag
+        key={`${proposal.proposalId}-status`}
+        color={getStatusColor(proposal.status)}
+        text={proposal.status}
+      />,
+      <span key={`${proposal.proposalId}-coordinates`}>
+        {`${proposal.latitude.toFixed(6)}, ${proposal.longitude.toFixed(6)}`}
+      </span>,
+      <span key={`${proposal.proposalId}-proposer`}>{proposal.proposer}</span>,
+      <span key={`${proposal.proposalId}-category`}>{categoryName || "Unknown Category"}</span>,
+    ];
+  });
+
+  // Dropdown options using `CategoryEnums`
+  const categoryOptions = [
+    { label: "All", value: "All" },
+    ...Object.values(CategoryEnums).map((category) => ({
+      label: category,
+      value: category,
+    })),
+  ];
 
   return (
     <div className={styles.container}>
@@ -362,47 +365,76 @@ const ProposalsPage = () => {
       ) : (
         <>
           <Header />
-          <h2 className={styles.title}>Pending Proposals</h2>
-          <div className={styles.proposalButton}>
-            <Button
-              text="+New Proposal"
-              theme="primary"
-              onClick={handleProposalCreate}
-              size="large"
-            />
+          <div className={styles.filterAndButton}>
+            <div className={styles.filterContainer}>
+              <label htmlFor="categoryFilter">Filter Categories</label>
+              <Select
+                isMulti
+                id="categoryFilter"
+                options={categoryOptions}
+                value={categoryOptions.filter((option) => selectedCategory.includes(option.value))}
+                onChange={(options) => {
+                  const selectedValues = options.map((option) => option.value);
+                  if (selectedValues.includes("All") && selectedValues.length > 1) {
+                    // Remove "All" if other categories are selected
+                    setSelectedCategory(selectedValues.filter((value) => value !== "All"));
+                  } else if (selectedValues.length === 0) {
+                    // Default back to "All" if no categories are selected
+                    setSelectedCategory(["All"]);
+                  } else {
+                    setSelectedCategory(selectedValues);
+                  }
+                }}
+                placeholder="Select categories"
+                className={styles.filterDropdown}
+                classNamePrefix="filter"
+              />
+            </div>
+            <div className={styles.proposalButton}>
+              <Button
+                text="+New Proposal"
+                theme="primary"
+                onClick={handleProposalCreate}
+                size="large"
+              />
+            </div>
           </div>
+          <h2 className={styles.title}>Pending Proposals</h2>
+
           <Table
-            columnsConfig="80px 2fr 1fr 1fr 2fr"
+            columnsConfig="80px 2fr 1fr 1fr 1fr 2fr"
             data={tableDataPending}
             header={[
               "",
-              <span>Title</span>,
-              <span>Status</span>,
-              <span>Coordinates</span>,
-              <span>Proposer</span>,
+              <span key="title">Title</span>,
+              <span key="status">Status</span>,
+              <span key="coordinates">Coordinates</span>,
+              <span key="proposer">Proposer</span>,
+              <span key="category">Category</span>
             ]}
             isColumnSortable={[false, true, false, false, false]}
-            maxPages={3}
+            maxPages={10}
             pageSize={5}
             onPageNumberChanged={() => {}}
-            onRowClick={(row) => handleRowClick(pendingProposals[row].proposalId)}
+            onRowClick={(row) => handleRowClick(filteredPendingProposals[row].proposalId)}
           />
           <h2 className={styles.title}>Executed Proposals</h2>
           <Table
-            columnsConfig="80px 2fr 1fr 1fr 2fr"
+            columnsConfig="80px 2fr 1fr 1fr 1fr 2fr"
             data={tableDataExecuted}
             header={[
               "",
-              <span>Title</span>,
-              <span>Status</span>,
-              <span>Coordinates</span>,
-              <span>Proposer</span>,
+              <span key="title">Title</span>,
+              <span key="status">Status</span>,
+              <span key="coordinates">Coordinates</span>,
+              <span key="proposer">Proposer</span>,
+              <span key="category">Category</span>
             ]}
             isColumnSortable={[false, true, false, false, false]}
-            maxPages={3}
+            maxPages={10}
             pageSize={5}
             onPageNumberChanged={() => {}}
-            onRowClick={(row) => handleRowClick(executedProposals[row].proposalId)}
+            onRowClick={(row) => handleRowClick(filteredExecutedProposals[row].proposalId)}
           />
         </>
       )}

@@ -129,7 +129,7 @@ const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
     dispatch({
       type: "success",
       message: "Vote submitted successfully.",
-      title: "Vote Cast",
+      title: "Vote Casted!",
       position: "topR",
     });
   };

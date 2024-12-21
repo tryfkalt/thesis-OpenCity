@@ -1,18 +1,17 @@
 import { useState } from "react";
 import { ethers } from "ethers";
-import axios from "axios";
 import { useMoralis, useWeb3Contract } from "react-moralis";
-import Spinner from "../Spinner/Spinner";
+import pinToIPFS from "../../utils/pinToIPFS";
 import {
   abiGovernor,
   abiProposalContract,
   contractAddressesGovernor,
   contractAddressesProposalContract,
 } from "../../constants";
+import { SCALING_FACTOR } from "../../constants/variables";
 import { useNotification } from "web3uikit";
+import Spinner from "../Spinner/Spinner";
 import styles from "../../styles/Queue-Execute.module.css";
-
-const PINATA_JWT = process.env.NEXT_PUBLIC_PINATA_JWT;
 
 const QueueProposal = ({ proposalDetails }) => {
   const { chainId: chainIdHex, account } = useMoralis();
@@ -32,8 +31,7 @@ const QueueProposal = ({ proposalDetails }) => {
     try {
       setLoading(true);
       setMessage("Queueing proposal...");
-      const SCALING_FACTOR = 1e6;
-      
+
       const functionToCall = "storeProposal";
       const proposalInterface = new ethers.utils.Interface(abiProposalContract);
       const args = [
@@ -43,6 +41,7 @@ const QueueProposal = ({ proposalDetails }) => {
         ethers.BigNumber.from((proposalDetails.coordinates.lng * SCALING_FACTOR).toFixed(0)),
         account,
         proposalDetails.ipfsHash,
+        proposalDetails.category,
       ];
       const encodedFunctionCall = proposalInterface.encodeFunctionData(functionToCall, args);
 
@@ -104,19 +103,6 @@ const QueueProposal = ({ proposalDetails }) => {
   const handleQueueError = (error) => {
     console.error("Error queueing proposal:", error);
     setMessage("Error queueing proposal: " + error.message);
-  };
-
-  const pinToIPFS = async (proposalData) => {
-    try {
-      const url = `https://api.pinata.cloud/pinning/pinJSONToIPFS`;
-      const response = await axios.post(url, proposalData, {
-        headers: { Authorization: `Bearer ${PINATA_JWT}` },
-      });
-      return response;
-    } catch (error) {
-      setMessage("Failed to pin data to IPFS.");
-      throw error;
-    }
   };
 
   return (

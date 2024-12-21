@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useMoralis, useWeb3Contract } from "react-moralis";
 import { ethers } from "ethers";
-import styles from "../../styles/ProposalForm.module.css";
+import pinToIPFS from "../../utils/pinToIPFS";
 import {
   abiProposalContract,
   contractAddressesProposalContract,
@@ -10,16 +10,16 @@ import {
   abiGovernanceToken,
   contractAddressesGovernanceToken,
 } from "../../constants";
+import CategoryEnums from "../../constants/categoryEnums";
+import categoryMapping from "../../constants/categoryMapping";
+import { SCALING_FACTOR } from "../../constants/variables";
 import { useNotification, Form } from "web3uikit";
 import Spinner from "../Spinner/Spinner";
 import axios from "axios";
 import dotenv from "dotenv";
+import styles from "../../styles/ProposalForm.module.css";
 
 dotenv.config();
-
-const PINATA_API_KEY = process.env.NEXT_PUBLIC_PINATA_API_KEY;
-const PINATA_API_SECRET = process.env.NEXT_PUBLIC_PINATA_SECRET_API_KEY;
-const PINATA_JWT = process.env.NEXT_PUBLIC_PINATA_JWT;
 
 const ProposalForm = ({ onProposalSubmit, coordinates }) => {
   const { isWeb3Enabled, chainId: chainIdHex, account } = useMoralis();
@@ -46,6 +46,7 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
   const dispatch = useNotification();
   const { runContractFunction } = useWeb3Contract();
 
+  // Check if the user is eligible to create a proposal
   async function checkProposalEligibility() {
     try {
       const thresholdOptions = {
@@ -64,14 +65,15 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
         runContractFunction({ params: thresholdOptions }),
         runContractFunction({ params: votingPowerOptions }),
       ]);
-      console.log("Proposal Threshold:", threshold.toString());
-      console.log("Voting Power:", votingPower.toString());
+
       setProposalThreshold(threshold);
       setCanPropose(ethers.BigNumber.from(votingPower).gte(threshold));
     } catch (error) {
       console.error("Error checking proposal eligibility:", error);
     }
   }
+
+  // Create a new proposal
   async function createProposal(data) {
     try {
       if (!canPropose) {
@@ -85,23 +87,42 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
       }
       setLoading(true);
       setMessage("");
-      console.log("Creating proposal...");
 
       const title = data.data[0].inputResult;
       const description = data.data[1].inputResult;
 
-      const SCALING_FACTOR = 1e6;
       const lat = ethers.BigNumber.from((coordinates.lat * SCALING_FACTOR).toFixed(0));
       const lng = ethers.BigNumber.from((coordinates.lng * SCALING_FACTOR).toFixed(0));
 
+      const categoryString = data.data[2].inputResult;
+      const normalizedCategoryString = categoryString.trim().toLowerCase();
+
+      const normalizedCategoryMapping = Object.fromEntries(
+        Object.entries(categoryMapping).map(([key, value]) => [key.toLowerCase(), value])
+      );
+
+      const category = normalizedCategoryMapping[normalizedCategoryString];
+
+      if (isNaN(category)) {
+        throw new Error("Invalid category selected.");
+      }
+
+      if (isNaN(category)) {
+        throw new Error("Invalid category selected.");
+      }
+
+      if (isNaN(category)) {
+        throw new Error("Invalid category selected.");
+      }
       const proposalData = {
         title,
         description,
         coordinates: { lat: coordinates.lat, lng: coordinates.lng },
+        category,
       };
+
       // Pin data to IPFS to get the hash
       const pinataResponse = await pinToIPFS(proposalData);
-
       const ipfsHash = pinataResponse?.data?.IpfsHash;
 
       if (!ipfsHash) {
@@ -112,7 +133,7 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
       const fullDescription = `${description}#${ipfsHash}`;
       const functionToCall = "storeProposal";
       const proposalInterface = new ethers.utils.Interface(abiProposalContract);
-      const args = [title, description, lat, lng, account, ipfsHash];
+      const args = [title, description, lat, lng, account, ipfsHash, category];
       const encodedFunctionCall = proposalInterface.encodeFunctionData(functionToCall, args);
 
       const createProposalOptions = {
@@ -146,28 +167,22 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
     }
   }
 
+  // Handle successful proposal creation
   const handleSuccess = async (tx, proposalData) => {
     try {
       const proposalReceipt = await tx.wait(1);
       const proposalId = proposalReceipt.events[0].args.proposalId.toString();
       const proposer = account;
+
       proposalData = { ...proposalData, proposalId, proposer };
-      // const pinataResponse = await pinToIPFS(proposalData);
-      // const ipfsHash = pinataResponse?.data?.IpfsHash;
 
-      // if (!ipfsHash) throw new Error("Failed to pin data to IPFS");
-
-      // Send proposal data (including IPFS hash) to backend
       if (chainId === 31337) {
-        const response = await axios.post("http://localhost:5000/proposals", {
-          ...proposalData,
-        });
+        await axios.post("http://localhost:5000/proposals", { ...proposalData });
       }
 
       await fetchProposalDetails(proposalId);
       setMessage("Proposal submitted successfully on the blockchain and saved to backend!");
 
-      // Dispatch success notification
       dispatch({
         type: "success",
         message: "Proposal submitted successfully!",
@@ -183,13 +198,14 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
       setMessage("Failed to save proposal. Please check the console for details.");
       dispatch({
         type: "error",
-        message: " Failed to save proposal. Please check the console for details.",
+        message: "Failed to save proposal. Please check the console for details.",
         title: "Transaction Notification",
         position: "topR",
       });
     }
   };
 
+  // Fetch proposal details from the blockchain
   const fetchProposalDetails = async (proposalId) => {
     try {
       const options = {
@@ -227,22 +243,7 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
     }
   };
 
-  const pinToIPFS = async (proposalData) => {
-    try {
-      const url = `https://api.pinata.cloud/pinning/pinJSONToIPFS`;
-      const response = await axios.post(url, proposalData, {
-        headers: {
-          Authorization: `Bearer ${PINATA_JWT}`,
-        },
-      });
-      return response;
-    } catch (error) {
-      console.error("Error pinning data to IPFS:", error);
-      setMessage("Failed to pin data to IPFS.");
-      throw error;
-    }
-  };
-
+  // Handle errors during proposal submission
   const handleError = (error) => {
     console.error("Proposal submission error:", error);
     setMessage("Proposal submission failed. Please see console for details.");
@@ -255,6 +256,7 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
     });
   };
 
+  // Update UI based on Web3 status
   async function updateUI() {
     if (isWeb3Enabled) {
       console.log("Web3 is enabled!");
@@ -287,6 +289,7 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
             inputWidth: "100%",
             validation: { required: true },
             placeholder: "Enter proposal title",
+            onChange: (e) => setTitle(e.target.value),
           },
           {
             name: "Description",
@@ -296,6 +299,21 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
             inputWidth: "100%",
             validation: { required: true },
             placeholder: "Enter proposal description",
+            onChange: (e) => setDescription(e.target.value),
+          },
+          {
+            name: "Category",
+            type: "select",
+            value: "",
+            key: "category",
+            inputWidth: "100%",
+            selectOptions: [
+              { value: "", label: "Select a category" },
+              ...Object.values(CategoryEnums).map((value) => ({
+                value: value,
+                label: value.charAt(0) + value.slice(1).toLowerCase(),
+              })),
+            ],
           },
           {
             name: "Latitude",
@@ -323,8 +341,6 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
           theme: "primary",
         }}
       />
-
-      {/* Add a global loader */}
       {loading && (
         <div className={styles["loading-overlay"]}>
           <Spinner />

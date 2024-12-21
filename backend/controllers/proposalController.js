@@ -6,7 +6,8 @@ const axios = require("axios");
 const { developmentChains } = require("../helper-hardhat-config");
 
 const createProposal = async (req, res) => {
-  const { title, description, coordinates, proposalId, proposer } = req.body;
+  const { title, description, coordinates, category, proposalId, proposer } = req.body;
+  console.log("req.body", req.body);
   const lat = parseFloat(coordinates.lat); // Use parseFloat to handle decimals
   const lng = parseFloat(coordinates.lng);
   const ipfsHash = req.body.ipfsHash;
@@ -21,6 +22,7 @@ const createProposal = async (req, res) => {
     proposalId,
     proposer,
     ipfsHash,
+    category,
   };
 
   // Define the file path for saving proposals

@@ -7,6 +7,7 @@ import { abiGovernanceToken, contractAddressesGovernanceToken } from "../../cons
 import styles from "../../styles/Delegate.module.css";
 
 const DelegateComponent = () => {
+  // State variables
   const [isClaimed, setIsClaimed] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCustomAddressModalOpen, setIsCustomAddressModalOpen] = useState(false);
@@ -31,6 +32,7 @@ const DelegateComponent = () => {
       ? contractAddressesGovernanceToken[chainId][0]
       : null;
 
+  // Modal handlers
   const openModal = () => setIsModalOpen(true);
   const closeModal = () => setIsModalOpen(false);
   const openCustomAddressModal = () => setIsCustomAddressModalOpen(true);
@@ -41,6 +43,7 @@ const DelegateComponent = () => {
     setEthAmount("");
   };
 
+  // Delegate handlers
   const handleDelegateToSelf = () => {
     setDelegateToSelf(true);
     setIsCustomAddressModalOpen(false);
@@ -100,6 +103,7 @@ const DelegateComponent = () => {
     console.error("Error delegating voting power:", error);
   };
 
+  // Fetch voting power
   const fetchVotingPower = async () => {
     setLoading(true);
     try {
@@ -112,12 +116,11 @@ const DelegateComponent = () => {
       const votes = await runContractFunction({ params: votingPowerOptions });
       const newVotingPower = votes.toString();
 
-      // Calculate newly delegated tokens if there was a prior delegation
       if (parseInt(previousVotingPower) < parseInt(newVotingPower)) {
-        setDelegatedBalance(newVotingPower); // Manually track delegated tokens
+        setDelegatedBalance(newVotingPower);
       }
       setVotingPower(newVotingPower);
-      setPreviousVotingPower(newVotingPower); // Update previous voting power
+      setPreviousVotingPower(newVotingPower);
       setIsClaimed(newVotingPower !== "0");
     } catch (error) {
       console.error("Error fetching voting power:", error);
@@ -126,6 +129,7 @@ const DelegateComponent = () => {
     }
   };
 
+  // Fetch deployer balance
   const fetchDeployerBalance = async () => {
     const deployerBalanceOptions = {
       abi: abiGovernanceToken,
@@ -133,9 +137,10 @@ const DelegateComponent = () => {
       functionName: "getDeployerBalance",
       params: {},
     };
-    const deployerBalance = await runContractFunction({ params: deployerBalanceOptions });
+    await runContractFunction({ params: deployerBalanceOptions });
   };
 
+  // Fetch token balance
   const fetchTokenBalance = async () => {
     setLoading(true);
     try {
@@ -154,6 +159,7 @@ const DelegateComponent = () => {
     }
   };
 
+  // Handle token exchange
   const handleExchangeTokens = async () => {
     if (!ethAmount || parseFloat(ethAmount) <= 0) {
       Notification.error({
@@ -171,7 +177,7 @@ const DelegateComponent = () => {
     };
 
     try {
-      const tx = await runContractFunction({
+      await runContractFunction({
         params: exchangeOptions,
         onSuccess: async (tx) => {
           await tx.wait(1);
@@ -189,6 +195,7 @@ const DelegateComponent = () => {
     }
   };
 
+  // Fetch token details
   const fetchTokenDetails = async () => {
     setLoading(true);
     try {
@@ -208,16 +215,7 @@ const DelegateComponent = () => {
     }
   };
 
-  // const withdrawEth = async () => {
-  //   setLoading(true);
-  //   const withdrawOptions = {
-  //     abi: abiGovernanceToken,
-  //     contractAddress: governanceTokenAddress,
-  //     functionName: "withdrawETH",
-  //   };
-  //   const tx = await runContractFunction({ params: withdrawOptions, onSuccess: handleSuccess });
-  // };
-
+  // Fetch initial data when component mounts
   useEffect(() => {
     if (isWeb3Enabled && account) {
       fetchDeployerBalance();
@@ -249,17 +247,6 @@ const DelegateComponent = () => {
         <p className={styles.votingPowerText}>
           Total voting power: <span>{votingPower !== "0" ? votingPower : "-"}</span>
         </p>
-        {/* 
-        <p className={styles.tokenBalance}>
-          TRYF TOKENS: <span>{tokenBalance}</span>
-        </p> */}
-        {/* <p className={styles.delegationStatus}>
-          {parseInt(tokenBalance) > parseInt(delegatedBalance)
-            ? `${parseInt(tokenBalance) - parseInt(delegatedBalance)} TT not delegated`
-            : parseInt(tokenBalance) === 0
-            ? "0 TT not delegated"
-            : `${delegatedBalance} TT delegated`}
-        </p> */}
         <Button
           onClick={openModal}
           text="Delegate"
@@ -267,13 +254,6 @@ const DelegateComponent = () => {
           disabled={!isWeb3Enabled || !account || loading}
           style={{ margin: "auto" }}
         />
-        {/* <Button
-          onClick={withdrawEth}
-          text="Withdraw"
-          theme="primary"
-          disabled={!isWeb3Enabled || !account || loading}
-          style={{ margin: "auto" }}
-        /> */}
       </div>
 
       {/* Delegate Voting Power Modal */}
@@ -348,7 +328,9 @@ const DelegateComponent = () => {
           placeholder="Enter amount in ETH"
           type="number"
         />
-        <p className={styles.exchangeAmountText}>Max exchange amount is: {maxExchangeAmount/100} ETH </p>
+        <p className={styles.exchangeAmountText}>
+          Max exchange amount is: {maxExchangeAmount / 100} ETH{" "}
+        </p>
         {loading && <Spinner />}
       </Modal>
     </div>

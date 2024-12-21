@@ -9,14 +9,14 @@ import {
 } from "react-leaflet";
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
-import styles from "../../styles/Home.module.css";
-import L, { divIcon, point } from "leaflet";
 import MarkerClusterGroup from "react-leaflet-markercluster";
 import { useMoralis, useWeb3Contract } from "react-moralis";
 import calculateDistance from "../../utils/calculateDistance";
 import { Modal, Button } from "web3uikit";
 import { abiGovernor, contractAddressesGovernor } from "../../constants";
-import range from "../../constants/variables";
+import { range } from "../../constants/variables";
+import { getMarkerIcon, getStatusText, defaultMarkerIcon } from "../../utils/map-utils/tableUtils";
+import extractIpfsHash from "../../utils/extractIpfsHash";
 import VoteDetails from "../Vote/VoteDetails";
 import SearchBar from "./SearchBar";
 import VoteForm from "../Vote/VoteForm";
@@ -24,38 +24,21 @@ import Spinner from "../Spinner/Spinner";
 import { useRouter } from "next/router";
 import { useQuery, useLazyQuery } from "@apollo/client";
 import { GET_PROPOSALS, GET_PROPOSAL_BY_ID } from "../../constants/subgraphQueries";
+import styles from "../../styles/Home.module.css";
 
-const pendingMarkerIcon = new L.Icon({
-  iconUrl: "/Pending.png",
-  iconSize: [50, 50],
-  iconAnchor: [25, 50],
-  popupAnchor: [0, -50],
-});
-const activeMarkerIcon = new L.Icon({
-  iconUrl: "/Active.png",
-  iconSize: [50, 50],
-  iconAnchor: [25, 50],
-  popupAnchor: [0, -50],
-});
-const acceptedMarkerIcon = new L.Icon({
-  iconUrl: "/Accepted.png",
-  iconSize: [50, 50],
-  iconAnchor: [25, 50],
-  popupAnchor: [0, -50],
-});
-const deniedMarkerIcon = new L.Icon({
-  iconUrl: "/Denied.png",
-  iconSize: [50, 50],
-  iconAnchor: [25, 50],
-  popupAnchor: [0, -50],
-});
-const defaultMarkerIcon = new L.Icon({
-  iconUrl: "/Default.png",
-  iconSize: [50, 50],
-  iconAnchor: [25, 50],
-  popupAnchor: [0, -50],
-});
-
+/**
+ * Map component that displays a map with various markers from proposals and allows interaction with them.
+ * 
+ * @param {Object} props - The properties object.
+ * @param {Object} props.userLocation - The user's current location with latitude and longitude.
+ * @param {Function} props.onMapClick - Callback function to handle map click events.
+ * @param {string} props.proposalStatus - The status of the proposal.
+ * @param {Object} props.createCoords - Coordinates for creating a new proposal when redirecting to create page.
+ * @param {boolean} props.staticMarker - Flag to determine if the marker is static.
+ * @param {Object} props.idCoords - Coordinates for a specific ID.
+ * 
+ * @returns {JSX.Element} The rendered Map component.
+ */
 const Map = ({
   userLocation,
   onMapClick,
@@ -93,7 +76,6 @@ const Map = ({
   // Hooks
   useEffect(() => {
     if (createCoords) {
-      console.log("HELP");
       setDefaultMarkerPosition(createCoords);
     }
   }, [createCoords]);
@@ -146,10 +128,6 @@ const Map = ({
       const fetchProposalsFromGraph = async () => {
         try {
           if (!proposalsFromGraph) return;
-          const extractIpfsHash = (description) => {
-            const parts = description.split("#");
-            return parts.length > 1 ? parts[1] : null;
-          };
 
           const proposalDetails = await Promise.all(
             proposalsFromGraph.proposalCreateds.map(async (proposal) => {
@@ -200,46 +178,6 @@ const Map = ({
       }
     }, [isWeb3Enabled, governorAddress, proposalsFromGraph]);
   }
-  // Helper Functions
-  const getStatusText = (state) => {
-    switch (state) {
-      case 0:
-        return "Pending";
-      case 1:
-        return "Active";
-      case 2:
-        return "Canceled";
-      case 3:
-        return "Defeated";
-      case 4:
-        return "Succeeded";
-      case 5:
-        return "Queued";
-      case 6:
-        return "Expired";
-      case 7:
-        return "Executed";
-      default:
-        return "Unknown";
-    }
-  };
-
-  const getMarkerIcon = (status) => {
-    switch (status) {
-      case "Pending":
-        return pendingMarkerIcon;
-      case "Active":
-        return activeMarkerIcon;
-      case "Succeeded":
-      case "Executed":
-        return acceptedMarkerIcon;
-      case "Defeated":
-      case "Canceled":
-        return deniedMarkerIcon;
-      default:
-        return defaultMarkerIcon;
-    }
-  };
 
   const fetchProposalDetails = async (proposalId) => {
     try {
@@ -259,6 +197,14 @@ const Map = ({
       console.error("Error fetching proposal details from The Graph:", error);
     }
   };
+
+  useEffect(() => {
+    if (proposalFromGraph && proposalFromGraph.proposalCreateds.length > 0) {
+      const fetchedProposal = proposalFromGraph.proposalCreateds[0]; // Assuming there's always at least one result
+      fetchProposalDetailsFromGraph(fetchedProposal);
+      setIsModalOpen(true);
+    }
+  }, [proposalFromGraph]);
 
   // Event Handlers
   const handleProposalCreate = () => {
@@ -286,14 +232,6 @@ const Map = ({
     }
     setIsModalOpen(true);
   };
-
-  useEffect(() => {
-    if (proposalFromGraph && proposalFromGraph.proposalCreateds.length > 0) {
-      const fetchedProposal = proposalFromGraph.proposalCreateds[0]; // Assuming there's always at least one result
-      fetchProposalDetailsFromGraph(fetchedProposal);
-      setIsModalOpen(true);
-    }
-  }, [proposalFromGraph]);
 
   const handleSearchResult = ({ lat, lng, place_name }) => {
     setDefaultMarkerPosition({ lat, lng });
@@ -324,6 +262,7 @@ const Map = ({
     });
     return null;
   };
+
   const dottedLineCoords =
     userLocation && idCoords ? [userLocation, [idCoords.lat, idCoords.lng]] : null;
 
@@ -431,7 +370,7 @@ const Map = ({
                 {marker.isInRange ? (
                   <p style={{ color: "green", marginTop: "12px" }}>In range to vote</p>
                 ) : (
-                  <p style={{ color: "red", marginTop: "12px"}}>Outside range to vote</p>
+                  <p style={{ color: "red", marginTop: "12px" }}>Outside range to vote</p>
                 )}
                 {marker?.status === "Pending" ? (
                   <p>Proposal vote hasn't started yet.</p>
@@ -502,7 +441,7 @@ const Map = ({
           zIndex: "1000",
         }}
       >
-        {loading ? ( // Show spinner during loading
+        {loading ? (
           <div className="spinnerContainer">
             <Spinner />
             <p>Submitting your vote, please wait...</p>

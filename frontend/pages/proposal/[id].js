@@ -9,6 +9,7 @@ import {
   abiGovernanceToken,
   contractAddressesGovernanceToken,
 } from "../../constants";
+import extractIpfsHash from "../../utils/extractIpfsHash";
 import Header from "../../components/Header";
 import Map from "../../components/Map";
 import QueueProposal from "../../components/Queue-Execute/QueueProposal";
@@ -16,7 +17,6 @@ import ExecuteProposal from "../../components/Queue-Execute/ExecuteProposal";
 import Spinner from "../../components/Spinner/Spinner";
 import styles from "../../styles/Proposal.module.css";
 import { GET_PROPOSAL_BY_ID } from "../../constants/subgraphQueries";
-import { SP } from "next/dist/shared/lib/utils";
 
 const ProposalDetails = () => {
   const { query } = useRouter();
@@ -122,11 +122,7 @@ const ProposalDetails = () => {
       const fetchProposalDetails = async () => {
         try {
           setLoading(true);
-          // Ex?tract IPFS hash from description
-          const extractIpfsHash = (description) => {
-            const parts = description.split("#");
-            return parts.length > 1 ? parts[1] : null;
-          };
+
           const ipfsHash =
             proposalFromGraph.proposalCreateds[0]?.ipfsHash ||
             extractIpfsHash(proposalFromGraph.proposalCreateds[0]?.description); // Access the first proposal
