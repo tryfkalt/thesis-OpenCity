@@ -125,12 +125,18 @@
   color: black;
   padding: 10px 15px;
   text-decoration: none;
-  display: block;
+  display: flex; /* Use flexbox for alignment */
+  align-items: center; /* Vertically center content */
   border: none;
   background: none;
   width: 100%;
   text-align: left;
   font-family: "Montserrat", sans-serif;
+  font-size: 16px; /* Adjust size if necessary */
+}
+
+.dropdownItem span {
+  margin-left: 8px; /* Space between emoji and text */
 }
 
 .dropdownItem:hover {

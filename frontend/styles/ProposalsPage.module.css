@@ -57,7 +57,7 @@
   width: 300px;
 }
 
-.filterDropdown .filter__control {
+/* .filterDropdown .filter__control {
   border-radius: 8px;
   border: 1px solid #d1d5db;
   padding: 5px;
@@ -88,4 +88,43 @@
   border-radius: 8px;
   box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
   font-size: 14px;
+} */
+
+.filterDropdown .filter__option {
+  display: flex; /* Use flexbox to align emoji and text */
+  align-items: center; /* Vertically center emoji and text */
+  gap: 8px; /* Add space between emoji and text */
+  padding: 8px 12px; /* Adjust padding for better spacing */
+  font-size: 14px; /* Ensure consistent font size */
+  font-family: "Montserrat", sans-serif;
+  cursor: pointer; /* Add a pointer cursor for better UX */
+}
+
+.filterDropdown .filter__option--is-focused,
+.filterDropdown .filter__option--is-selected {
+  background-color: #eff6ff; /* Highlight background */
+  color: #1d4ed8; /* Highlight text color */
+}
+
+.filterDropdown .filter__option:hover {
+  background-color: #e0f2fe; /* Slightly darker hover color */
+}
+
+.filterDropdown .filter__single-value {
+  display: flex; /* Align emoji and selected text */
+  align-items: center;
+  gap: 8px;
+}
+
+.filterDropdown .filter__multi-value {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #eff6ff;
+  border-radius: 4px;
+  padding: 4px;
+}
+
+.filterDropdown .filter__multi-value__label {
+  margin-left: 4px; /* Space after the emoji in multi-select */
 }

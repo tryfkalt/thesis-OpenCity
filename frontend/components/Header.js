@@ -112,7 +112,7 @@ export default function Header() {
           </button>
           <div className={`${styles.dropdownContent} ${isDropdownOpen ? styles.open : ""}`}>
             <button className={styles.dropdownItem} onClick={openModal}>
-              Contracts and Parameters
+            📜<span>Contracts and Parameters</span>
             </button>
           </div>
         </div>

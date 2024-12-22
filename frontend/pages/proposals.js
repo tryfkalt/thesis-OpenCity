@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import dynamic from "next/dynamic";
 import Select from "react-select";
 import { useMoralis, useWeb3Contract } from "react-moralis";
 import axios from "axios";
@@ -12,6 +11,7 @@ import {
   abiProposalContract,
   contractAddressesProposalContract,
 } from "../constants";
+import categoryEmojiMap from "../constants/emojiMappings";
 import { SCALING_FACTOR } from "../constants/variables";
 import extractIpfsHash from "../utils/extractIpfsHash";
 import getStatusColor from "../utils/proposalsUtils/tableUtils";
@@ -208,13 +208,62 @@ const ProposalsPage = () => {
       }
     };
 
+    const fetchExecutedProposalsFromGraph = async () => {
+      try {
+        setLoading(true);
+        const executedProposalsOptions = {
+          abi: abiProposalContract,
+          contractAddress: proposalContractAddress,
+          functionName: "getAllProposals",
+          params: {},
+        };
+        const rawProposals = await runContractFunction({
+          params: executedProposalsOptions,
+          onSuccess: (proposals) => proposals,
+          onError: (error) => {
+            console.error("Error fetching executed proposals:", error);
+            return [];
+          },
+        });
+        // Convert BigNumber coordinates and other required fields
+        const convertedProposals = rawProposals.map((proposal, index) => ({
+          title: proposal.title || "N/A",
+          status: "Executed",
+          proposer: proposal.proposer,
+          latitude: convertScaledCoordinate(
+            proposal.latitude,
+            ethers.BigNumber.from(SCALING_FACTOR)
+          ),
+          longitude: convertScaledCoordinate(
+            proposal.longitude,
+            ethers.BigNumber.from(SCALING_FACTOR)
+          ),
+          category: proposal.category || "N/A",
+        }));
+        if (executedProposalsFromGraph && executedProposalsFromGraph.proposalExecuteds) {
+          const graphProposals = executedProposalsFromGraph.proposalExecuteds;
+          const mergedProposals = convertedProposals.map((contractProposal, index) => ({
+            ...contractProposal,
+            proposalId: graphProposals[index]?.proposalId || null, // Use the proposalId from the Graph
+          }));
+          setExecutedProposals(mergedProposals);
+        } else {
+          setExecutedProposals(convertedProposals);
+        }
+      } catch (error) {
+        console.error("Error processing executed proposals:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     if (isWeb3Enabled && governorAddress) {
       if (chainId === 31337) {
         fetchProposalsMetadata();
         fetchExecutedProposals();
       } else if (proposalsFromGraph) {
         fetchProposalsFromGraph();
-        fetchExecutedProposals();
+        fetchExecutedProposalsFromGraph();
       }
     } else {
       setLoading(false);
@@ -289,9 +338,17 @@ const ProposalsPage = () => {
 
   // Dropdown options using `CategoryEnums`
   const categoryOptions = [
-    { label: "All", value: "All" },
+    {
+      label: `${categoryEmojiMap["All"]} All`,
+      value: "All",
+    },
     ...Object.values(CategoryEnums).map((category) => ({
-      label: category,
+      label: (
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          {categoryEmojiMap[category]}
+          <span>{category}</span>
+        </div>
+      ),
       value: category,
     })),
   ];
@@ -309,6 +366,7 @@ const ProposalsPage = () => {
               <Select
                 isMulti
                 id="categoryFilter"
+                label="Filter Categories"
                 options={categoryOptions}
                 value={categoryOptions.filter((option) => selectedCategory.includes(option.value))}
                 onChange={(options) => {
