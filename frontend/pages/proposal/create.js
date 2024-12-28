@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useMoralis } from "react-moralis";
+import { useDispatch, useSelector } from "react-redux";
+import { setUserLocation } from "../../store/userLocationSlice";
 import ProposalForm from "../../components/Proposal/CreateProposal";
 import Map from "../../components/Map";
 import Header from "../../components/Header";
@@ -14,7 +16,10 @@ const CreateProposalPage = () => {
   const { lat, lng } = router.query;
   const { isWeb3Enabled, chainId } = useMoralis();
   const [proposals, setProposals] = useState([]);
-  const [userLocation, setUserLocation] = useState({ lat: null, lng: null });
+
+  const dispatch = useDispatch();
+  const userLocation = useSelector((state) => state.userLocation); // Access the global state
+  // const [userLocation, setUserLocation] = useState({ lat: null, lng: null });
   const [selectedCoords, setSelectedCoords] = useState({
     lat: lat || userLocation.lat,
     lng: lng || userLocation.lng,
@@ -22,15 +27,16 @@ const CreateProposalPage = () => {
   const [isStatic, setIsStatic] = useState(true);
   const [loading, setLoading] = useState(true);
 
-  // Track user's current location
   useEffect(() => {
     if (navigator.geolocation) {
       const watchId = navigator.geolocation.watchPosition(
         (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
+          dispatch(
+            setUserLocation({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            })
+          );
         },
         (error) => {
           console.error("Error fetching location: ", error);
@@ -38,12 +44,11 @@ const CreateProposalPage = () => {
         { enableHighAccuracy: true }
       );
 
-      // Clean up the watcher on component unmount
       return () => navigator.geolocation.clearWatch(watchId);
     } else {
       console.error("Geolocation is not supported by this browser.");
     }
-  }, []);
+  }, [dispatch]);
 
   // Set isStatic to false after the initial render
   useEffect(() => {
@@ -52,7 +57,7 @@ const CreateProposalPage = () => {
 
     return () => clearTimeout(timer);
   }, []);
-  
+
   const handleProposalSubmit = (proposalData) => {
     setProposals([...proposals, proposalData]);
   };
