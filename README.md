@@ -41,6 +41,7 @@ OpenCity is an open-source platform aimed at enhancing community governance by l
 - npm or yarn
 - Hardhat (for contract deployment)
 - The Graph CLI (for subgraph deployment)
+- Docker and Docker Compose
 
 ### Installation
 
@@ -115,6 +116,24 @@ or
 cd frontend
 yarn dev
 ```
+### Running with Docker
+
+You can also run the entire application using Docker and Docker Compose. Ensure Docker and Docker Compose are installed on your system.
+
+#### Build and Start Containers:
+
+To build the Docker images and start the containers for the frontend, backend, and subgraph services, run the following commands:
+
+```sh
+docker-compose up --build
+```
+
+Alternatively, you can build without using the cache and start the containers in detached mode:
+
+```sh
+docker compose build --no-cache
+docker compose up -d
+```
 
 ### Deploy Subgraph:
 
@@ -170,4 +189,3 @@ We welcome contributions! To contribute:
 ## License
 
 This project is licensed under the MIT License. See the LICENSE file for more details.
-
