@@ -3,7 +3,8 @@ import store from "../store"; // Import the Redux store
 import { MoralisProvider } from "react-moralis";
 import { NotificationProvider } from "web3uikit";
 import "leaflet/dist/leaflet.css";
-import "react-leaflet-markercluster/dist/styles.min.css";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "../styles/globals.css";
 import { ApolloProvider, ApolloClient, InMemoryCache } from "@apollo/client";
 import Head from "next/head";

@@ -39,6 +39,7 @@
   },
   "dependencies": {
     "cors": "^2.8.5",
+    "ethereumjs-abi": "0.6.8",
     "express": "^4.21.0"
   }
 }

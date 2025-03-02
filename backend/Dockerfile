@@ -1,20 +1,26 @@
-# Use the official Node.js image as the base image
-FROM node:14
+# Use the official Node.js image
+FROM node:18-alpine
 
-# Set the working directory
-WORKDIR /usr/src/app
+# Install Git (Required for some dependencies)
+RUN apk add --no-cache git
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
+# Set working directory
+WORKDIR /app
+
+# Copy package.json and yarn.lock first for caching
+COPY package.json yarn.lock ./
 
 # Install dependencies
-RUN npm install
+RUN yarn install --frozen-lockfile
 
-# Copy the rest of the application code
+# Ensure ts-node is installed globally
+RUN yarn global add ts-node
+
+# Copy the entire project
 COPY . .
 
-# Expose the port the app runs on
-EXPOSE 3000
+# Expose the backend port (change if needed)
+EXPOSE 5000
 
-# Command to run the application
-CMD ["npm", "start"]
+# Start the backend using ts-node
+CMD ["yarn", "dev"]
