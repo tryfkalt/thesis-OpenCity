@@ -3,6 +3,7 @@ import { useMoralis } from "react-moralis";
 import { useDispatch, useSelector } from "react-redux";
 import { setUserLocation } from "../../store/userLocationSlice";
 import ProposalForm from "../../components/Proposal/CreateProposal";
+import ProposalSlider from "../../components/Proposal/Slider";
 import Map from "../../components/Map";
 import Header from "../../components/Header";
 import Spinner from "../../components/Spinner/Spinner";
@@ -24,6 +25,8 @@ const CreateProposalPage = () => {
     lat: lat || userLocation.lat,
     lng: lng || userLocation.lng,
   });
+  const [radius, setRadius] = useState(50); // Default radius
+
   const [isStatic, setIsStatic] = useState(true);
   const [loading, setLoading] = useState(true);
 
@@ -62,6 +65,10 @@ const CreateProposalPage = () => {
     setProposals([...proposals, proposalData]);
   };
 
+  const handleRadiusChange = (newRadius) => {
+    setRadius(newRadius);
+  };
+
   return (
     <div className={styles.container}>
       {loading ? (
@@ -82,9 +89,12 @@ const CreateProposalPage = () => {
                     <ProposalForm
                       onProposalSubmit={handleProposalSubmit}
                       coordinates={selectedCoords ?? userLocation}
-                      // setLoading={setLoading}t
+                      userLocation={userLocation}
+                      range={radius}     
                     />
+                    <ProposalSlider onRadiusChange={handleRadiusChange} />
                   </div>
+
                   <div className={styles.map}>
                     {isStatic ? (
                       <Map
@@ -99,6 +109,7 @@ const CreateProposalPage = () => {
                             : { lat: 51.505, lng: -0.09 }
                         }
                         staticMarker={isStatic}
+                        range={radius || 50}
                       />
                     ) : (
                       <Map
@@ -106,6 +117,7 @@ const CreateProposalPage = () => {
                         markers={proposals}
                         onMapClick={setSelectedCoords}
                         staticMarker={isStatic}
+                        range={radius || 50}
                       />
                     )}
                   </div>

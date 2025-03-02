@@ -21,7 +21,7 @@ import styles from "../../styles/ProposalForm.module.css";
 
 dotenv.config();
 
-const ProposalForm = ({ onProposalSubmit, coordinates }) => {
+const ProposalForm = ({ onProposalSubmit, coordinates, userLocation, range }) => {
   const { isWeb3Enabled, chainId: chainIdHex, account } = useMoralis();
   const chainId = parseInt(chainIdHex, 16);
 
@@ -104,7 +104,6 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
       );
 
       const category = normalizedCategoryMapping[normalizedCategoryString];
-
       if (isNaN(category)) {
         throw new Error("Invalid category selected.");
       }
@@ -112,6 +111,7 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
         title,
         description,
         coordinates: { lat: coordinates.lat, lng: coordinates.lng },
+        range,
         category,
       };
 
@@ -127,7 +127,7 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
       const fullDescription = `${description}#${ipfsHash}`;
       const functionToCall = "storeProposal";
       const proposalInterface = new ethers.utils.Interface(abiProposalContract);
-      const args = [title, description, lat, lng, account, ipfsHash, category];
+      const args = [title, description, lat, lng, range, account, ipfsHash, category];
       const encodedFunctionCall = proposalInterface.encodeFunctionData(functionToCall, args);
 
       const createProposalOptions = {
@@ -335,6 +335,7 @@ const ProposalForm = ({ onProposalSubmit, coordinates }) => {
           theme: "primary",
         }}
       />
+
       {loading && (
         <div className={styles["loading-overlay"]}>
           <Spinner />

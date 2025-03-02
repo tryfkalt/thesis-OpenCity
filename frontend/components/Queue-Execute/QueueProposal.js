@@ -25,7 +25,6 @@ const QueueProposal = ({ proposalDetails }) => {
 
   const dispatch = useNotification();
   const { runContractFunction } = useWeb3Contract();
-  console.log("proposalDetails", proposalDetails);
 
   async function queueProposal() {
     try {

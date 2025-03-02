@@ -15,7 +15,6 @@ import { useMoralis, useWeb3Contract } from "react-moralis";
 import calculateDistance from "../../utils/calculateDistance";
 import { Modal, Button } from "web3uikit";
 import { abiGovernor, contractAddressesGovernor } from "../../constants";
-import { range } from "../../constants/variables";
 import { getStatusText } from "../../utils/map-utils/tableUtils";
 import extractIpfsHash from "../../utils/extractIpfsHash";
 import VoteDetails from "../Vote/VoteDetails";
@@ -47,6 +46,7 @@ const Map = ({
   createCoords,
   staticMarker,
   idCoords,
+  range,
 }) => {
   const router = useRouter();
   const { isWeb3Enabled, chainId: chainIdHex, account, enableWeb3 } = useMoralis();
@@ -155,7 +155,7 @@ const Map = ({
             const status = getStatusText(proposalState);
             const distance =
               userLocation && calculateDistance(userLocation, ipfsResponse.data.coordinates);
-            const isInRange = distance && distance <= range; // 10 km range
+            const isInRange = distance && distance <= ipfsResponse.data.range;
             return { ...proposal, ...ipfsResponse.data, status, distance, isInRange };
           })
         );
@@ -196,6 +196,7 @@ const Map = ({
               const status = getStatusText(proposalState);
               const distance =
                 userLocation && calculateDistance(userLocation, ipfsResponse.data.coordinates);
+
               const isInRange = distance && distance <= range;
 
               return { ...proposal, ...ipfsResponse.data, status, distance, isInRange };
@@ -307,7 +308,7 @@ const Map = ({
 
   const dottedLineCoords =
     userLocation && idCoords ? [userLocation, [idCoords.lat, idCoords.lng]] : null;
-    
+
   return (
     <div>
       <MapContainer
@@ -352,10 +353,10 @@ const Map = ({
         )}
 
         <SearchBar onSearchResult={handleSearchResult} />
-        {userLocation && (
+        {(idCoords || createCoords || userLocation) && (
           <Circle
-            center={userLocation}
-            radius={range * 1000} // range in meters
+            center={idCoords || createCoords || defaultMarkerPosition ||userLocation}
+            radius={(range ? range : 50) * 1000} // range in meters
             pathOptions={{ color: "blue", fillColor: "lightblue", fillOpacity: 0.2 }}
           />
         )}
@@ -496,6 +497,7 @@ const Map = ({
                 onVoteSubmit={(voteProposal) => {
                   voteProposalRef.current = voteProposal;
                 }}
+                userLocation={userLocation}
                 setLoading={setLoading} // Pass setLoading to VoteForm
               />
             </>

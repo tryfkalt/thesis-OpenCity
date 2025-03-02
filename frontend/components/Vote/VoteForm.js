@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/router";
 import { useMoralis, useWeb3Contract } from "react-moralis";
-import { useNotification, Radios, Input, Button, TextArea } from "web3uikit";
-import Spinner from "../Spinner/Spinner";
+import { useNotification, Radios, Button, TextArea } from "web3uikit";
+import calculateDistance from "../../utils/calculateDistance";
 import {
   abiGovernor,
   contractAddressesGovernor,
@@ -11,7 +11,7 @@ import {
 } from "../../constants";
 import styles from "../../styles/VoteForm.module.css";
 
-const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
+const VoteForm = ({ proposalDetails, onVoteSubmit, userLocation }) => {
   const router = useRouter();
   const dispatch = useNotification();
 
@@ -21,6 +21,8 @@ const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
   const chainId = parseInt(chainIdHex, 16);
 
   const proposer = proposalDetails?.proposer;
+  const range = proposalDetails?.range;
+  const distance = calculateDistance(userLocation, proposalDetails.coordinates);
   const isProposer = proposer === account;
 
   const [vote, setVote] = useState(null);
@@ -161,7 +163,7 @@ const VoteForm = ({ proposalDetails, onVoteSubmit }) => {
         abi: abiGovernor,
         contractAddress: governorAddress,
         functionName: "getVotes",
-        params: { account: account, blockNumber: snapshotBlock },
+        params: { account: account, blockNumber: snapshotBlock, distance: distance, range: range },
       };
       const power = await runContractFunction({ params: voterPowerOptions });
       setVoterPower(power.toString());

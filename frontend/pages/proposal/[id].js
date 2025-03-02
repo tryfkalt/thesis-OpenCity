@@ -112,15 +112,12 @@ const ProposalDetails = () => {
           const ipfsHash =
             proposalFromGraph.proposalCreateds[0]?.ipfsHash ||
             extractIpfsHash(proposalFromGraph.proposalCreateds[0]?.description);
-          console.log("IPFS hash:", ipfsHash);
           if (!ipfsHash) {
             console.error("No IPFS hash found");
             setLoading(false);
             return;
           }
-          console.log(proposalFromGraph.proposalCreateds[0]);
           const ipfsResponse = await axios.get(`https://gateway.pinata.cloud/ipfs/${ipfsHash}`);
-          console.log("IPFS response:", ipfsResponse.data);
           setProposal({
             ...ipfsResponse.data,
             ipfsHash,
@@ -397,6 +394,7 @@ const ProposalDetails = () => {
                 onMapClick={setSelectedCoords}
                 proposalStatus={status}
                 idCoords={{ lat: proposal.coordinates.lat, lng: proposal.coordinates.lng }}
+                range = {proposal.range}
               />
             )}
           </div>

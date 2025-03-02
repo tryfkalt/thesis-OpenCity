@@ -2,7 +2,7 @@ import { gql } from "@apollo/client";
 
 const GET_PROPOSALS = gql`
   {
-    proposalCreateds(orderBy: blockTimestamp, orderDirection: desc, first: 5) {
+    proposalCreateds(orderBy: blockTimestamp, orderDirection: desc) {
       id
       proposalId
       proposer
