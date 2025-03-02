@@ -53,30 +53,21 @@ cd thesis-OpenCity
 
 #### Install Dependencies:
 
-**Frontend:**
+**Using npm:**
 
 ```sh
-cd frontend
-npm install
+cd frontend && npm install && cd ../backend && npm install && cd ../thegraph-OpenCity/opencity && npm install
 ```
 
-**Backend:**
+**Using yarn:**
 
 ```sh
-cd backend
-npm install
-```
-
-**Subgraph:**
-
-```sh
-cd thegraph-OpenCity/opencity
-npm install
+cd frontend && yarn install && cd ../backend && yarn install && cd ../thegraph-OpenCity/opencity && yarn install
 ```
 
 ### Setup Environment Variables:
 
-Create `.env` files in the respective directories. Use `.env.example` as a reference for required variables.
+Ensure you have a `.env` file in each relevant directory. Use `.env.example` as a reference for required variables.
 
 ### Deploy Contracts:
 
@@ -86,18 +77,43 @@ Navigate to the smart contract directory and deploy to the desired network:
 npx hardhat run scripts/deploy.js --network NETWORK_NAME
 ```
 
-### Run the Backend:
+### Running the Application
+
+For convenience, use the provided `start.sh` script to automate the setup process.
+
+```sh
+chmod +x start.sh
+./start.sh
+```
+
+Alternatively, you can manually start each service:
+
+**Backend:**
 
 ```sh
 cd backend
 npm start
 ```
 
-### Run the Frontend:
+or
+
+```sh
+cd backend
+yarn start
+```
+
+**Frontend:**
 
 ```sh
 cd frontend
 npm run dev
+```
+
+or
+
+```sh
+cd frontend
+yarn dev
 ```
 
 ### Deploy Subgraph:
@@ -154,3 +170,4 @@ We welcome contributions! To contribute:
 ## License
 
 This project is licensed under the MIT License. See the LICENSE file for more details.
+
