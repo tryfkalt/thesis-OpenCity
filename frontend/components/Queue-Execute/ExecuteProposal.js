@@ -13,7 +13,7 @@ import { SCALING_FACTOR } from "../../constants/variables";
 import { useNotification } from "web3uikit";
 import styles from "../../styles/Queue-Execute.module.css";
 
-const ExecuteProposal = ({ proposalDetails, onExecuted }) => {
+const ExecuteProposal = ({ proposalDetails, onExecuted, range }) => {
   const { chainId: chainIdHex, account } = useMoralis();
   const chainId = parseInt(chainIdHex, 16); // Convert chainId to integer
   const [loading, setLoading] = useState(false);
@@ -29,7 +29,6 @@ const ExecuteProposal = ({ proposalDetails, onExecuted }) => {
     try {
       setLoading(true);
       setMessage("Executing proposal...");
-      console.log("Executing proposal:", proposalDetails);
 
       const functionToCall = "storeProposal";
       const proposalInterface = new ethers.utils.Interface(abiProposalContract);
@@ -38,11 +37,11 @@ const ExecuteProposal = ({ proposalDetails, onExecuted }) => {
         proposalDetails.description,
         ethers.BigNumber.from((proposalDetails.coordinates.lat * SCALING_FACTOR).toFixed(0)),
         ethers.BigNumber.from((proposalDetails.coordinates.lng * SCALING_FACTOR).toFixed(0)),
+        range,
         account,
         proposalDetails.ipfsHash,
         proposalDetails.category,
       ];
-      console.log("Proposal args:", args);
       const encodedFunctionCall = proposalInterface.encodeFunctionData(functionToCall, args);
       const descriptionHash = ethers.utils.keccak256(
         ethers.utils.toUtf8Bytes(`${proposalDetails.description}#${proposalDetails.ipfsHash}`)
@@ -100,7 +99,6 @@ const ExecuteProposal = ({ proposalDetails, onExecuted }) => {
       };
 
       const proposal = await runContractFunction({ params: proposalOptions });
-      console.log("Updated proposal details:", proposal);
 
       // Notify parent about execution success and provide the transaction hash
       if (onExecuted) {
