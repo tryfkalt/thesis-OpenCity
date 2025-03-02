@@ -28,6 +28,7 @@ contract ProposalContract is Ownable {
         string description;
         int256 latitude;
         int256 longitude;
+        uint256 range; // Dynamic range in kilometers
         address proposer;
         string ipfsHash;
         Category category;
@@ -44,6 +45,7 @@ contract ProposalContract is Ownable {
         string description,
         int256 latitude,
         int256 longitude,
+        uint256 range,
         address proposer,
         string ipfsHash,
         Category category
@@ -53,11 +55,11 @@ contract ProposalContract is Ownable {
 
     /**
      * @dev Store a new proposal in the contract.
-     * Can be called by any address.
      * @param _title The title of the proposal.
      * @param _description The description of the proposal.
      * @param _latitude The latitude of the proposal's location.
      * @param _longitude The longitude of the proposal's location.
+     * @param _range The voting eligibility range in kilometers.
      * @param _ipfsHash The IPFS hash containing proposal data.
      * @param _category The category of the proposal.
      */
@@ -66,6 +68,7 @@ contract ProposalContract is Ownable {
         string memory _description,
         int256 _latitude,
         int256 _longitude,
+        uint256 _range,
         address _proposer,
         string memory _ipfsHash,
         Category _category
@@ -76,22 +79,24 @@ contract ProposalContract is Ownable {
             description: _description,
             latitude: _latitude,
             longitude: _longitude,
+            range: _range,
             proposer: _proposer,
             ipfsHash: _ipfsHash,
             category: _category
         });
-        
+
         emit ProposalAdded(
             proposalCount,
             _title,
             _description,
             _latitude,
             _longitude,
+            _range,
             _proposer,
             _ipfsHash,
             _category
         );
-        
+
         // Increment proposal count after storing
         proposalCount++;
     }
@@ -99,7 +104,6 @@ contract ProposalContract is Ownable {
     /**
      * @dev Retrieve a specific proposal by its ID.
      * @param _id The ID of the proposal to retrieve.
-     * 
      */
     function getProposal(uint256 _id)
         public
@@ -110,6 +114,7 @@ contract ProposalContract is Ownable {
             string memory description,
             int256 latitude,
             int256 longitude,
+            uint256 range,
             address proposer,
             string memory ipfsHash,
             Category category
@@ -122,6 +127,7 @@ contract ProposalContract is Ownable {
             proposal.description,
             proposal.latitude,
             proposal.longitude,
+            proposal.range,
             proposal.proposer,
             proposal.ipfsHash,
             proposal.category
@@ -130,8 +136,7 @@ contract ProposalContract is Ownable {
 
     /**
      * @dev Retrieve all proposals' details.
-     * @return Array of all proposals stored in the contract.
-     * This function is used to retrieve all proposals stored in the contract.
+     * @return Array of all proposals stored in the contract
      */
     function getAllProposals() public view returns (Proposal[] memory) {
         Proposal[] memory allProposals = new Proposal[](proposalCount);

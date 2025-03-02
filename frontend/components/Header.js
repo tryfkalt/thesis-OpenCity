@@ -112,7 +112,7 @@ export default function Header() {
           </button>
           <div className={`${styles.dropdownContent} ${isDropdownOpen ? styles.open : ""}`}>
             <button className={styles.dropdownItem} onClick={openModal}>
-            📜<span>Contracts and Parameters</span>
+              📜<span>Contracts and Parameters</span>
             </button>
           </div>
         </div>
@@ -236,9 +236,9 @@ export default function Header() {
                       <span className={styles.tooltipEther}>View on Etherscan</span>
                     </div>
                   </div>
-                  
-                   {/* TimeLock Contract Row */}
-                   <div className={styles.contractRow}>
+
+                  {/* TimeLock Contract Row */}
+                  <div className={styles.contractRow}>
                     <p>
                       <strong>TimeLock Contract:</strong> {timelockAddress}
                     </p>
@@ -249,7 +249,7 @@ export default function Header() {
                         className={`${styles.copyIcon} ${
                           copiedIcon["timelock"] ? styles.animate : ""
                         }`}
-                        onClick={() => handleCopy("token", governanceTokenAddress)}
+                        onClick={() => handleCopy("timelock", timelockAddress)}
                       />
                       <span className={styles.tooltipCopy}>
                         {copiedIcon["timelock"] ? "Address Copied!" : "Copy to Clipboard"}

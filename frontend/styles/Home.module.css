@@ -13,6 +13,19 @@
   align-items: center;
 }
 
+.walletConnectMessage {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-family: "Montserrat", sans-serif;
+  align-items: center;
+  justify-content: center;
+  padding: 20px; /* Add padding */
+  border-radius: 8px; /* Rounded corners */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+  text-align: center; /* Center text */
+}
+
 .footer {
   display: flex;
   flex: 1;

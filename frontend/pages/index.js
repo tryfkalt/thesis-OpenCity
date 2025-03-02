@@ -3,6 +3,8 @@ import styles from "../styles/Home.module.css";
 import Header from "../components/Header";
 import { useState, useEffect, use } from "react";
 import { useMoralis, useWeb3Contract } from "react-moralis";
+import { useDispatch, useSelector } from "react-redux";
+import { setUserLocation } from "../store/userLocationSlice";
 import Map from "../components/Map";
 import ProposalsTable from "../components/Proposal/ProposalsTable";
 import DelegateComponent from "../components/Delegate";
@@ -13,22 +15,26 @@ const supportedChains = ["31337", "11155111"];
 export default function Home() {
   const { isWeb3Enabled, chainId: chainIdHex, account } = useMoralis();
   const chainId = parseInt(chainIdHex, 16);
-  const [userLocation, setUserLocation] = useState({ lat: null, lng: null });
+  // const [userLocation, setUserLocation] = useState({ lat: null, lng: null });
   const [selectedCoords, setSelectedCoords] = useState({ lat: "", lng: "" });
   const [loading, setLoading] = useState(false);
   const [totalSupply, setTotalSupply] = useState(null);
 
   const { runContractFunction } = useWeb3Contract();
 
-  // Track user's current location
+  const dispatch = useDispatch();
+  const userLocation = useSelector((state) => state.userLocation); // Access the global state
+
   useEffect(() => {
     if (navigator.geolocation) {
       const watchId = navigator.geolocation.watchPosition(
         (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-          });
+          dispatch(
+            setUserLocation({
+              lat: position.coords.latitude,
+              lng: position.coords.longitude,
+            })
+          );
         },
         (error) => {
           console.error("Error fetching location: ", error);
@@ -36,12 +42,11 @@ export default function Home() {
         { enableHighAccuracy: true }
       );
 
-      // Clean up the watcher on component unmount
       return () => navigator.geolocation.clearWatch(watchId);
     } else {
       console.error("Geolocation is not supported by this browser.");
     }
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
     const fetchTotalSupply = async () => {
@@ -97,9 +102,7 @@ export default function Home() {
                 <li className={isWeb3Enabled && !selectedCoords ? styles.activeStep : ""}>
                   Select a location on the map to make a proposal.
                 </li>
-                <li>
-                  Vote on proposals to shape the future.
-                </li>
+                <li>Vote on proposals to shape the future.</li>
               </ol>
             </aside>
 
@@ -135,7 +138,7 @@ export default function Home() {
                   )}
                 </>
               ) : (
-                <div>Please connect to a Wallet to interact with OpenCity features.</div>
+                <div className={styles.walletConnectMessage}>Please connect to a Wallet to interact with OpenCity features.</div>
               )}
             </main>
           </div>

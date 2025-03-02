@@ -8,9 +8,9 @@ dataSources:
     name: GovernorContract
     network: sepolia
     source:
-      address: "0xdeddE257E98C6767A64fD145037BB9CB2541dd3D"
+      address: "0x44650b97413DB0e1F6544Eab9272B7e2A12Da038"
       abi: GovernorContract
-      startBlock: 7321908
+      startBlock: 7436579
     mapping:
       kind: ethereum/events
       apiVersion: 0.0.7

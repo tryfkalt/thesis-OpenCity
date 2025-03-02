@@ -15,6 +15,7 @@ const axios = require("axios");
  * @param {Object} req.body.coordinates - The coordinates of the proposal location.
  * @param {string} req.body.coordinates.lat - The latitude of the proposal location.
  * @param {string} req.body.coordinates.lng - The longitude of the proposal location.
+ * @param {string} req.body.range - The vote range of the proposal.
  * @param {string} req.body.category - The category of the proposal.
  * @param {string} req.body.proposalId - The unique identifier for the proposal.
  * @param {string} req.body.proposer - The proposer of the proposal.
@@ -24,7 +25,7 @@ const axios = require("axios");
  * @throws {Error} - If there is an error saving the proposal.
  */
 const createProposal = async (req, res) => {
-  const { title, description, coordinates, category, proposalId, proposer } = req.body;
+  const { title, description, coordinates, range, category, proposalId, proposer } = req.body;
   console.log("req.body", req.body);
   const lat = parseFloat(coordinates.lat); // Use parseFloat to handle decimals
   const lng = parseFloat(coordinates.lng);
@@ -37,6 +38,7 @@ const createProposal = async (req, res) => {
       lat,
       lng,
     },
+    range,
     proposalId,
     proposer,
     ipfsHash,

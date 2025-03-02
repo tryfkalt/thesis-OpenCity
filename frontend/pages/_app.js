@@ -1,3 +1,5 @@
+import { Provider } from "react-redux"; // Import Redux Provider
+import store from "../store"; // Import the Redux store
 import { MoralisProvider } from "react-moralis";
 import { NotificationProvider } from "web3uikit";
 import "leaflet/dist/leaflet.css";
@@ -14,20 +16,21 @@ const client = new ApolloClient({
 function MyApp({ Component, pageProps }) {
   return (
     <>
-      {/* Global Head settings */}
       <Head>
         <title>OpenCity</title>
         <meta name="description" content="Proposal Map App" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <MoralisProvider initializeOnMount={false}>
-        <ApolloProvider client={client}>
-          <NotificationProvider>
-            <Component {...pageProps} />
-          </NotificationProvider>
-        </ApolloProvider>
-      </MoralisProvider>
+      <Provider store={store}>
+        <MoralisProvider initializeOnMount={false}>
+          <ApolloProvider client={client}>
+            <NotificationProvider>
+              <Component {...pageProps} />
+            </NotificationProvider>
+          </ApolloProvider>
+        </MoralisProvider>
+      </Provider>
     </>
   );
 }
