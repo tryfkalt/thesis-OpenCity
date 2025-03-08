@@ -82,7 +82,7 @@ const ProposalForm = ({ onProposalSubmit, coordinates, userLocation, range }) =>
         dispatch({
           type: "error",
           message: "Proposal threshold not met. Voting power must be greater than threshold.",
-          title: "Transaction Notification",
+          title: "Proposal Submitted!",
           position: "topR",
         });
         return;

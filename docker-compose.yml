@@ -1,6 +1,19 @@
-version: '3.9'
+version: "3.8"
 
 services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      ssh: [default]
+    ports:
+      - "3000:3000"
+    env_file:
+    - ./frontend/.env  # Load .env for frontend
+    volumes:
+      - ~/.ssh:/root/.ssh:ro
+    extra_hosts:
+      - "github.com:140.82.113.3"
   backend:
     build:
       context: ./backend
@@ -8,31 +21,7 @@ services:
     ports:
       - "5000:5000"
     env_file:
-      - ./backend/.env
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
-    command: npm start
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
-    env_file:
-      - ./frontend/.env
-    volumes:
-      - ./frontend:/app
-      - /app/node_modules
-    command: npm run dev
-
-  subgraph:
-    build:
-      context: ./thegraph-OpenCity/opencity
-      dockerfile: Dockerfile
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./thegraph-OpenCity/opencity:/app
-    command: yarn start
+      - ./backend/.env  # Load .env for backend
+    environment:
+      - NODE_ENV=production
+      - PORT=5000

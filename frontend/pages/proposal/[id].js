@@ -377,13 +377,13 @@ const ProposalDetails = () => {
 
           {canQueue && (
             <div className={styles.queueExecute}>
-              <QueueProposal proposalDetails={proposal} />
+              <QueueProposal proposalDetails={proposal} range={proposal.range}/>
             </div>
           )}
 
           {canExecute && (
             <div className={styles.queueExecute}>
-              <ExecuteProposal proposalDetails={proposal} onExecuted={handleExecution} />
+              <ExecuteProposal proposalDetails={proposal} onExecuted={handleExecution} range={proposal.range}/>
             </div>
           )}
 

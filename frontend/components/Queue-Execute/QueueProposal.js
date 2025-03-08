@@ -13,7 +13,7 @@ import { useNotification } from "web3uikit";
 import Spinner from "../Spinner/Spinner";
 import styles from "../../styles/Queue-Execute.module.css";
 
-const QueueProposal = ({ proposalDetails }) => {
+const QueueProposal = ({ proposalDetails, range }) => {
   const { chainId: chainIdHex, account } = useMoralis();
   const chainId = parseInt(chainIdHex, 16); // Convert chainId to integer
 
@@ -30,7 +30,6 @@ const QueueProposal = ({ proposalDetails }) => {
     try {
       setLoading(true);
       setMessage("Queueing proposal...");
-
       const functionToCall = "storeProposal";
       const proposalInterface = new ethers.utils.Interface(abiProposalContract);
       const args = [
@@ -38,6 +37,7 @@ const QueueProposal = ({ proposalDetails }) => {
         proposalDetails.description,
         ethers.BigNumber.from((proposalDetails.coordinates.lat * SCALING_FACTOR).toFixed(0)),
         ethers.BigNumber.from((proposalDetails.coordinates.lng * SCALING_FACTOR).toFixed(0)),
+        range,
         account,
         proposalDetails.ipfsHash,
         proposalDetails.category,
@@ -101,7 +101,7 @@ const QueueProposal = ({ proposalDetails }) => {
 
   const handleQueueError = (error) => {
     console.error("Error queueing proposal:", error);
-    setMessage("Error queueing proposal: " + error.message);
+    setMessage("Something went wrong!" );
   };
 
   return (
